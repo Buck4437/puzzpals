@@ -1,24 +1,27 @@
 <template>
-  Upload file:
-  <input ref="fileInput" type="file" name="avatar" accept=".json" />
+  <FilePicker @file-picked="onFilePicked"/>
   <button @click="uploadFile">Upload</button>
 </template>
 
 <script setup lang="ts">
+import FilePicker from '@/components/FilePicker.vue';
 import api from '@/services/api';
-import { useTemplateRef } from 'vue';
 import { useRouter } from 'vue-router';
 
 const router = useRouter();
-const fileInput = useTemplateRef('fileInput');
+
+let pickedFile: File | null = null;
 
 async function uploadFile() {
-  if (fileInput.value === null || fileInput.value.files === null || fileInput.value.files[0] === undefined) {
+  if (pickedFile === null) {
     alert('Please select a file to upload.');
     return;
   }
 
-  const file = fileInput.value.files[0];
+  // While reading file, `pickedFile` might be mutated to null
+  // Store `pickedFile` in `fileToRead` to avoid error
+  const fileToRead = pickedFile;
+
   let puzzleData;
 
   try {
@@ -33,7 +36,7 @@ async function uploadFile() {
         }
       };
       reader.onerror = () => reject(reader.error);
-      reader.readAsText(file);
+      reader.readAsText(fileToRead);
     }).then(JSON.parse)
       .catch(() => {
         alert('Failed to read or parse the file. Please ensure it is a valid JSON file.');
@@ -57,6 +60,13 @@ async function uploadFile() {
   if (res !== undefined && res.data && res.data.token) {
     router.push(`/room/${res.data.token}`);
   }
-
 }
+
+// Normally called by FilePicker
+// During tests, call this directly
+function onFilePicked(file: File | null) {
+  pickedFile = file;
+}
+
+defineExpose({ onFilePicked });
 </script>
