@@ -19,8 +19,6 @@ import type CellState from '@/models/CellState';
 import type GridState from '@/models/GridState';
 
 const router = useRouter();
-
-const room: Ref<{ token: string; } | null> = ref(null);
 const gridState: Ref<GridState | null> = ref(null);
 const gridComponent = useTemplateRef("gridComponent");
 
@@ -40,8 +38,8 @@ function is404(err: unknown) {
 
 async function fetchRoom() {
   try {
-    const res = await api.get(`/rooms/${props.token}`);
-    room.value = res.data.room;
+    // Check that the room exists
+    await api.get(`/rooms/${props.token}`);
   } catch (err) {
     if (is404(err)) {
       router.push('/404');
@@ -53,13 +51,10 @@ async function fetchRoom() {
 }
 
 async function join() {
-  const res = await api.post(`/rooms/${props.token}/join`);
-  room.value = res.data.room;
   socket.emit('room:join', { token: props.token });
 }
 
 async function leave() {
-  await api.post(`/rooms/${props.token}/leave`);
   socket.emit('room:leave', { token: props.token });
   router.push('/');
 }

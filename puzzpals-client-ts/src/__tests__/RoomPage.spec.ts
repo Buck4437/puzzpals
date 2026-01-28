@@ -37,6 +37,8 @@ describe('RoomPage', () => {
   // As a player, I want to synchronise my progress with other players
   // so that we can collaborate on the same puzzle.
   it('joins room', async () => {
+    api.get.mockResolvedValueOnce({ data: { room: 'TestRm' } });
+
     // Load the room page with 'TestRm' as token
     mount(RoomPage, { props: { token: 'TestRm' } });
     await flushPromises();
@@ -46,6 +48,8 @@ describe('RoomPage', () => {
   });
 
   it('redirects to 404 if room does not exist', async () => {
+    api.get.mockRejectedValueOnce({ response: { status: 404 } });
+
     // Load the room page with non-existent room
     mount(RoomPage, { props: { token: 'TestRn' } });
     await flushPromises();
