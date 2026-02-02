@@ -1,6 +1,6 @@
 <template>
   <label for="puzzle-file">Upload file: </label>
-  <input type="file" name="puzzle-file" accept=".json" @change="onChange" />
+  <input type="file" name="puzzle-file" id="puzzle-file" accept=".json" @change="onChange" />
 </template>
 
 <script setup lang="ts">
