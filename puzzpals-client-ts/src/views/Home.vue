@@ -4,9 +4,9 @@
 </template>
 
 <script setup lang="ts">
-import FilePicker from '@/components/FilePicker.vue';
-import api from '@/services/api';
-import { useRouter } from 'vue-router';
+import FilePicker from "@/components/FilePicker.vue";
+import api from "@/services/api";
+import { useRouter } from "vue-router";
 
 const router = useRouter();
 
@@ -23,15 +23,15 @@ function readFile(file: File) {
 
 async function uploadFile() {
   if (pickedFile === null) {
-    alert('Please select a file to upload.');
+    alert("Please select a file to upload.");
     return;
   }
 
   let fileContent;
   try {
-    fileContent = await readFile(pickedFile);;
+    fileContent = await readFile(pickedFile);
   } catch (error) {
-    alert('Failed to read the file.');
+    alert("Failed to read the file.");
     return;
   }
 
@@ -39,18 +39,20 @@ async function uploadFile() {
   try {
     puzzleData = JSON.parse(fileContent);
   } catch (error) {
-    alert('Failed to parse the file. Please ensure it is a valid JSON file.');
+    alert("Failed to parse the file. Please ensure it is a valid JSON file.");
     return;
-  };
+  }
 
   // Send the data to the server
-  const res = await api.post('/rooms/create', puzzleData, {
-    headers: {
-      'Content-Type': 'application/json'
-    }
-  }).catch((err) => {
-    alert(`Upload failed: ${err.response?.data?.error || err.message}`);
-  });
+  const res = await api
+    .post("/rooms/create", puzzleData, {
+      headers: {
+        "Content-Type": "application/json",
+      },
+    })
+    .catch((err) => {
+      alert(`Upload failed: ${err.response?.data?.error || err.message}`);
+    });
 
   if (res !== undefined && res.data && res.data.token) {
     router.push(`/room/${res.data.token}`);

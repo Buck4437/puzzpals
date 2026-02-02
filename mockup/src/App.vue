@@ -1,12 +1,12 @@
 <script>
-import './assets/main.css';
-import JoinRoomModal from './components/JoinRoomModal.vue';
-import WelcomePage from './components/WelcomePage.vue';
-import CreateRoomModal from './components/CreateRoomModal.vue';
-import SolvingPage from './components/SolvingPage.vue';
+import "./assets/main.css";
+import JoinRoomModal from "./components/JoinRoomModal.vue";
+import WelcomePage from "./components/WelcomePage.vue";
+import CreateRoomModal from "./components/CreateRoomModal.vue";
+import SolvingPage from "./components/SolvingPage.vue";
 
 export default {
-  name: 'App',
+  name: "App",
   components: { WelcomePage, JoinRoomModal, CreateRoomModal, SolvingPage },
   data() {
     return {
@@ -18,22 +18,22 @@ export default {
   },
   methods: {
     handleKeydown(event) {
-      if (event.key === ',' && this.pageId > 0) {
+      if (event.key === "," && this.pageId > 0) {
         this.pageId -= 1;
-      } else if (event.key === '.' && this.pageId < this.maxPageId) {
+      } else if (event.key === "." && this.pageId < this.maxPageId) {
         this.pageId += 1;
-      } else if (event.key === 'm') {
+      } else if (event.key === "m") {
         this.showPageId = !this.showPageId;
       }
     },
   },
   mounted() {
     this._keyHandler = (event) => this.handleKeydown(event);
-    document.addEventListener('keydown', this._keyHandler);
+    document.addEventListener("keydown", this._keyHandler);
   },
   beforeUnmount() {
     if (this._keyHandler) {
-      document.removeEventListener('keydown', this._keyHandler);
+      document.removeEventListener("keydown", this._keyHandler);
       this._keyHandler = null;
     }
   },
@@ -41,13 +41,11 @@ export default {
 </script>
 
 <template>
-    <!--
+  <!--
     <img alt="Vue logo" class="logo" src="./assets/logo.svg" width="125" height="125" />
     -->
 
-    <div v-if="showPageId" class="debug-pageid">
-      PageId: {{ pageId }}
-    </div>
+  <div v-if="showPageId" class="debug-pageid">PageId: {{ pageId }}</div>
   <main>
     <template v-if="pageId === 0">
       <WelcomePage />
@@ -67,7 +65,6 @@ export default {
 </template>
 
 <style>
-
 main {
   height: 100%;
   width: 100%;

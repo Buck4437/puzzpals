@@ -1,0 +1,2 @@
+# Ignore artifacts, e.g., `build` and `coverage`
+# You don't need to ignore files already in .gitignore

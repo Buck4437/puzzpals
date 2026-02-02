@@ -6,8 +6,8 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 
 import Home from "@/views/Home.vue";
 
-vi.mock('@/services/api', () => ({ default: api }));
-vi.mock('vue-router', () => ({ useRouter }));
+vi.mock("@/services/api", () => ({ default: api }));
+vi.mock("vue-router", () => ({ useRouter }));
 
 describe("Home", () => {
   beforeEach(() => {
@@ -21,22 +21,22 @@ describe("Home", () => {
     const wrapper = mount(Home);
 
     const puzzle = {
-      "type": "akari",
-      "grid": [[".", "1", "#"]]
+      type: "akari",
+      grid: [[".", "1", "#"]],
     };
 
     const fileContent = JSON.stringify(puzzle);
     const puzzleFile = new File([fileContent], "puzzle.json");
 
-    // It is difficult to simulate the player picking a file 
+    // It is difficult to simulate the player picking a file
     // via the <input> element, so we expose `onFilePicked`
     wrapper.vm.onFilePicked(puzzleFile);
 
     api.post.mockResolvedValueOnce({ data: { token: "TestRm" } });
 
     wrapper.find("button").trigger("click");
-    await flushPromises();  // Read file
-    await flushPromises();  // Call API
+    await flushPromises(); // Read file
+    await flushPromises(); // Call API
 
     // Create room (check the first two arguments only)
     expect(api.post).toHaveBeenCalledOnce();
@@ -73,8 +73,8 @@ describe("Home", () => {
     const wrapper = mount(Home);
 
     const puzzle = {
-      "type": "akari",
-      "grid": [[".", "1", "#"]]
+      type: "akari",
+      grid: [[".", "1", "#"]],
     };
 
     const fileContent = JSON.stringify(puzzle);
@@ -84,8 +84,8 @@ describe("Home", () => {
     api.post.mockRejectedValueOnce(new Error("API error"));
 
     wrapper.find("button").trigger("click");
-    await flushPromises();  // Read file
-    await flushPromises();  // Call API
+    await flushPromises(); // Read file
+    await flushPromises(); // Call API
 
     // Alert: API error
     expect(alert).toHaveBeenCalledOnce();

@@ -1,6 +1,6 @@
-type Room = {
-  token: string,
-  puzzle_data?: string
+interface Room {
+  token: string;
+  puzzle_data?: string;
 }
 
 export { type Room };

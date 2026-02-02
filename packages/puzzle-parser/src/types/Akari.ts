@@ -4,13 +4,13 @@ type PuzzleType = "akari" | "kakuro" | "masyu";
 
 type Clue = number | null;
 
-type CellData = {
+interface CellData {
   isBlack: boolean;
   number: Clue;
   input: number;
 }
 
-type Grid = {
+interface Grid {
   rows: number;
   cols: number;
   cells: Cell[];

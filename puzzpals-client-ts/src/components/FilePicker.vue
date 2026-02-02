@@ -11,7 +11,10 @@ function onChange(event: Event) {
   const input = event.target as HTMLInputElement;
 
   // If user cancels file selection, file will be null
-  const file = (input.files !== null && input.files[0] !== undefined) ? input.files[0] : null;
+  const file =
+    input.files !== null && input.files[0] !== undefined
+      ? input.files[0]
+      : null;
   emit("filePicked", file);
 }
 </script>

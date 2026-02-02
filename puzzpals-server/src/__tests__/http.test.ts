@@ -11,8 +11,11 @@ describe("Create room API", () => {
 
   it("can create room", async () => {
     const payload = {
-      "type": "akari",
-      "grid": [[".", "2"], ["#", "."]]
+      type: "akari",
+      grid: [
+        [".", "2"],
+        ["#", "."],
+      ],
     };
 
     const res = await request(app).post("/api/rooms/create").send(payload);
@@ -35,78 +38,93 @@ describe("Create room API", () => {
     await assertBadRequest("Hello, world!");
   });
 
-  it("rejects payload missing \"type\"", async () => {
+  it('rejects payload missing "type"', async () => {
     await assertBadRequest({
-      "grid": [[".", "2"], ["#", "."]]
+      grid: [
+        [".", "2"],
+        ["#", "."],
+      ],
     });
   });
 
-  it("rejects payload missing \"grid\"", async () => {
+  it('rejects payload missing "grid"', async () => {
     await assertBadRequest({
-      "type": "akari"
+      type: "akari",
     });
   });
 
-  it("rejects wrong \"type\" type", async () => {
+  it('rejects wrong "type" type', async () => {
     await assertBadRequest({
-      "type": 0,
-      "grid": [[".", "2"], ["#", "."]]
+      type: 0,
+      grid: [
+        [".", "2"],
+        ["#", "."],
+      ],
     });
   });
 
-  it("rejects wrong \"type\" value", async () => {
+  it('rejects wrong "type" value', async () => {
     await assertBadRequest({
-      "type": "masyu",
-      "grid": [[".", "2"], ["#", "."]]
+      type: "masyu",
+      grid: [
+        [".", "2"],
+        ["#", "."],
+      ],
     });
   });
 
-  it("rejects wrong \"grid\" type", async () => {
+  it('rejects wrong "grid" type', async () => {
     await assertBadRequest({
-      "type": "akari",
-      "grid": "Hello, world!"
+      type: "akari",
+      grid: "Hello, world!",
     });
   });
 
   it("rejects empty grid", async () => {
     await assertBadRequest({
-      "type": "akari",
-      "grid": []
+      type: "akari",
+      grid: [],
     });
   });
 
   it("rejects wrong row type", async () => {
     await assertBadRequest({
-      "type": "akari",
-      "grid": [".", "2", "#", "."]
+      type: "akari",
+      grid: [".", "2", "#", "."],
     });
   });
 
   it("rejects empty row", async () => {
     await assertBadRequest({
-      "type": "akari",
-      "grid": [[]]
+      type: "akari",
+      grid: [[]],
     });
   });
 
   it("rejects non-rectangular grid", async () => {
     await assertBadRequest({
-      "type": "akari",
-      "grid": [[".", "2"], ["#"]]
+      type: "akari",
+      grid: [[".", "2"], ["#"]],
     });
   });
 
   it("rejects wrong cell type", async () => {
     await assertBadRequest({
-      "type": "akari",
-      "grid": [[".", 2], ["#", "."]]
+      type: "akari",
+      grid: [
+        [".", 2],
+        ["#", "."],
+      ],
     });
   });
 
   it("rejects wrong cell value", async () => {
     await assertBadRequest({
-      "type": "akari",
-      "grid": [[".", "5"], ["#", "."]]
+      type: "akari",
+      grid: [
+        [".", "5"],
+        ["#", "."],
+      ],
     });
   });
 });
@@ -117,11 +135,16 @@ describe("Join room API", () => {
 
   it("can join players to rooms", async () => {
     const payload = {
-      "type": "akari",
-      "grid": [[".", "2"], ["#", "."]]
+      type: "akari",
+      grid: [
+        [".", "2"],
+        ["#", "."],
+      ],
     };
 
-    const createRes = await request(app).post("/api/rooms/create").send(payload);
+    const createRes = await request(app)
+      .post("/api/rooms/create")
+      .send(payload);
     const token = createRes.body.token;
 
     const joinRes = await request(app).post(`/api/rooms/${token}/join`);

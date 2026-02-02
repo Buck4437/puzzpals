@@ -4,7 +4,7 @@ import { serialize, deserialize } from "./parsers/AkariParser.js";
 import puzzle from "./demo-puzzles/akari1.json" with { type: "json" };
 
 function createEmptyGrid(): Grid {
-  return parseAkari(puzzle) 
+  return parseAkari(puzzle);
 }
 
 function parsePuzzle(input: any): Grid {

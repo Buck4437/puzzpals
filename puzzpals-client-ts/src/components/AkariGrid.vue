@@ -1,25 +1,33 @@
 <template>
   <div class="grid-wrapper">
-    <div 
-      class="grid" 
+    <div
+      class="grid"
       :style="{
         gridTemplateColumns: `repeat(${initialGridState.cols}, 1fr)`,
-        gridTemplateRows: `repeat(${initialGridState.rows}, 1fr)`
+        gridTemplateRows: `repeat(${initialGridState.rows}, 1fr)`,
       }"
     >
-      <AkariCell 
-        v-for="(cell, idx) in cells" 
-        :key="idx" 
-        :idx="idx" 
-        :cell="cell" 
+      <AkariCell
+        v-for="(cell, idx) in cells"
+        :key="idx"
+        :idx="idx"
+        :cell="cell"
         @left-click="onCellClicked"
-        @right-click="onCellRightClicked" />
+        @right-click="onCellRightClicked"
+      />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { nextTick, onBeforeMount, onBeforeUnmount, ref, watch, type Ref } from "vue";
+import {
+  nextTick,
+  onBeforeMount,
+  onBeforeUnmount,
+  ref,
+  watch,
+  type Ref,
+} from "vue";
 
 import AkariCell from "@/components/AkariCell.vue";
 import Cell from "@/models/Cell";
@@ -30,7 +38,7 @@ const props = defineProps<{
   initialGridState: GridState;
 }>();
 
-const emit = defineEmits(['updateCell']);
+const emit = defineEmits(["updateCell"]);
 
 const cells: Ref<Cell[]> = ref([]);
 
@@ -48,8 +56,8 @@ type UndoRedoStackEntry = {
 
 const undoRedoStack = {
   undo: [] as UndoRedoStackEntry[],
-  redo: [] as UndoRedoStackEntry[]
-}
+  redo: [] as UndoRedoStackEntry[],
+};
 
 function updateUndoRedoStack(idx: number, prevState: CellState) {
   undoRedoStack.undo.push({ idx, prevState });
@@ -66,7 +74,7 @@ function undo() {
     const cell = getCell(entry.idx);
     const currentState = cell.state;
     onCellUpdated(entry.idx, entry.prevState);
-    emit('updateCell', entry.idx, entry.prevState);
+    emit("updateCell", entry.idx, entry.prevState);
     undoRedoStack.redo.push({ idx: entry.idx, prevState: currentState });
   }
 }
@@ -77,7 +85,7 @@ function redo() {
     const cell = getCell(entry.idx);
     const currentState = cell.state;
     onCellUpdated(entry.idx, entry.prevState);
-    emit('updateCell', entry.idx, entry.prevState);
+    emit("updateCell", entry.idx, entry.prevState);
     undoRedoStack.undo.push({ idx: entry.idx, prevState: currentState });
   }
 }
@@ -86,7 +94,7 @@ function onCellClicked(cell: Cell) {
   const prevState = cell.state;
   if (cell.toggleLightBulb()) {
     updateUndoRedoStack(cell.idx, prevState);
-    emit('updateCell', cell.idx, cell.state);
+    emit("updateCell", cell.idx, cell.state);
   }
 }
 
@@ -94,7 +102,7 @@ function onCellRightClicked(cell: Cell) {
   const prevState = cell.state;
   if (cell.toggleNote()) {
     updateUndoRedoStack(cell.idx, prevState);
-    emit('updateCell', cell.idx, cell.state);
+    emit("updateCell", cell.idx, cell.state);
   }
 }
 
@@ -130,7 +138,7 @@ function onBulbChanged(modifiedCell: Cell) {
     [0, 1],
     [0, -1],
     [1, 0],
-    [-1, 0]
+    [-1, 0],
   ];
 
   for (const [dr, dc] of steps) {
@@ -158,7 +166,7 @@ function onBulbChanged(modifiedCell: Cell) {
   }
 
   // Check victory
-  if (!hasWon.value && cells.value.every(cell => cell.isRuleSatisfied)) {
+  if (!hasWon.value && cells.value.every((cell) => cell.isRuleSatisfied)) {
     hasWon.value = true;
   }
 }
@@ -167,8 +175,9 @@ defineExpose({ onCellUpdated, undo, redo });
 
 const keyboardListener = (e: KeyboardEvent) => {
   // Mac convention: Cmd+Z / Shift+Cmd+Z
-  const isUndo = (e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey;
-  const isRedo = (e.ctrlKey && e.key === 'y') || (e.metaKey && e.key === 'z' && e.shiftKey);
+  const isUndo = (e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey;
+  const isRedo =
+    (e.ctrlKey && e.key === "y") || (e.metaKey && e.key === "z" && e.shiftKey);
 
   if (isUndo) {
     undo();
@@ -188,16 +197,19 @@ onBeforeMount(() => {
   });
 
   // Calculate light levels
-  cells.value.forEach(cell => {
+  cells.value.forEach((cell) => {
     // Initialise light levels
     if (cell.hasBulb) {
       onBulbChanged(cell);
     }
     // Watch light bulbs get added/removed from Cells, and update light levels
-    watch(() => cell.hasBulb, () => onBulbChanged(cell));
+    watch(
+      () => cell.hasBulb,
+      () => onBulbChanged(cell),
+    );
   });
 
-  window.addEventListener('keydown', keyboardListener);
+  window.addEventListener("keydown", keyboardListener);
 });
 
 watch(hasWon, async (won) => {
@@ -209,7 +221,7 @@ watch(hasWon, async (won) => {
 });
 
 onBeforeUnmount(() => {
-  window.removeEventListener('keydown', keyboardListener);
+  window.removeEventListener("keydown", keyboardListener);
 });
 </script>
 

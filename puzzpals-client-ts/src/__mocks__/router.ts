@@ -4,6 +4,6 @@ export const pushMock = vi.fn();
 
 export function useRouter() {
   return {
-    push: pushMock
+    push: pushMock,
   };
 }
