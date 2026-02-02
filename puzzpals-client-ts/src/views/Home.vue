@@ -1,5 +1,5 @@
 <template>
-  <FilePicker @file-picked="onFilePicked"/>
+  <FilePicker @file-picked="onFilePicked" />
   <button @click="uploadFile">Upload</button>
 </template>
 
@@ -12,41 +12,36 @@ const router = useRouter();
 
 let pickedFile: File | null = null;
 
+function readFile(file: File) {
+  return new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(file);
+  });
+}
+
 async function uploadFile() {
   if (pickedFile === null) {
     alert('Please select a file to upload.');
     return;
   }
 
-  // While reading file, `pickedFile` might be mutated to null
-  // Store `pickedFile` in `fileToRead` to avoid error
-  const fileToRead = pickedFile;
-
-  let puzzleData;
-
+  let fileContent;
   try {
-    // Read JSON file 
-    puzzleData = await new Promise<string>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => {
-        if (typeof reader.result === 'string') {
-          resolve(reader.result);
-        } else {
-          reject();
-        }
-      };
-      reader.onerror = () => reject(reader.error);
-      reader.readAsText(fileToRead);
-    }).then(JSON.parse)
-      .catch(() => {
-        alert('Failed to read or parse the file. Please ensure it is a valid JSON file.');
-        throw new Error('File read/parse error');
-      });
-  } catch (e) {
+    fileContent = await readFile(pickedFile);;
+  } catch (error) {
+    alert('Failed to read the file.');
     return;
   }
 
-  console.log('Parsed puzzle data:', puzzleData);
+  let puzzleData;
+  try {
+    puzzleData = JSON.parse(fileContent);
+  } catch (error) {
+    alert('Failed to parse the file. Please ensure it is a valid JSON file.');
+    return;
+  };
 
   // Send the data to the server
   const res = await api.post('/rooms/create', puzzleData, {
