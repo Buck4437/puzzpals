@@ -1,17 +1,20 @@
 const NO_INPUT = 2;
 
+type PuzzleType = "akari" | "kakuro" | "masyu";
+
 type Clue = number | null;
 
 type CellData = {
-    isBlack: boolean;
-    number: Clue;
-    input: number;
+  isBlack: boolean;
+  number: Clue;
+  input: number;
 }
 
 type Grid = {
-    rows: number;
-    cols: number;
-    cells: Cell[];
+  rows: number;
+  cols: number;
+  cells: Cell[];
+  type: PuzzleType;
 }
 
 class Cell {
@@ -31,4 +34,4 @@ class Cell {
   }
 }
 
-export { NO_INPUT, type Clue, type CellData, type Grid, Cell };
+export { NO_INPUT, type Clue, type CellData, type Grid, Cell, type PuzzleType };

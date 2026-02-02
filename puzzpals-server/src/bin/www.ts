@@ -10,21 +10,25 @@ function assertEnvExists(variable: string | undefined, name: string): asserts va
 }
 
 assertEnvExists(process.env.PORT, "PORT");
-assertEnvExists(process.env.MONGO_URI, "MONGO_URI");
 assertEnvExists(process.env.CLIENT_BASE_URL, "CLIENT_BASE_URL");
 
 import debug from 'debug';
 import { createServer } from 'http';
-import { connect } from 'mongoose';
 import { Server } from 'socket.io';
 import app from '../app.js';
-import init from '../socket.js';
+import { init } from '../socket.js';
+import { closeDb, initDb } from 'src/db.js';
+import { startAutosave, stopAutosave } from 'src/memorystore.js';
 
 const serverDebugger = debug('puzzpals-server:server');
 
 // Get port from environment and store in Express
 const port = normalizePort(process.env.PORT);
 app.set('port', port);
+
+// Initialize database and memory store
+initDb();
+startAutosave();
 
 // Create HTTP server
 const server = createServer(app);
@@ -38,9 +42,6 @@ const io = new Server(server, {
 
 app.set('io', io);
 init(io);
-
-// Connect to Mongoose
-connect(process.env.MONGO_URI);
 
 // Listen on provided port, on all network interfaces
 server.listen(port);
@@ -104,5 +105,24 @@ function onListening() {
     : 'port ' + addr!.port;
   serverDebugger('Listening on ' + bind);
 }
+
+/**
+ * Shut down the server gracefully
+ */
+
+function shutdown() {
+  console.log("Shutting down...");
+  server.close(() => { process.exit(0); });
+
+  // stop io and save data to DB to prevent data loss
+  io.close();
+  stopAutosave();
+  closeDb();
+}
+
+process.on('exit', () => shutdown());
+process.on('SIGHUP', () => process.exit(128 + 1));
+process.on('SIGINT', () => process.exit(128 + 2));
+process.on('SIGTERM', () => process.exit(128 + 15));
 
 console.log('Server loaded');

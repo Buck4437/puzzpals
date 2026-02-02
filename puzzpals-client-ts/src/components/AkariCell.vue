@@ -1,6 +1,13 @@
 <template>
-  <div class="cell" :class="classObject" role="button" tabindex="0" @click="onLeftClick"
-    @keydown.enter.prevent="onLeftClick" @keydown.space.prevent="onLeftClick" @contextmenu.prevent="onRightClick">
+  <div class="cell" 
+    :class="classObject" 
+    role="button" 
+    tabindex="0" 
+    @click="onLeftClick"
+    @keydown.enter.prevent="onLeftClick" 
+    @keydown.space.prevent="onLeftClick" 
+    @contextmenu.prevent="onRightClick"
+  >
     {{ cell.text }}
   </div>
 </template>

@@ -1,4 +1,4 @@
-import { Cell, NO_INPUT, type Grid } from "../types/Akari.js";
+import { Cell, NO_INPUT, type Grid, type PuzzleType } from "../types/Akari.js";
 
 const validChars = new Set(["0", "1", "2", "3", "4", ".", "#"]);
 
@@ -63,8 +63,34 @@ function parse(input: unknown): Grid {
     return {
         rows: gridData.length,
         cols: expectedCols,
-        cells
+        cells,
+        type: "akari" as PuzzleType
     };
 }
 
-export { parse };
+function serialize(input: Grid): string {
+    const obj = {
+        type: input.type,
+        rows: input.rows,
+        cols: input.cols,
+        cells: input.cells
+    }
+    return JSON.stringify(obj);
+}
+
+function deserialize(input: string): Grid {
+    const obj = JSON.parse(input);
+
+    return {
+        rows: obj.rows,
+        cols: obj.cols,
+        type: obj.type,
+        cells: obj.cells.map((cellData: any) => {
+            const cell = new Cell();
+            cell.setData(cellData);
+            return cell;
+        })
+    }
+}
+
+export { parse, serialize, deserialize };

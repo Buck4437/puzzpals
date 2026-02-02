@@ -1,38 +1,63 @@
 import type { Server } from 'socket.io';
-import { createEmptyGrid, grids } from './grid.js';
-import { parsePuzzle } from '@puzzpals/puzzle-parser';
-import Room from './models/Room.js';
+import { createEmptyGrid } from '@puzzpals/puzzle-parser';
+import { markAsDirty, getRoomFromStore } from './memorystore.js';
+import { processChatMessage } from './chat.js';
+import { randomUserID } from './user.js';
 
 function init(io: Server) {
   io.on('connection', socket => {
     socket.on('room:join', async data => {
-
       const token = data.token;
-      console.log("joined");
+      const userID = randomUserID(token);
+      console.log("joined", userID);
       socket.join(token);
 
-      let grid = grids.get(token);
-      if (!grid) {
-        const puzzleData = await Room.findOne({ token }).then(r => r === null ? null : r.puzzleData);
-        grid = puzzleData === null ? createEmptyGrid() : parsePuzzle(puzzleData);
-        grids.set(token, grid);
+      const room = getRoomFromStore(token);
+
+      if (!room) {
+        return;
       }
 
-      socket.emit('grid:state', grid);
+      socket.emit('user:id', userID);
+
+      const grid = room.puzzleData || null;
+      if (!grid) {
+        socket.emit('grid:state', createEmptyGrid());
+      } else {
+        socket.emit('grid:state', grid);
+      }
     });
 
     socket.on('grid:updateCell', data => {
       const { token, idx, value } = data;
-      const grid = grids.get(token);
+
+      const room = getRoomFromStore(token);
+      if (!room) {
+        return;
+      }
+
+      const grid = room.puzzleData;
 
       if (!grid) {
         return;
       }
 
-      grids.get(token).cells[idx].setData(value);
+      // TODO: Data validation
+      grid.cells[idx]?.setData(value);
+      markAsDirty(room);
 
       // Emit the update to all clients in the room (including the sender)
       io.to(token).emit('grid:cellUpdated', { idx, value });
+    });
+
+    socket.on('chat:newMessage', data => {
+      const { token, message } = data;
+      const processed = processChatMessage(message);
+      if (!processed) {
+        console.log("Invalid chat message received:", message);
+        return;
+      }
+      io.to(token).emit('chat:messageNew', processed);
     });
 
     const handleDisconnect = (data: any) => {
@@ -45,4 +70,4 @@ function init(io: Server) {
   });
 }
 
-export default init;
+export { init };

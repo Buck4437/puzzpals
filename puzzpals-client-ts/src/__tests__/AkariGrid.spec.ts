@@ -13,13 +13,13 @@ function getGridWrapper(initialInput: number) {
     input: initialInput
   };
 
-  const gridState: GridState = {
+  const initialGridState: GridState = {
     rows: 1,
     cols: 1,
     cells: [cellState]
   };
 
-  return mount(Grid, { props: { gridState } });
+  return mount(Grid, { props: { initialGridState } });
 }
 
 function getFirstCellElement(gridWrapper: VueWrapper) {
@@ -45,13 +45,13 @@ describe('Grid', () => {
       input: NO_INPUT
     };
 
-    const gridState: GridState = {
+    const initialGridState: GridState = {
       rows: 1,
       cols: 1,
       cells: [cellState]
     };
 
-    const wrapper = mount(Grid, { props: { gridState } });
+    const wrapper = mount(Grid, { props: { initialGridState } });
     const cell = getFirstCellElement(wrapper);
 
     await cell.trigger('click');

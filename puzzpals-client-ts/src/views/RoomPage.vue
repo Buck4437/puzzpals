@@ -1,9 +1,14 @@
 <template>
-  <div v-if="!gridState">Joining room...</div>
+  <div v-if="!initialGridState">Joining room...</div>
   <div v-else>
     <h2>Room {{ token }}</h2>
     <button @click="leave">Leave</button>
-    <AkariGrid :grid-state="gridState" @update-cell="onCellUpdated" ref="gridComponent" />
+    <PuzzleArea
+      :initial-grid-state="initialGridState"
+      @update-cell="onCellUpdated"
+      ref="areaComponent"
+    ></PuzzleArea>
+    <Chat :chat-state="chatState" :userID="userID" @newMessage="onChatSubmit" ref="chatComponent" />
   </div>
 </template>
 
@@ -13,15 +18,23 @@ import { useRouter } from 'vue-router';
 
 import api from '@/services/api';
 import socket from '@/socket';
+import PuzzleArea from '@/components/PuzzleArea.vue';
 
-import AkariGrid from '@/components/AkariGrid.vue';
 import type CellState from '@/models/CellState';
 import type GridState from '@/models/GridState';
+import Chat from '@/components/Chat.vue';
+import type ChatState from '@/models/ChatState';
+import type { ChatMessage } from '@/models/ChatState';
 
 const router = useRouter();
-const gridState: Ref<GridState | null> = ref(null);
-const gridComponent = useTemplateRef("gridComponent");
 
+const initialGridState: Ref<GridState | null> = ref(null);
+const areaComponent = useTemplateRef("areaComponent");
+
+const chatState: Ref<ChatState> = ref({messages: []});
+const chatComponent = useTemplateRef("chatComponent");
+
+const userID = ref<string | null>(null);
 const props = defineProps({
   token: { type: String, required: true }
 });
@@ -63,17 +76,46 @@ function onCellUpdated(idx: number, value: CellState) {
   socket.emit('grid:updateCell', { token: props.token, idx, value });
 }
 
+function onChatSubmit(message: ChatMessage) {
+  if (userID.value) {
+    message.user = userID.value;
+  }
+  socket.emit('chat:newMessage', { token: props.token, message: message });
+}
+
+
 function initiateSocket() {
+  // TODO
+  socket.on('user:id', (id: string) => {
+    userID.value = id;
+  });
+
   socket.on('grid:state', (data: GridState) => {
-    gridState.value = data;
+    initialGridState.value = data;
   });
 
   socket.on('grid:cellUpdated', (data: { idx: number, value: CellState; }) => {
-    if (gridComponent.value === null) {
-      throw new Error("Grid is missing");
-    }
     const { idx, value } = data;
-    gridComponent.value.onCellUpdated(idx, value);
+    if (areaComponent.value === null) {
+      throw new Error("areaComponent is missing");
+    };
+    areaComponent.value.onCellUpdated(idx, value);
+  });
+
+  // socket.on('chat:records', (history) => {
+  //   if (chatComponent.value === null) {
+  //     throw new Error("Chat Block is missing");
+  //   }
+  //   chatState.value.messages.splice(0, chatState.value.messages.length, ...history);
+  //   chatComponent.value.scrollToBottom();
+  // });
+
+  socket.on('chat:messageNew', (msgBlock) => {
+    if (chatComponent.value === null) {
+      throw new Error("Chat Block is missing");
+    }
+    chatState.value.messages.push(msgBlock);
+    chatComponent.value.scrollToBottom();
   });
 }
 
@@ -87,7 +129,6 @@ onMounted(async () => {
 
 onBeforeUnmount(() => {
   socket.emit('room:leave', { token: props.token });
-  socket.off("grid:state");
-  socket.off("grid:cellUpdated");
+  socket.off();
 });
 </script>

@@ -1,8 +1,6 @@
-import { Schema, model } from 'mongoose';
+type Room = {
+  token: string,
+  puzzle_data?: string
+}
 
-const RoomSchema = new Schema({
-  token: { type: String, required: true, index: true, unique: true },
-  puzzleData: { type: JSON, required: false }
-})
-
-export default model('Room', RoomSchema)
+export { type Room };
