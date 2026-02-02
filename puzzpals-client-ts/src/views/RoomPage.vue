@@ -2,7 +2,7 @@
   <div v-if="!initialGridState">Joining room...</div>
   <div v-else>
     <h2>Room {{ token }}</h2>
-    <button @click="leave">Leave</button>
+    <button @click="leaveRoom">Leave</button>
     <PuzzleArea
       :initial-grid-state="initialGridState"
       @update-cell="onCellUpdated"
@@ -49,7 +49,7 @@ function is404(err: unknown) {
     err.response.status === 404;
 }
 
-async function fetchRoom() {
+async function checkRoomExists() {
   try {
     // Check that the room exists
     await api.get(`/rooms/${props.token}`);
@@ -63,11 +63,11 @@ async function fetchRoom() {
   }
 }
 
-async function join() {
+async function joinRoom() {
   socket.emit('room:join', { token: props.token });
 }
 
-async function leave() {
+async function leaveRoom() {
   socket.emit('room:leave', { token: props.token });
   router.push('/');
 }
@@ -122,9 +122,9 @@ function initiateSocket() {
 onBeforeMount(initiateSocket);
 
 onMounted(async () => {
-  await fetchRoom();
+  await checkRoomExists();
   console.log(`Joining room ${props.token}`);
-  await join();
+  await joinRoom();
 });
 
 onBeforeUnmount(() => {
