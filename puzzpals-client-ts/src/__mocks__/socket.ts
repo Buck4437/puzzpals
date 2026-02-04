@@ -11,9 +11,7 @@ interface MockSocket {
   emitServerEvent: (ev: SocketEvent, payload: any) => void;
 }
 
-let handlers: {
-  [ev: SocketEvent]: Function[];
-} = {};
+let handlers: Record<SocketEvent, Function[]> = {};
 
 const socket: MockSocket = {
   on(ev, cb) {

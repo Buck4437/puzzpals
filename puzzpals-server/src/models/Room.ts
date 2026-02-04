@@ -1,4 +1,4 @@
-type Room = {
+interface Room {
   token: string,
   puzzle_data?: string
 }

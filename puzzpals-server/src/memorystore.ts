@@ -1,7 +1,7 @@
 import { fetchRoom } from "./db.js";
 import { type Grid, deserialize } from "@puzzpals/puzzle-parser";
 
-type RoomEntry = {
+interface RoomEntry {
     token: string;
     puzzleData: Grid;
     isDirty?: boolean;
