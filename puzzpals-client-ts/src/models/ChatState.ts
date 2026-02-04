@@ -7,4 +7,3 @@ export interface ChatMessage {
   msgtext: string;
   timestamp: number;
 }
-

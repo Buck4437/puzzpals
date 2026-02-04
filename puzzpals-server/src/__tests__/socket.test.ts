@@ -3,13 +3,19 @@ import { afterEach, beforeEach, describe, it } from "node:test";
 import request from "supertest";
 
 import app from "src/app.js";
-import { arrangeBeforeEach, cleanUpAfterEach, } from "./utils/arrange.js";
+import { arrangeBeforeEach, cleanUpAfterEach } from "./utils/arrange.js";
 import { createMockSocket, mockBroadcast, mockIo } from "src/__mocks__/io.js";
 import { __clearForTests, startAutosave } from "src/memorystore.js";
 
-function assertEmit(actual: any[], expectedEvent: string, ...expectedPayload: any[]) {
+function assertEmit(
+  actual: any[],
+  expectedEvent: string,
+  ...expectedPayload: any[]
+) {
   assert.equal(actual[0], expectedEvent);
-  const actualPayload = actual.slice(1).map(x => JSON.parse(JSON.stringify(x)));
+  const actualPayload = actual
+    .slice(1)
+    .map((x) => JSON.parse(JSON.stringify(x)));
   assert.deepEqual(actualPayload, expectedPayload);
 }
 
@@ -45,11 +51,18 @@ describe("Socket", () => {
     const socket = createMockSocket();
     socket.call("room:join", { token });
 
-    assertEmit(socket.emit.mock.calls[1]!.arguments, "grid:state", expectedGrid);
+    assertEmit(
+      socket.emit.mock.calls[1]!.arguments,
+      "grid:state",
+      expectedGrid,
+    );
 
     socket.call("grid:updateCell", { token, idx: 0, value: 0 });
     assert.deepEqual(mockIo.to.mock.calls[0]!.arguments, [token]);
-    assertEmit(mockBroadcast.mock.calls[0]!.arguments, "grid:cellUpdated", { idx: 0, value: 0 });
+    assertEmit(mockBroadcast.mock.calls[0]!.arguments, "grid:cellUpdated", {
+      idx: 0,
+      value: 0,
+    });
   });
 
   it("restores room progress after server shuts down", async (t) => {
@@ -70,6 +83,10 @@ describe("Socket", () => {
     const socket = createMockSocket();
     socket.call("room:join", { token });
 
-    assertEmit(socket.emit.mock.calls[1]!.arguments, "grid:state", expectedGrid);
+    assertEmit(
+      socket.emit.mock.calls[1]!.arguments,
+      "grid:state",
+      expectedGrid,
+    );
   });
 });

@@ -12,19 +12,19 @@ const app = express();
 const CLIENT_BASE_URL = process.env.CLIENT_BASE_URL!;
 
 const corsOptions = {
-  origin: CLIENT_BASE_URL
+  origin: CLIENT_BASE_URL,
 };
 app.use(cors(corsOptions));
 
-app.use(logger('dev'));
+app.use(logger("dev"));
 app.use(json());
 app.use(urlencoded({ extended: false }));
 app.use(cookieParser());
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-app.use(serveStatic(join(__dirname, '../public')));
+app.use(serveStatic(join(__dirname, "../public")));
 
-app.use('/api/rooms', roomsRouter);
+app.use("/api/rooms", roomsRouter);
 
 export default app;

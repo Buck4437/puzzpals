@@ -17,19 +17,23 @@
 //   chatRecords.get(token)!.push(message);
 // }
 
-function processChatMessage(raw: any): { user: string, msgtext: string, timestamp: number } | null {
+function processChatMessage(
+  raw: any,
+): { user: string; msgtext: string; timestamp: number } | null {
   if (
-      !raw || typeof raw !== 'object' || typeof raw.user !== 'string' ||
-      typeof raw.msgtext !== 'string' || raw.msgtext.trim() === ''
+    !raw ||
+    typeof raw !== "object" ||
+    typeof raw.user !== "string" ||
+    typeof raw.msgtext !== "string" ||
+    raw.msgtext.trim() === ""
   ) {
     return null;
   }
   return {
     user: raw.user,
     msgtext: raw.msgtext.trim(),
-    timestamp: Date.now()
+    timestamp: Date.now(),
   };
 }
-
 
 export { processChatMessage };

@@ -9,16 +9,17 @@
 </template>
 
 <script setup lang="ts">
-import type { ChatMessage } from '@/models/ChatState';
-import { computed } from 'vue';
+import type { ChatMessage } from "@/models/ChatState";
+import { computed } from "vue";
 
-const props = defineProps<{ msg: ChatMessage, currentUserID: string | null }>();
+const props = defineProps<{ msg: ChatMessage; currentUserID: string | null }>();
 
 const isMine = computed(() => props.currentUserID === props.msg.user);
 
 const formattedTime = computed(() => {
   return new Date(props.msg.timestamp).toLocaleTimeString([], {
-    hour: '2-digit', minute: '2-digit'
+    hour: "2-digit",
+    minute: "2-digit",
   });
 });
 </script>
@@ -81,7 +82,6 @@ const formattedTime = computed(() => {
   align-self: flex-end;
 }
 </style>
-
 
 <!-- <template>
     <div class="bubble" :class="{ 'my-message': isMine, 'other-message': !isMine }">

@@ -1,11 +1,12 @@
 <template>
-  <div class="cell" 
-    :class="classObject" 
-    role="button" 
-    tabindex="0" 
+  <div
+    class="cell"
+    :class="classObject"
+    role="button"
+    tabindex="0"
     @click="onLeftClick"
-    @keydown.enter.prevent="onLeftClick" 
-    @keydown.space.prevent="onLeftClick" 
+    @keydown.enter.prevent="onLeftClick"
+    @keydown.space.prevent="onLeftClick"
     @contextmenu.prevent="onRightClick"
   >
     {{ cell.text }}
@@ -13,29 +14,29 @@
 </template>
 
 <script setup lang="ts">
-import Cell from '@/models/Cell';
-import { computed } from 'vue';
+import Cell from "@/models/Cell";
+import { computed } from "vue";
 
 const props = defineProps({
-  cell: { type: Cell, required: true }
+  cell: { type: Cell, required: true },
 });
 
 const classObject = computed(() => ({
-  'black': props.cell.isBlack,
-  'white': !props.cell.isBlack,
-  'lit': props.cell.isLit,
-  'number-error': props.cell.hasNumberError,
-  'bulb-error': props.cell.hasBulbError,
+  black: props.cell.isBlack,
+  white: !props.cell.isBlack,
+  lit: props.cell.isLit,
+  "number-error": props.cell.hasNumberError,
+  "bulb-error": props.cell.hasBulbError,
 }));
 
-const emit = defineEmits(['leftClick', 'rightClick']);
+const emit = defineEmits(["leftClick", "rightClick"]);
 
 function onLeftClick() {
-  emit('leftClick', props.cell);
+  emit("leftClick", props.cell);
 }
 
 function onRightClick() {
-  emit('rightClick', props.cell);
+  emit("rightClick", props.cell);
 }
 </script>
 

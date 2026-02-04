@@ -14,7 +14,7 @@ export default class Cell {
     this.number = number;
   }
 
-  setData(data: { input: number; }) {
+  setData(data: { input: number }) {
     this.input = data.input;
   }
 }

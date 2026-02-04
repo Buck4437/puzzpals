@@ -8,11 +8,11 @@ const mockIo = {
     initSocket = listener;
   },
 
-  to: mock.fn(() => ({ emit: mockBroadcast }))
+  to: mock.fn(() => ({ emit: mockBroadcast })),
 };
 
 function createMockSocket() {
-  const events: { [ev: string]: (...args: any[]) => void; } = {};
+  const events: Record<string, (...args: any[]) => void> = {};
 
   const mockSocket = {
     on(ev: string, listener: (...args: any[]) => void) {
@@ -27,7 +27,7 @@ function createMockSocket() {
 
     join: mock.fn(),
     leave: mock.fn(),
-    emit: mock.fn()
+    emit: mock.fn(),
   };
 
   initSocket(mockSocket);
