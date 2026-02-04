@@ -1,4 +1,10 @@
-import { Cell, NO_INPUT, type Grid, type PuzzleType } from "../types/Akari.js";
+import {
+  Cell,
+  NO_INPUT,
+  type CellData,
+  type Grid,
+  type PuzzleType,
+} from "../types/Akari.js";
 
 const validChars = new Set(["0", "1", "2", "3", "4", ".", "#"]);
 
@@ -87,7 +93,7 @@ function deserialize(input: string): Grid {
     rows: obj.rows,
     cols: obj.cols,
     type: obj.type,
-    cells: obj.cells.map((cellData: any) => {
+    cells: obj.cells.map((cellData: CellData) => {
       const cell = new Cell();
       cell.setData(cellData);
       return cell;

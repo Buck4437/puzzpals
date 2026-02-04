@@ -60,6 +60,8 @@ function init(io: Server) {
       io.to(token).emit("chat:messageNew", processed);
     });
 
+    // https://github.com/minghinshi/puzzpals/issues/39
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handleDisconnect = (data: any) => {
       const token = data.token;
       socket.leave(token);

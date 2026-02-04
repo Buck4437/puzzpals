@@ -1,17 +1,18 @@
 import { vi } from "vitest";
 
 type SocketEvent = string | symbol;
+type Callback = (...args: unknown[]) => void;
 
 interface MockSocket {
-  on: (ev: SocketEvent, cb: Function) => void;
-  off: (ev?: SocketEvent, cb?: Function) => void;
-  emit: (ev: SocketEvent, payload: any) => void;
+  on: (ev: SocketEvent, cb: Callback) => void;
+  off: (ev?: SocketEvent, cb?: Callback) => void;
+  emit: (ev: SocketEvent, payload: unknown) => void;
 
   reset: () => void;
-  emitServerEvent: (ev: SocketEvent, payload: any) => void;
+  emitServerEvent: (ev: SocketEvent, payload: unknown) => void;
 }
 
-let handlers: Record<SocketEvent, Function[]> = {};
+let handlers: Record<SocketEvent, Callback[]> = {};
 
 const socket: MockSocket = {
   on(ev, cb) {

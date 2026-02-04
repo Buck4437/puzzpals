@@ -1,32 +1,19 @@
 #!/usr/bin/env node
 
-// Load environment variables
-import "dotenv/config";
-
-function assertEnvExists(
-  variable: string | undefined,
-  name: string,
-): asserts variable is string {
-  if (variable === undefined) {
-    throw new Error(`The .env variable ${name} is missing`);
-  }
-}
-
-assertEnvExists(process.env.PORT, "PORT");
-assertEnvExists(process.env.CLIENT_BASE_URL, "CLIENT_BASE_URL");
-
 import debug from "debug";
 import { createServer } from "http";
 import { Server } from "socket.io";
-import app from "../app.js";
-import { init } from "../socket.js";
+
+import app from "src/app.js";
+import env from "src/config.js";
 import { closeDb, initDb } from "src/db.js";
 import { startAutosave, stopAutosave } from "src/memorystore.js";
+import { init } from "src/socket.js";
 
 const serverDebugger = debug("puzzpals-server:server");
 
 // Get port from environment and store in Express
-const port = normalizePort(process.env.PORT);
+const port = normalizePort(env.PORT);
 app.set("port", port);
 
 // Initialize database and memory store
@@ -39,7 +26,7 @@ const server = createServer(app);
 // Create Socket.IO server
 const io = new Server(server, {
   cors: {
-    origin: [process.env.CLIENT_BASE_URL],
+    origin: [env.CLIENT_BASE_URL],
   },
 });
 
@@ -85,11 +72,9 @@ function onError(error: NodeJS.ErrnoException) {
   // handle specific listen errors with friendly messages
   switch (error.code) {
     case "EACCES":
-      console.error(bind + " requires elevated privileges");
-      process.exit(1);
+      throw new Error(`${bind} requires elevated privileges`);
     case "EADDRINUSE":
-      console.error(bind + " is already in use");
-      process.exit(1);
+      throw new Error(`${bind} is already in use`);
     default:
       throw error;
   }
@@ -101,7 +86,13 @@ function onError(error: NodeJS.ErrnoException) {
 
 function onListening() {
   const addr = server.address();
-  const bind = typeof addr === "string" ? "pipe " + addr : "port " + addr!.port;
+  if (addr === null) {
+    throw new Error(
+      "addr is null (Did you call onListening() at the right time?)",
+    );
+  }
+
+  const bind = typeof addr === "string" ? "pipe " + addr : "port " + addr.port;
   serverDebugger("Listening on " + bind);
 }
 

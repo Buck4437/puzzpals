@@ -40,7 +40,7 @@ describe("Home", () => {
 
     // Create room (check the first two arguments only)
     expect(api.post).toHaveBeenCalledOnce();
-    const [url, body] = api.post.mock.calls[0]!;
+    const [url, body] = api.post.mock.calls[0] ?? [];
     expect(url).toBe("/rooms/create");
     expect(body).toStrictEqual(puzzle);
 
