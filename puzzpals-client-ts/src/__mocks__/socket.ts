@@ -22,12 +22,12 @@ const socket: MockSocket = {
   off(ev, cb) {
     if (ev === undefined) {
       handlers = {};
-      console.log('Removed all listeners');
+      console.log("Removed all listeners");
     } else if (cb === undefined) {
       handlers[ev] = [];
       console.log(`Removed all listeners for ${ev.toString()}`);
     } else {
-      handlers[ev] = (handlers[ev] ?? []).filter(f => f !== cb);
+      handlers[ev] = (handlers[ev] ?? []).filter((f) => f !== cb);
       console.log(`Removed listener for ${ev.toString()}`);
     }
   },
@@ -40,7 +40,7 @@ const socket: MockSocket = {
   },
 
   emitServerEvent(ev, payload) {
-    handlers[ev]?.forEach(fn => fn(payload));
+    handlers[ev]?.forEach((fn) => fn(payload));
     console.log(`Emitted server event ${ev.toString()}`);
   },
 };

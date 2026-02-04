@@ -9,20 +9,28 @@
       />
     </div>
     <form class="chat-input" @submit.prevent="send">
-      <input v-model="input" type="text" placeholder="Type a message..." autocomplete="off" />
+      <input
+        v-model="input"
+        type="text"
+        placeholder="Type a message..."
+        autocomplete="off"
+      />
       <button type="submit">Send</button>
     </form>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, nextTick } from 'vue';
-import type { ChatMessage } from '@/models/ChatState';
-import ChatBubble from './ChatBubble.vue';
+import { ref, nextTick } from "vue";
+import type { ChatMessage } from "@/models/ChatState";
+import ChatBubble from "./ChatBubble.vue";
 
-const props = defineProps<{ chatState: { messages: ChatMessage[] }, userID: string | null }>();
-const emit = defineEmits(['newMessage']);
-const input = ref('');
+const props = defineProps<{
+  chatState: { messages: ChatMessage[] };
+  userID: string | null;
+}>();
+const emit = defineEmits(["newMessage"]);
+const input = ref("");
 const chatWindowRef = ref<HTMLElement | null>(null);
 
 defineExpose({ scrollToBottom });
@@ -33,21 +41,22 @@ function send() {
     const message = {
       user: "",
       msgtext: text,
-      timestamp: 0
+      timestamp: 0,
     };
-    console.log(message)
-    emit('newMessage', message);
-    input.value = '';
+    console.log(message);
+    emit("newMessage", message);
+    input.value = "";
   }
 }
 
 function scrollToBottom() {
   nextTick(() => {
     const cW = chatWindowRef.value;
-    if (cW) { cW.scrollTop = cW.scrollHeight; }
+    if (cW) {
+      cW.scrollTop = cW.scrollHeight;
+    }
   });
 }
-
 </script>
 
 <style scoped>

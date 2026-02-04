@@ -5,30 +5,26 @@ import logger from "morgan";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
 
-import indexRouter from "./routes/index.js";
 import roomsRouter from "./routes/rooms.js";
-import usersRouter from "./routes/users.js";
 
 const app = express();
 
 const CLIENT_BASE_URL = process.env.CLIENT_BASE_URL!;
 
 const corsOptions = {
-  origin: CLIENT_BASE_URL
+  origin: CLIENT_BASE_URL,
 };
 app.use(cors(corsOptions));
 
-app.use(logger('dev'));
+app.use(logger("dev"));
 app.use(json());
 app.use(urlencoded({ extended: false }));
 app.use(cookieParser());
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-app.use(serveStatic(join(__dirname, '../public')));
+app.use(serveStatic(join(__dirname, "../public")));
 
-app.use('/', indexRouter);
-app.use('/users', usersRouter);
-app.use('/api/rooms', roomsRouter);
+app.use("/api/rooms", roomsRouter);
 
 export default app;

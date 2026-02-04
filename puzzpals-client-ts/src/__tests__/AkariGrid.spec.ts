@@ -10,82 +10,82 @@ function getGridWrapper(initialInput: number) {
   const cellState: CellState = {
     isBlack: false,
     number: null,
-    input: initialInput
+    input: initialInput,
   };
 
-  const gridState: GridState = {
+  const initialGridState: GridState = {
     rows: 1,
     cols: 1,
-    cells: [cellState]
+    cells: [cellState],
   };
 
-  return mount(Grid, { props: { gridState } });
+  return mount(Grid, { props: { initialGridState } });
 }
 
 function getFirstCellElement(gridWrapper: VueWrapper) {
-  return gridWrapper.find('div.cell');
+  return gridWrapper.find("div.cell");
 }
 
-describe('Grid', () => {
-  // As a player, I want to add light bulbs to the grid 
+describe("Grid", () => {
+  // As a player, I want to add light bulbs to the grid
   // so that I can solve the puzzle.
-  it('can add light bulbs', async () => {
+  it("can add light bulbs", async () => {
     const wrapper = getGridWrapper(NO_INPUT);
     const cell = getFirstCellElement(wrapper);
 
-    await cell.trigger('click');
+    await cell.trigger("click");
 
     expect(cell.text()).toContain(bulbText);
   });
 
-  it('cannot add light bulbs to black cells', async () => {
+  it("cannot add light bulbs to black cells", async () => {
     const cellState: CellState = {
       isBlack: true,
       number: null,
-      input: NO_INPUT
+      input: NO_INPUT,
     };
 
-    const gridState: GridState = {
+    const initialGridState: GridState = {
       rows: 1,
       cols: 1,
-      cells: [cellState]
+      cells: [cellState],
     };
 
-    const wrapper = mount(Grid, { props: { gridState } });
+    const wrapper = mount(Grid, { props: { initialGridState } });
     const cell = getFirstCellElement(wrapper);
 
-    await cell.trigger('click');
+    await cell.trigger("click");
 
     expect(cell.text()).not.toContain(bulbText);
   });
 
-  // As a player, I want to remove light bulbs 
+  // As a player, I want to remove light bulbs
   // so that I can correct mistakes.
-  it('can remove light bulbs', async () => {
+  it("can remove light bulbs", async () => {
     const wrapper = getGridWrapper(BULB);
     const cell = getFirstCellElement(wrapper);
 
-    await cell.trigger('click');
+    await cell.trigger("click");
 
     expect(cell.text()).not.toContain(bulbText);
   });
 
   // As a player, I want to mark which cells do not have bulbs
   // so that I do not need to keep track manually.
-  it('can add notes', async () => {
+  it("can add notes", async () => {
     const wrapper = getGridWrapper(NO_INPUT);
     const cell = getFirstCellElement(wrapper);
 
-    await cell.trigger('contextmenu');
+    await cell.trigger("contextmenu");
 
     expect(cell.text()).toContain(dotText);
   });
 
-  it('can remove notes', async () => {
+  it("can remove notes", async () => {
     const wrapper = getGridWrapper(DOT);
     const cell = getFirstCellElement(wrapper);
 
-    await cell.trigger('contextmenu');
+    await cell.trigger("contextmenu");
 
     expect(cell.text()).not.toContain(dotText);
   });

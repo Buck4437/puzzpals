@@ -1,7 +1,7 @@
 import type CellState from "./CellState";
 
-export const bulbText = '💡';
-export const dotText = '·';
+export const bulbText = "💡";
+export const dotText = "·";
 
 export const BULB = 0;
 export const DOT = 1;
@@ -26,7 +26,7 @@ export default class Cell {
       return false;
     } else {
       // If the cell is marked with something else, this will clear it first
-      this._input = (this._input === NO_INPUT ? BULB : NO_INPUT);
+      this._input = this._input === NO_INPUT ? BULB : NO_INPUT;
       return true;
     }
   }
@@ -35,7 +35,7 @@ export default class Cell {
     if (this._isBlack) {
       return false;
     } else {
-      this._input = (this._input === NO_INPUT ? DOT : NO_INPUT);
+      this._input = this._input === NO_INPUT ? DOT : NO_INPUT;
       return true;
     }
   }
@@ -47,11 +47,11 @@ export default class Cell {
   }
 
   changeLightLevel(increase: boolean) {
-    this._lightLevel += (increase ? 1 : -1);
+    this._lightLevel += increase ? 1 : -1;
   }
 
   changeAdjacentBulbCount(increase: boolean) {
-    this._adjacentCells += (increase ? 1 : -1);
+    this._adjacentCells += increase ? 1 : -1;
   }
 
   get isBlack() {
@@ -77,7 +77,7 @@ export default class Cell {
   get text() {
     if (this._isBlack) {
       if (this._number === null) {
-        return '';
+        return "";
       } else {
         return this._number.toString();
       }
@@ -88,7 +88,7 @@ export default class Cell {
         case DOT:
           return dotText;
         case NO_INPUT:
-          return '';
+          return "";
         default:
           throw new Error("Cell has invalid input");
       }
@@ -107,7 +107,7 @@ export default class Cell {
     return {
       isBlack: this._isBlack,
       number: this._number,
-      input: this._input
+      input: this._input,
     };
   }
 }
