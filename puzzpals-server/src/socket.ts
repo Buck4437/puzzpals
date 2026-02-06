@@ -68,7 +68,6 @@ function init(io: Server) {
     };
 
     socket.on("room:leave", (data) => handleDisconnect(data));
-    socket.on("disconnect", (data) => handleDisconnect(data));
   });
 }
 
