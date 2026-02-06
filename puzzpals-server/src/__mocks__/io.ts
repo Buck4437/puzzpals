@@ -1,10 +1,10 @@
 import { mock } from "node:test";
 
-let initSocket: (socket: any) => void;
+let initSocket: (socket: unknown) => void;
 const mockBroadcast = mock.fn();
 
 const mockIo = {
-  on(_: any, listener: (socket: any) => void) {
+  on(_: unknown, listener: (socket: unknown) => void) {
     initSocket = listener;
   },
 
@@ -12,14 +12,14 @@ const mockIo = {
 };
 
 function createMockSocket() {
-  const events: Record<string, (...args: any[]) => void> = {};
+  const events: Record<string, (...args: unknown[]) => void> = {};
 
   const mockSocket = {
-    on(ev: string, listener: (...args: any[]) => void) {
+    on(ev: string, listener: (...args: unknown[]) => void) {
       events[ev] = listener;
     },
 
-    call(ev: string, ...args: any[]) {
+    call(ev: string, ...args: unknown[]) {
       if (events[ev] !== undefined) {
         events[ev](...args);
       }
