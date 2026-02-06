@@ -7,7 +7,7 @@ function createEmptyGrid(): Grid {
   return parseAkari(puzzle);
 }
 
-function parsePuzzle(input: any): Grid {
+function parsePuzzle(input: unknown): Grid {
   return parseAkari(input);
 }
 

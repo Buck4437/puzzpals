@@ -1,9 +1,3 @@
-// type ChatMessage = {
-//   user: string;
-//   msgtext: string;
-//   timestamp: number;
-// };
-
 // const chatRecords = new Map<string, ChatMessage[]>();
 
 // function fetchChatRecords(token: string) {
@@ -17,23 +11,38 @@
 //   chatRecords.get(token)!.push(message);
 // }
 
-function processChatMessage(
-  raw: any,
-): { user: string; msgtext: string; timestamp: number } | null {
-  if (
-    !raw ||
-    typeof raw !== "object" ||
-    typeof raw.user !== "string" ||
-    typeof raw.msgtext !== "string" ||
-    raw.msgtext.trim() === ""
-  ) {
-    return null;
+interface RawChatMessage {
+  user: string;
+  msgtext: string;
+}
+
+interface ChatMessage {
+  user: string;
+  msgtext: string;
+  timestamp: number;
+}
+
+function isMessageValid(raw: unknown): raw is RawChatMessage {
+  return (
+    typeof raw === "object" &&
+    raw !== null &&
+    "user" in raw &&
+    typeof raw.user === "string" &&
+    "msgtext" in raw &&
+    typeof raw.msgtext === "string" &&
+    raw.msgtext.trim() !== ""
+  );
+}
+
+function processChatMessage(raw: unknown): ChatMessage | null {
+  if (isMessageValid(raw)) {
+    return {
+      user: raw.user,
+      msgtext: raw.msgtext.trim(),
+      timestamp: Date.now(),
+    };
   }
-  return {
-    user: raw.user,
-    msgtext: raw.msgtext.trim(),
-    timestamp: Date.now(),
-  };
+  return null;
 }
 
 export { processChatMessage };

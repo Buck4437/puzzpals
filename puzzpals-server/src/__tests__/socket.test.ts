@@ -8,9 +8,9 @@ import { createMockSocket, mockBroadcast, mockIo } from "src/__mocks__/io.js";
 import { __clearForTests, startAutosave } from "src/memorystore.js";
 
 function assertEmit(
-  actual: any[],
+  actual: unknown[],
   expectedEvent: string,
-  ...expectedPayload: any[]
+  ...expectedPayload: unknown[]
 ) {
   assert.equal(actual[0], expectedEvent);
   const actualPayload = actual
@@ -52,17 +52,19 @@ describe("Socket", () => {
     socket.call("room:join", { token });
 
     assertEmit(
-      socket.emit.mock.calls[1]!.arguments,
+      socket.emit.mock.calls[1]?.arguments ?? [],
       "grid:state",
       expectedGrid,
     );
 
     socket.call("grid:updateCell", { token, idx: 0, value: 0 });
-    assert.deepEqual(mockIo.to.mock.calls[0]!.arguments, [token]);
-    assertEmit(mockBroadcast.mock.calls[0]!.arguments, "grid:cellUpdated", {
-      idx: 0,
-      value: 0,
-    });
+    assert.deepEqual(mockIo.to.mock.calls[0]?.arguments, [token]);
+
+    assertEmit(
+      mockBroadcast.mock.calls[0]?.arguments ?? [],
+      "grid:cellUpdated",
+      { idx: 0, value: 0 },
+    );
   });
 
   it("restores room progress after server shuts down", async (t) => {
@@ -84,7 +86,7 @@ describe("Socket", () => {
     socket.call("room:join", { token });
 
     assertEmit(
-      socket.emit.mock.calls[1]!.arguments,
+      socket.emit.mock.calls[1]?.arguments ?? [],
       "grid:state",
       expectedGrid,
     );

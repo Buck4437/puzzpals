@@ -9,8 +9,8 @@ function makeToken(length = 6) {
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   const bytes = crypto.getRandomValues(new Uint8Array(length));
   let result = "";
-  for (let i = 0; i < length; i++) {
-    result += chars[bytes[i]! % chars.length];
+  for (const byte of bytes) {
+    result += chars[byte % chars.length];
   }
   return result;
 }
@@ -45,7 +45,7 @@ router.post("/create", async (req, res) => {
     }
 
     createRoomInStore(token, puzzle);
-  } catch (e) {
+  } catch {
     return res.status(400).json({ error: "Invalid puzzle data" });
   }
 
