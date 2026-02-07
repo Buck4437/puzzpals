@@ -127,31 +127,3 @@ describe("Create room API", () => {
     });
   });
 });
-
-describe("Join room API", () => {
-  beforeEach(arrangeBeforeEach);
-  afterEach(cleanUpAfterEach);
-
-  it("can join players to rooms", async () => {
-    const payload = {
-      type: "akari",
-      grid: [
-        [".", "2"],
-        ["#", "."],
-      ],
-    };
-
-    const createRes = await request(app)
-      .post("/api/rooms/create")
-      .send(payload);
-    const token = createRes.body.token;
-
-    const joinRes = await request(app).post(`/api/rooms/${token}/join`);
-    expect(joinRes.ok).toBe(true);
-  });
-
-  it("rejects request to join non-existent room", async () => {
-    const res = await request(app).post(`/api/rooms/TestRm/join`);
-    expect(res.notFound).toBe(true);
-  });
-});

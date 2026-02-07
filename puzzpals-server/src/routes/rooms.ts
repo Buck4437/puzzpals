@@ -62,20 +62,4 @@ router.get("/:token", (req, res) => {
   res.json({ room });
 });
 
-// Join room
-router.post("/:token/join", (req, res) => {
-  const { token } = req.params;
-  const room = getRoomFromStore(token);
-  if (!room) return res.status(404).json({ error: "Room not found" });
-  res.json({ room });
-});
-
-// Leave room
-router.post("/:token/leave", (req, res) => {
-  const { token } = req.params;
-  const room = getRoomFromStore(token);
-  if (!room) return res.status(404).json({ error: "Room not found" });
-  res.json({ room });
-});
-
 export default router;
