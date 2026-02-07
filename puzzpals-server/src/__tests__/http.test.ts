@@ -4,20 +4,20 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import app from "../app.js";
 import { arrangeBeforeEach, cleanUpAfterEach } from "./utils/arrange.js";
 
+const validPayload = {
+  type: "akari",
+  grid: [
+    [".", "2"],
+    ["#", "."],
+  ],
+};
+
 describe("Create room API", () => {
   beforeEach(arrangeBeforeEach);
   afterEach(cleanUpAfterEach);
 
   it("can create room", async () => {
-    const payload = {
-      type: "akari",
-      grid: [
-        [".", "2"],
-        ["#", "."],
-      ],
-    };
-
-    const res = await request(app).post("/api/rooms/create").send(payload);
+    const res = await request(app).post("/api/rooms/create").send(validPayload);
     expect(res.ok).toBe(true);
 
     // Room token specification: 6 character alphanumeric
@@ -125,5 +125,20 @@ describe("Create room API", () => {
         ["#", "."],
       ],
     });
+  });
+});
+
+describe("Get room API", () => {
+  it("succeeds when room exists", async () => {
+    const res1 = await request(app)
+      .post("/api/rooms/create")
+      .send(validPayload);
+    const res2 = await request(app).get(`/api/rooms/${res1.body.token}`);
+    expect(res2.ok).toBe(true);
+  });
+
+  it("responds 404 when room does not exist", async () => {
+    const res = await request(app).get("/api/rooms/TestRm");
+    expect(res.notFound).toBe(true);
   });
 });
