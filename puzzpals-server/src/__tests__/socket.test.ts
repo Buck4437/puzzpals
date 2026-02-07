@@ -66,5 +66,40 @@ describe("Socket", () => {
     const socket = createMockSocket();
     socket.call("room:join", { token });
     expect(socket.emit).toHaveBeenCalledWith("grid:state", expectedGrid);
+
+    // Restore timer
+    vi.useRealTimers();
+  });
+
+  // As a player, I want to communicate with other players
+  // so that we can share insights.
+  it("broadcasts chat messages to all players in same room", async () => {
+    // Mock time
+    vi.useFakeTimers();
+    vi.setSystemTime(0);
+
+    // Create a room
+    const res = await request(app).post("/api/rooms/create").send(payload);
+    const token = res.body.token;
+
+    // Join the room
+    const socket = createMockSocket();
+    socket.call("room:join", { token });
+
+    // Send a message
+    const user = "00000000";
+    const msgtext = "Hello, world!";
+    socket.call("chat:newMessage", { token, message: { user, msgtext } });
+
+    // Assert message is broadcast
+    expect(mockIo.to).toHaveBeenCalledWith(token);
+    expect(mockBroadcast).toHaveBeenCalledWith("chat:messageNew", {
+      user,
+      msgtext,
+      timestamp: 0,
+    });
+
+    // Restore time
+    vi.useRealTimers();
   });
 });

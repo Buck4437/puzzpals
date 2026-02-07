@@ -1,3 +1,5 @@
+import { vi } from "vitest";
+
 import { mockIo } from "../../__mocks__/io.js";
 import { closeDb, initDb } from "../../db.js";
 import { __clearForTests, stopAutosave } from "../../memorystore.js";
@@ -15,4 +17,5 @@ export function cleanUpAfterEach() {
   stopAutosave();
   closeDb();
   __clearForTests();
+  vi.clearAllMocks();
 }
