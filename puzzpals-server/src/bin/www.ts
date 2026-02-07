@@ -4,11 +4,11 @@ import debug from "debug";
 import { createServer } from "http";
 import { Server } from "socket.io";
 
-import app from "src/app.js";
-import env from "src/config.js";
-import { closeDb, initDb } from "src/db.js";
-import { startAutosave, stopAutosave } from "src/memorystore.js";
-import { init } from "src/socket.js";
+import app from "../app.js";
+import env from "../config.js";
+import { closeDb, initDb } from "../db.js";
+import { startAutosave, stopAutosave } from "../memorystore.js";
+import { init } from "../socket.js";
 
 const serverDebugger = debug("puzzpals-server:server");
 

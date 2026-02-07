@@ -1,23 +1,10 @@
-import assert from "node:assert/strict";
-import { afterEach, beforeEach, describe, it } from "node:test";
 import request from "supertest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import app from "src/app.js";
+import { createMockSocket, mockBroadcast, mockIo } from "../__mocks__/io.js";
+import app from "../app.js";
+import { __clearForTests, startAutosave } from "../memorystore.js";
 import { arrangeBeforeEach, cleanUpAfterEach } from "./utils/arrange.js";
-import { createMockSocket, mockBroadcast, mockIo } from "src/__mocks__/io.js";
-import { __clearForTests, startAutosave } from "src/memorystore.js";
-
-function assertEmit(
-  actual: unknown[],
-  expectedEvent: string,
-  ...expectedPayload: unknown[]
-) {
-  assert.equal(actual[0], expectedEvent);
-  const actualPayload = actual
-    .slice(1)
-    .map((x) => JSON.parse(JSON.stringify(x)));
-  assert.deepEqual(actualPayload, expectedPayload);
-}
 
 describe("Socket", () => {
   beforeEach(arrangeBeforeEach);
@@ -50,25 +37,19 @@ describe("Socket", () => {
 
     const socket = createMockSocket();
     socket.call("room:join", { token });
-
-    assertEmit(
-      socket.emit.mock.calls[1]?.arguments ?? [],
-      "grid:state",
-      expectedGrid,
-    );
+    expect(socket.emit).toHaveBeenCalledWith("grid:state", expectedGrid);
 
     socket.call("grid:updateCell", { token, idx: 0, value: 0 });
-    assert.deepEqual(mockIo.to.mock.calls[0]?.arguments, [token]);
-
-    assertEmit(
-      mockBroadcast.mock.calls[0]?.arguments ?? [],
-      "grid:cellUpdated",
-      { idx: 0, value: 0 },
-    );
+    expect(mockIo.to).toHaveBeenCalledWith(token);
+    expect(mockBroadcast).toHaveBeenCalledWith("grid:cellUpdated", {
+      idx: 0,
+      value: 0,
+    });
   });
 
-  it("restores room progress after server shuts down", async (t) => {
-    t.mock.timers.enable({ apis: ["setInterval"] });
+  it("restores room progress after server shuts down", async () => {
+    // Mock timer
+    vi.useFakeTimers();
 
     // Enable autosave in this test to allow the timer to call autosave
     startAutosave();
@@ -77,18 +58,13 @@ describe("Socket", () => {
     const token = res.body.token;
 
     // Wait for 1 minute
-    t.mock.timers.tick(60 * 1000);
+    vi.advanceTimersToNextTimer();
 
     // "Shut down" the server, wiping memory
     __clearForTests();
 
     const socket = createMockSocket();
     socket.call("room:join", { token });
-
-    assertEmit(
-      socket.emit.mock.calls[1]?.arguments ?? [],
-      "grid:state",
-      expectedGrid,
-    );
+    expect(socket.emit).toHaveBeenCalledWith("grid:state", expectedGrid);
   });
 });

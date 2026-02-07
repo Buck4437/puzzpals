@@ -1,14 +1,14 @@
-import { mock } from "node:test";
+import { vi } from "vitest";
 
 let initSocket: (socket: unknown) => void;
-const mockBroadcast = mock.fn();
+const mockBroadcast = vi.fn();
 
 const mockIo = {
   on(_: unknown, listener: (socket: unknown) => void) {
     initSocket = listener;
   },
 
-  to: mock.fn(() => ({ emit: mockBroadcast })),
+  to: vi.fn(() => ({ emit: mockBroadcast })),
 };
 
 function createMockSocket() {
@@ -25,9 +25,9 @@ function createMockSocket() {
       }
     },
 
-    join: mock.fn(),
-    leave: mock.fn(),
-    emit: mock.fn(),
+    join: vi.fn(),
+    leave: vi.fn(),
+    emit: vi.fn(),
   };
 
   initSocket(mockSocket);

@@ -1,7 +1,7 @@
-import { closeDb, initDb } from "src/db.js";
-import { __clearForTests, stopAutosave } from "src/memorystore.js";
-import { init } from "src/socket.js";
-import { mockIo } from "src/__mocks__/io.js";
+import { mockIo } from "../../__mocks__/io.js";
+import { closeDb, initDb } from "../../db.js";
+import { __clearForTests, stopAutosave } from "../../memorystore.js";
+import { init } from "../../socket.js";
 
 export function arrangeBeforeEach() {
   // @ts-expect-error, we're inserting a mock object

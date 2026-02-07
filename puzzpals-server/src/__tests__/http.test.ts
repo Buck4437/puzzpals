@@ -1,8 +1,7 @@
-import assert from "node:assert/strict";
-import { afterEach, beforeEach, describe, it } from "node:test";
 import request from "supertest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import app from "src/app.js";
+import app from "../app.js";
 import { arrangeBeforeEach, cleanUpAfterEach } from "./utils/arrange.js";
 
 describe("Create room API", () => {
@@ -19,15 +18,15 @@ describe("Create room API", () => {
     };
 
     const res = await request(app).post("/api/rooms/create").send(payload);
-    assert.ok(res.ok);
+    expect(res.ok).toBe(true);
 
     // Room token specification: 6 character alphanumeric
-    assert.match(res.body.token, /^[a-zA-Z0-9]{6}$/);
+    expect(res.body.token).toMatch(/^[a-zA-Z0-9]{6}$/);
   });
 
   async function assertBadRequest(payload?: string | object) {
     const res = await request(app).post("/api/rooms/create").send(payload);
-    assert.ok(res.badRequest);
+    expect(res.badRequest).toBe(true);
   }
 
   it("rejects request missing payload", async () => {
@@ -148,11 +147,11 @@ describe("Join room API", () => {
     const token = createRes.body.token;
 
     const joinRes = await request(app).post(`/api/rooms/${token}/join`);
-    assert.equal(joinRes.status, 200);
+    expect(joinRes.ok).toBe(true);
   });
 
   it("rejects request to join non-existent room", async () => {
     const res = await request(app).post(`/api/rooms/TestRm/join`);
-    assert.equal(res.status, 404);
+    expect(res.notFound).toBe(true);
   });
 });
