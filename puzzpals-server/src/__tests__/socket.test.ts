@@ -36,15 +36,12 @@ describe("Socket", () => {
     const token = res.body.token;
 
     const socket = createMockSocket();
-    socket.call("room:join", { token });
+    socket.call("room:join", token);
     expect(socket.emit).toHaveBeenCalledWith("grid:state", expectedGrid);
 
-    socket.call("grid:updateCell", { token, idx: 0, value: 0 });
+    socket.call("grid:updateCell", token, 0, 0);
     expect(mockIo.to).toHaveBeenCalledWith(token);
-    expect(mockBroadcast).toHaveBeenCalledWith("grid:cellUpdated", {
-      idx: 0,
-      value: 0,
-    });
+    expect(mockBroadcast).toHaveBeenCalledWith("grid:cellUpdated", 0, 0);
   });
 
   it("restores room progress after server shuts down", async () => {
@@ -64,7 +61,7 @@ describe("Socket", () => {
     __clearForTests();
 
     const socket = createMockSocket();
-    socket.call("room:join", { token });
+    socket.call("room:join", token);
     expect(socket.emit).toHaveBeenCalledWith("grid:state", expectedGrid);
 
     // Restore timer
@@ -84,12 +81,12 @@ describe("Socket", () => {
 
     // Join the room
     const socket = createMockSocket();
-    socket.call("room:join", { token });
+    socket.call("room:join", token);
 
     // Send a message
     const user = "00000000";
     const msgtext = "Hello, world!";
-    socket.call("chat:newMessage", { token, message: { user, msgtext } });
+    socket.call("chat:newMessage", token, { user, msgtext });
 
     // Assert message is broadcast
     expect(mockIo.to).toHaveBeenCalledWith(token);

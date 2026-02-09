@@ -78,23 +78,23 @@ async function checkRoomExists() {
 }
 
 async function joinRoom() {
-  socket.emit("room:join", { token: props.token });
+  socket.emit("room:join", props.token);
 }
 
 async function leaveRoom() {
-  socket.emit("room:leave", { token: props.token });
+  socket.emit("room:leave", props.token);
   router.push("/");
 }
 
 function onCellUpdated(idx: number, value: CellState) {
-  socket.emit("grid:updateCell", { token: props.token, idx, value });
+  socket.emit("grid:updateCell", props.token, idx, value);
 }
 
 function onChatSubmit(message: ChatMessage) {
   if (userID.value) {
     message.user = userID.value;
   }
-  socket.emit("chat:newMessage", { token: props.token, message: message });
+  socket.emit("chat:newMessage", props.token, message);
 }
 
 function initiateSocket() {
@@ -107,8 +107,7 @@ function initiateSocket() {
     initialGridState.value = data;
   });
 
-  socket.on("grid:cellUpdated", (data: { idx: number; value: CellState }) => {
-    const { idx, value } = data;
+  socket.on("grid:cellUpdated", (idx: number, value: CellState) => {
     if (areaComponent.value === null) {
       throw new Error("areaComponent is missing");
     }
@@ -141,7 +140,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  socket.emit("room:leave", { token: props.token });
+  socket.emit("room:leave", props.token);
   socket.off();
 });
 </script>

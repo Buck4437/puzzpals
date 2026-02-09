@@ -6,8 +6,7 @@ import { randomUserID } from "./user.js";
 
 function init(io: Server) {
   io.on("connection", (socket) => {
-    socket.on("room:join", async (data) => {
-      const token = data.token;
+    socket.on("room:join", async (token) => {
       const userID = randomUserID(token);
       console.log("joined", userID);
       socket.join(token);
@@ -28,9 +27,7 @@ function init(io: Server) {
       }
     });
 
-    socket.on("grid:updateCell", (data) => {
-      const { token, idx, value } = data;
-
+    socket.on("grid:updateCell", (token, idx, value) => {
       const room = getRoomFromStore(token);
       if (!room) {
         return;
@@ -47,11 +44,10 @@ function init(io: Server) {
       markAsDirty(room);
 
       // Emit the update to all clients in the room (including the sender)
-      io.to(token).emit("grid:cellUpdated", { idx, value });
+      io.to(token).emit("grid:cellUpdated", idx, value);
     });
 
-    socket.on("chat:newMessage", (data) => {
-      const { token, message } = data;
+    socket.on("chat:newMessage", (token, message) => {
       const processed = processChatMessage(message);
       if (!processed) {
         console.log("Invalid chat message received:", message);

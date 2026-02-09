@@ -6,10 +6,10 @@ type Callback = (...args: unknown[]) => void;
 interface MockSocket {
   on: (ev: SocketEvent, cb: Callback) => void;
   off: (ev?: SocketEvent, cb?: Callback) => void;
-  emit: (ev: SocketEvent, payload: unknown) => void;
+  emit: (ev: SocketEvent, ...args: unknown[]) => void;
 
   reset: () => void;
-  emitServerEvent: (ev: SocketEvent, payload: unknown) => void;
+  call: (ev: SocketEvent, ...args: unknown[]) => void;
 }
 
 let handlers: Record<SocketEvent, Callback[]> = {};
@@ -40,8 +40,8 @@ const socket: MockSocket = {
     handlers = {};
   },
 
-  emitServerEvent(ev, payload) {
-    handlers[ev]?.forEach((fn) => fn(payload));
+  call(ev, ...args) {
+    handlers[ev]?.forEach((fn) => fn(...args));
     console.log(`Emitted server event ${ev.toString()}`);
   },
 };

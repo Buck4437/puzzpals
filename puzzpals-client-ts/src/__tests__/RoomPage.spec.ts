@@ -47,7 +47,7 @@ describe("RoomPage", () => {
     await flushPromises();
 
     // Server receives request to join room
-    expect(socket.emit).toHaveBeenCalledWith("room:join", { token: "TestRm" });
+    expect(socket.emit).toHaveBeenCalledWith("room:join", "TestRm");
   });
 
   it("redirects to 404 if room does not exist", async () => {
@@ -65,7 +65,7 @@ describe("RoomPage", () => {
     const wrapper = mount(RoomPage, { props: { token: "TestRm" } });
     await flushPromises();
 
-    socket.emitServerEvent("grid:state", gridState);
+    socket.call("grid:state", gridState);
     await nextTick();
 
     // Click leave room button
@@ -73,7 +73,7 @@ describe("RoomPage", () => {
     await flushPromises();
 
     // Server receives request to leave room
-    expect(socket.emit).toHaveBeenCalledWith("room:leave", { token: "TestRm" });
+    expect(socket.emit).toHaveBeenCalledWith("room:leave", "TestRm");
   });
 
   it("leaves room when leaving page", async () => {
@@ -84,13 +84,13 @@ describe("RoomPage", () => {
     wrapper.unmount();
 
     // Server receives request to leave room
-    expect(socket.emit).toHaveBeenCalledWith("room:leave", { token: "TestRm" });
+    expect(socket.emit).toHaveBeenCalledWith("room:leave", "TestRm");
   });
 
   it("synchronises your grid upon entering room", async () => {
     const wrapper = mount(RoomPage, { props: { token: "TestRm" } });
 
-    socket.emitServerEvent("grid:state", gridState);
+    socket.call("grid:state", gridState);
     await nextTick();
 
     const cells = wrapper.findAll("div.cell");
@@ -107,20 +107,17 @@ describe("RoomPage", () => {
     const wrapper = mount(RoomPage, { props: { token: "TestRm" } });
 
     // Set up the grid
-    socket.emitServerEvent("grid:state", gridState);
+    socket.call("grid:state", gridState);
     await nextTick();
 
-    const data = {
-      idx: 1,
-      value: {
-        isBlack: false,
-        number: null,
-        input: NO_INPUT,
-      },
+    const cellValue = {
+      isBlack: false,
+      number: null,
+      input: NO_INPUT,
     };
 
     // Update the second cell
-    socket.emitServerEvent("grid:cellUpdated", data);
+    socket.call("grid:cellUpdated", 1, cellValue);
     await nextTick();
 
     const cell = wrapper.findAll("div.cell")[1];
@@ -131,27 +128,18 @@ describe("RoomPage", () => {
     const wrapper = mount(RoomPage, { props: { token: "TestRm" } });
 
     // Set up the grid
-    socket.emitServerEvent("grid:state", gridState);
+    socket.call("grid:state", gridState);
     await nextTick();
 
     // Click the second cell
     const cell = wrapper.findAll("div.cell")[1];
     await cell?.trigger("click");
 
-    const expectedPayload = {
-      token: "TestRm",
-      idx: 1,
-      value: {
-        isBlack: false,
-        number: null,
-        input: NO_INPUT,
-      },
-    };
-
     // Assert data emitted to socket
-    expect(socket.emit).toHaveBeenCalledWith(
-      "grid:updateCell",
-      expectedPayload,
-    );
+    expect(socket.emit).toHaveBeenCalledWith("grid:updateCell", "TestRm", 1, {
+      isBlack: false,
+      number: null,
+      input: NO_INPUT,
+    });
   });
 });
