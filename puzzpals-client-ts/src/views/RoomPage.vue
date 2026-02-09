@@ -82,7 +82,7 @@ async function joinRoom() {
 }
 
 async function leaveRoom() {
-  socket.emit("room:leave", { token: props.token });
+  socket.disconnect();
   router.push("/");
 }
 
@@ -141,7 +141,7 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  socket.emit("room:leave", { token: props.token });
+  socket.disconnect();
   socket.off();
 });
 </script>

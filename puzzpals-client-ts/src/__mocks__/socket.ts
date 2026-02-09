@@ -7,6 +7,7 @@ interface MockSocket {
   on: (ev: SocketEvent, cb: Callback) => void;
   off: (ev?: SocketEvent, cb?: Callback) => void;
   emit: (ev: SocketEvent, payload: unknown) => void;
+  disconnect: () => void;
 
   reset: () => void;
   emitServerEvent: (ev: SocketEvent, payload: unknown) => void;
@@ -34,6 +35,7 @@ const socket: MockSocket = {
   },
 
   emit: vi.fn(),
+  disconnect: vi.fn(),
 
   // Called by tests
   reset() {
