@@ -1,4 +1,4 @@
-import { closeDb, initDb } from "src/db.js";
+import { closeDb } from "src/db.js";
 import { __clearForTests, stopAutosave } from "src/memorystore.js";
 import { init } from "src/socket.js";
 import { mockIo } from "src/__mocks__/io.js";
@@ -8,7 +8,7 @@ export function arrangeBeforeEach() {
   init(mockIo);
 
   // In-memory databases are deleted when closed
-  initDb(":memory:");
+  // initDb(":memory:");
 }
 
 export function cleanUpAfterEach() {
