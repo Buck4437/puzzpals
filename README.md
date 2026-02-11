@@ -15,3 +15,24 @@ This project uses sqlite to store puzzle data. It is automatically created at `p
 
 - Install sqlite3 on linux
 - You can install the plugin "SQLite Viewer" to view the database after installing sqlite3
+
+### About Postgres
+
+First time setup:
+
+- Install postgres on linux
+- `sudo -u postgres psql` to enter postgres
+- `ALTER USER postgres PASSWORD 'postgres'` to change the password for the user.
+- Run `\conninfo` to see your current connection
+- `CREATE TABLE puzzpals_test;`
+- Exit with `\q`
+- You can now access the created db with `sudo -u postgres psql puzzpals_test`
+- You also need to add `DATABASE_URL` to your `.env`. Refer to [this doc](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING). For example:
+
+```
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/puzzpals_test
+```
+
+Starting the DB
+
+- The server should start in the background as you install postgres
