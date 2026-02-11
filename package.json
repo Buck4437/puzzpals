@@ -1,6 +1,10 @@
 {
   "name": "@puzzpals/puzzpals",
   "private": true,
+  "engines": {
+    "node": "22.20.0",
+    "npm": "10.9.3"
+  },
   "workspaces": [
     "puzzpals-client-ts",
     "puzzpals-server",
