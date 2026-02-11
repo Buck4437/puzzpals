@@ -61,7 +61,7 @@ async function uploadFile() {
 }
 
 function openEditor() {
-  router.push('/editor');
+  router.push("/editor");
 }
 // Normally called by FilePicker
 // During tests, call this directly
