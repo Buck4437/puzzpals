@@ -30,7 +30,7 @@
           v-for="(cell, colIdx) in row"
           class="cell"
           :class="`cell-color-${cell.color}`"
-          @click="() => onClickCell(cell)"
+          @click="onClickCell(cell)"
           :key="colIdx"
         >
           {{ cell.symbol.text }}
@@ -41,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeMount, ref } from "vue";
+import { computed, ref } from "vue";
 
 type CellData = {
   symbol: {
@@ -62,15 +62,19 @@ const currentTool = ref(tools[0]);
 
 const grid = ref<CellData[][]>([]);
 
+const createEmptyCell = () => {
+  return {
+    symbol: {
+      text: "" as CellText,
+    },
+    color: "white",
+  };
+};
+
 for (let i = 0; i < rowCount.value; i++) {
   const row: CellData[] = [];
   for (let j = 0; j < colCount.value; j++) {
-    row.push({
-      symbol: {
-        text: "",
-      },
-      color: "white",
-    });
+    row.push(createEmptyCell());
   }
   grid.value.push(row);
 }
@@ -79,7 +83,7 @@ const canExport = computed(() => {
   for (let row of grid.value) {
     for (let cell of row) {
       if (cell === undefined) continue;
-      if (cell.symbol.text != "" && cell.color !== "black") {
+      if (cell.symbol.text !== "" && cell.color !== "black") {
         return false;
       }
     }
@@ -109,20 +113,10 @@ const setDimensions = () => {
         if (cell) {
           row.push(cell);
         } else {
-          row.push({
-            symbol: {
-              text: "",
-            },
-            color: "white",
-          });
+          row.push(createEmptyCell());
         }
       } else {
-        row.push({
-          symbol: {
-            text: "",
-          },
-          color: "white",
-        });
+        row.push(createEmptyCell());
       }
     }
     newGrid.push(row);
@@ -134,10 +128,10 @@ const setDimensions = () => {
 };
 
 const downloadObjectAsJson = (exportObj: object, exportName: string) => {
-  var dataStr =
+  const dataStr =
     "data:text/json;charset=utf-8," +
     encodeURIComponent(JSON.stringify(exportObj));
-  var downloadAnchorNode = document.createElement("a");
+  const downloadAnchorNode = document.createElement("a");
   downloadAnchorNode.setAttribute("href", dataStr);
   downloadAnchorNode.setAttribute("download", exportName + ".json");
   document.body.appendChild(downloadAnchorNode); // required for firefox
@@ -199,11 +193,6 @@ const onClickCell = (cell: CellData) => {
 <style scoped>
 .grid-wrapper {
   padding: 12px;
-}
-
-.grid {
-  display: flex;
-  flex-direction: column;
 }
 
 .grid-row {
