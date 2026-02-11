@@ -36,7 +36,6 @@ import type CellState from "@/models/CellState";
 import type GridState from "@/models/GridState";
 import Chat from "@/components/Chat.vue";
 import type ChatState from "@/models/ChatState";
-import type { ChatMessage } from "@/models/ChatState";
 
 const router = useRouter();
 
@@ -90,11 +89,11 @@ function onCellUpdated(idx: number, value: CellState) {
   socket.emit("grid:updateCell", props.token, idx, value);
 }
 
-function onChatSubmit(message: ChatMessage) {
+function onChatSubmit(text: string) {
   if (userID.value) {
-    message.user = userID.value;
+    const message = { msgtext: text, user: userID.value };
+    socket.emit("chat:newMessage", props.token, message);
   }
-  socket.emit("chat:newMessage", props.token, message);
 }
 
 function initiateSocket() {

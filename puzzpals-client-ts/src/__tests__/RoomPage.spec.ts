@@ -69,7 +69,7 @@ describe("RoomPage", () => {
     await nextTick();
 
     // Click leave room button
-    wrapper.find("button").trigger("click");
+    wrapper.get("button").trigger("click");
     await flushPromises();
 
     // Server receives request to leave room
@@ -141,5 +141,58 @@ describe("RoomPage", () => {
       number: null,
       input: NO_INPUT,
     });
+  });
+
+  // As a player, I want to communicate with other players
+  // so that we can share insights.
+  it("can send messages to other players", async () => {
+    const token = "TestRm";
+    const user = "user_TestRm_00000000";
+    const msgtext = "Hello, world!";
+    const message = { user, msgtext };
+
+    const wrapper = mount(RoomPage, { props: { token } });
+    socket.call("grid:state", gridState);
+    socket.call("user:id", user);
+    await nextTick();
+
+    const chatForm = wrapper.get("form.chat-input");
+    const textInput = chatForm.get("input");
+
+    // Type "Hello, world!" and send
+    textInput.setValue(msgtext);
+    chatForm.trigger("submit.prevent");
+
+    // Assert message sent
+    expect(socket.emit).toHaveBeenCalledWith("chat:newMessage", token, message);
+  });
+
+  it("can receive messages from other players", async () => {
+    const token = "TestRm";
+    const user = "user_TestRm_00000000";
+    const msgtext = "Hello, world!";
+    const message = { user, msgtext, timestamp: 0 };
+
+    const wrapper = mount(RoomPage, { props: { token } });
+    socket.call("grid:state", gridState);
+    await nextTick();
+
+    // Receive "Hello, world!" from another user
+    socket.call("chat:messageNew", message);
+    await nextTick();
+
+    // Assert message shown
+    const chatBubble = wrapper.find("div.chat-message");
+    expect(chatBubble.exists()).toBe(true);
+
+    // Assert message has correct text
+    const timeString = new Date(0).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    expect(chatBubble.get("div.chat-header").text()).toBe(user);
+    expect(chatBubble.get("div.chat-text").text()).toBe(msgtext);
+    expect(chatBubble.get("div.chat-footer").text()).toBe(timeString);
   });
 });

@@ -38,13 +38,7 @@ defineExpose({ scrollToBottom });
 function send() {
   const text = input.value.trim();
   if (text) {
-    const message = {
-      user: "",
-      msgtext: text,
-      timestamp: 0,
-    };
-    console.log(message);
-    emit("newMessage", message);
+    emit("newMessage", text);
     input.value = "";
   }
 }
