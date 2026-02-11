@@ -1,136 +1,203 @@
 <template>
-    <div>
-        <button
-            v-for="tool in tools"
-            :key="tool"
-            :class="{ active: currentTool === tool}"
-            @click="currentTool = tool"
-        >
-            {{ tool }}
-        </button>
-    </div>
-    Current tool: {{ currentTool }}
-    <button @click="exportGrid" 
-        :disabled="!canExport">
-        Export as akari
+  <div>
+    <button
+      v-for="tool in tools"
+      :key="tool"
+      :class="{ active: currentTool === tool }"
+      @click="currentTool = tool"
+    >
+      {{ tool }}
     </button>
-    <div class="grid-wrapper">
-      <div>
-        <div
-           v-for="(row, rowIdx) in grid"
-           :key="rowIdx"
-           class="grid-row">
-            <div
-                v-for="(cell, colIdx) in row"
-                class="cell"
-                :class="`cell-color-${cell.color}`"
-                @click="() => onClickCell(cell)"
-                :key="colIdx">
+  </div>
+  <div>
+    Current dimensions: Row: {{ rowCount }}, Col: {{ colCount }}
 
+    <br />
+
+    Set dimensions: Row:
+    <input type="number" v-model.number="inputRowCount" min="1" max="100" />
+    Col:
+    <input type="number" v-model.number="inputColCount" min="1" max="100" />
+
+    <button @click="setDimensions">Set</button>
+  </div>
+  Current tool: {{ currentTool }}
+  <button @click="exportGrid" :disabled="!canExport">Export as akari</button>
+  <div class="grid-wrapper">
+    <div>
+      <div v-for="(row, rowIdx) in grid" :key="rowIdx" class="grid-row">
+        <div
+          v-for="(cell, colIdx) in row"
+          class="cell"
+          :class="`cell-color-${cell.color}`"
+          @click="() => onClickCell(cell)"
+          :key="colIdx"
+        >
           {{ cell.symbol.text }}
-            </div>
         </div>
       </div>
     </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import { computed, onBeforeMount, ref } from 'vue';
+import { computed, onBeforeMount, ref } from "vue";
+
+type CellData = {
+  symbol: {
+    text: CellText;
+  };
+  color: string;
+};
+
+type CellText = "" | "0" | "1" | "2" | "3" | "4";
 
 const rowCount = ref(6);
 const colCount = ref(7);
+const inputRowCount = ref("6");
+const inputColCount = ref("7");
 
-const tools = ["symbols", "colors"];
+const tools = ["colors", "symbols"];
 const currentTool = ref(tools[0]);
 
-const grid = ref<string[][]>([]);
+const grid = ref<CellData[][]>([]);
+
+for (let i = 0; i < rowCount.value; i++) {
+  const row: CellData[] = [];
+  for (let j = 0; j < colCount.value; j++) {
+    row.push({
+      symbol: {
+        text: "",
+      },
+      color: "white",
+    });
+  }
+  grid.value.push(row);
+}
 
 const canExport = computed(() => {
-    for (let i = 0; i < rowCount.value; i++) {
-        for (let j = 0; j < colCount.value; j++) {
-            const cell = grid.value[i][j];
-            if (cell.symbol.text != "" && cell.color !== "black") {
-                return false;
-            }
-        }
+  for (let row of grid.value) {
+    for (let cell of row) {
+      if (cell === undefined) continue;
+      if (cell.symbol.text != "" && cell.color !== "black") {
+        return false;
+      }
     }
-    return true;
+  }
+  return true;
 });
 
-const downloadObjectAsJson = (exportObj, exportName) => {
-    var dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(exportObj));
-    var downloadAnchorNode = document.createElement('a');
-    downloadAnchorNode.setAttribute("href",     dataStr);
-    downloadAnchorNode.setAttribute("download", exportName + ".json");
-    document.body.appendChild(downloadAnchorNode); // required for firefox
-    downloadAnchorNode.click();
-    downloadAnchorNode.remove();
-}
+const setDimensions = () => {
+  // Validate input
+  const [x, y] = [parseInt(inputRowCount.value), parseInt(inputColCount.value)];
 
-const exportGrid = () => {
-    if (!canExport.value) {
-        alert("cannot export: numbers can only be on black cells");
-        return;
-    }
-    const grid2 = grid.value.map(row => {
-        return row.map(cell => {
-            return cell.color === "white" ? "." : 
-            cell.symbol.text === "" ? "#" : cell.symbol.text
-        })
-    });
-    console.log(grid2);
-    const exportData = {
-        type: "akari",
-        grid: grid2
-    }
-    downloadObjectAsJson(exportData, "akari-puzzle");
-}
+  if (isNaN(x) || isNaN(y) || x < 1 || y < 1) {
+    alert("Please enter valid positive integers for dimensions.");
+    return;
+  }
 
-const onClickCell = (cell) => {
-    switch (currentTool.value) {
-        case "symbols": {
-            const prev = cell.symbol.text;
-            cell.symbol.text = {
-                "": "0",
-                "0": "1",
-                "1": "2",
-                "2": "3",
-                "3": "4",
-                "4": "",
-            }[prev]; 
+  const newRowCount = x;
+  const newColCount = y;
+
+  const newGrid: CellData[][] = [];
+  for (let i = 0; i < newRowCount; i++) {
+    const row: CellData[] = [];
+    for (let j = 0; j < newColCount; j++) {
+      const oldRow = grid.value[i] || [];
+      if (i < grid.value.length && j < oldRow.length) {
+        const cell = oldRow[j];
+        if (cell) {
+          row.push(cell);
+        } else {
+          row.push({
+            symbol: {
+              text: "",
+            },
+            color: "white",
+          });
         }
-            break;
-        case "colors": {
-            const prev = cell.color;
-            if (prev === "black") {
-                cell.color = "white";
-            } else {
-                cell.color = "black";
-            }
-        }
-            break;
+      } else {
+        row.push({
+          symbol: {
+            text: "",
+          },
+          color: "white",
+        });
+      }
     }
+    newGrid.push(row);
+  }
+
+  grid.value = newGrid;
+  rowCount.value = newRowCount;
+  colCount.value = newColCount;
 };
 
-onBeforeMount(() => {
-    for (let i = 0; i < rowCount.value; i++) {
-        const row: string[] = [];
-        for (let j = 0; j < colCount.value; j++) {
-            row.push({
-                symbol: {
-                    text: "",
-                },
-                color: "white"
-            });
+const downloadObjectAsJson = (exportObj: object, exportName: string) => {
+  var dataStr =
+    "data:text/json;charset=utf-8," +
+    encodeURIComponent(JSON.stringify(exportObj));
+  var downloadAnchorNode = document.createElement("a");
+  downloadAnchorNode.setAttribute("href", dataStr);
+  downloadAnchorNode.setAttribute("download", exportName + ".json");
+  document.body.appendChild(downloadAnchorNode); // required for firefox
+  downloadAnchorNode.click();
+  downloadAnchorNode.remove();
+};
+
+const exportGrid = () => {
+  if (!canExport.value) {
+    alert("cannot export: numbers can only be on black cells");
+    return;
+  }
+  const grid2 = grid.value.map((row) => {
+    return row.map((cell) => {
+      return cell.color === "white"
+        ? "."
+        : cell.symbol.text === ""
+          ? "#"
+          : cell.symbol.text;
+    });
+  });
+  console.log(grid2);
+  const exportData = {
+    type: "akari",
+    grid: grid2,
+  };
+  downloadObjectAsJson(exportData, "akari-puzzle");
+};
+
+const onClickCell = (cell: CellData) => {
+  switch (currentTool.value) {
+    case "symbols":
+      {
+        const prev = cell.symbol.text;
+        cell.symbol.text = {
+          "": "0",
+          "0": "1",
+          "1": "2",
+          "2": "3",
+          "3": "4",
+          "4": "",
+        }[prev] as CellText;
+      }
+      break;
+    case "colors":
+      {
+        const prev = cell.color;
+        if (prev === "black") {
+          cell.color = "white";
+        } else {
+          cell.color = "black";
         }
-        grid.value.push(row);
-    }
-});
+      }
+      break;
+  }
+};
 </script>
 
 <style scoped>
 .grid-wrapper {
-  max-width: 480px;
   padding: 12px;
 }
 
@@ -146,7 +213,7 @@ onBeforeMount(() => {
 
 .cell {
   border: 1px solid #ccc;
-  width: 100%;
+  width: 60px;
   height: 60px;
   display: flex;
   align-items: center;
@@ -163,5 +230,4 @@ onBeforeMount(() => {
   background-color: black;
   color: white;
 }
-
 </style>
