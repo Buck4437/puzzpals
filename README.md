@@ -24,14 +24,10 @@ First time setup:
 - `sudo -u postgres psql` to enter postgres
 - `ALTER USER postgres PASSWORD 'postgres'` to change the password for the user.
 - Run `\conninfo` to see your current connection
-- `CREATE TABLE puzzpals_test;`
+- `CREATE TABLE puzzpals_dev;`
 - Exit with `\q`
-- You can now access the created db with `sudo -u postgres psql puzzpals_test`
-- You also need to add `DATABASE_URL` to your `.env`. Refer to [this doc](https://www.postgresql.org/docs/current/libpq-connect.html#LIBPQ-CONNSTRING). For example:
-
-```
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/puzzpals_test
-```
+- You can now access the created db with `sudo -u postgres psql puzzpals_dev`
+- You also need to update your `.env` in `puzzpals-server`. Refer to `.env.example`
 
 Starting the DB
 
