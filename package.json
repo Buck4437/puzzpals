@@ -8,7 +8,8 @@
   ],
   "scripts": {
     "prepare": "husky",
-    "deploy-server": "cd puzzpals-server && npm run build && npm run start"
+    "deploy-server": "cd puzzpals-server && npm run build && npm run start",
+    "start": "npm run deploy-server"
   },
   "devDependencies": {
     "@eslint/compat": "^2.0.2",
