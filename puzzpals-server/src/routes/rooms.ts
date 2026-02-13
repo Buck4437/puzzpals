@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { getRoomFromStore, createRoomInStore } from "../memorystore.js";
-import { parsePuzzle } from "@puzzpals/puzzle-parser";
+import { deserialize, parsePuzzle } from "@puzzpals/puzzle-parser";
+import { getPuzzleById } from "src/db.js";
 
 const router = Router();
 
@@ -49,6 +50,40 @@ router.post("/create", async (req, res) => {
     return res.status(400).json({ error: "Invalid puzzle data" });
   }
 
+  res.json({
+    token: token,
+  });
+});
+
+router.get("/createFromPuzzle", (req, res) => {
+  const { pId } = req.query;
+
+  if (!pId || typeof pId !== "string" || pId.trim() === "") {
+    return res.status(400).json({ error: "Invalid or missing pId" });
+  }
+
+  // Fetch puzzle from database
+  const puzzle = getPuzzleById(pId);
+  if (!puzzle) {
+    return res.status(404).json({ error: "Puzzle not found" });
+  }
+  let token;
+  try {
+    const puzzleGrid = deserialize(
+      (puzzle as { puzzleData: string }).puzzleData,
+    );
+    token = generateToken();
+    if (token === null) {
+      return res
+        .status(500)
+        .json({ error: "Could not create room, please try again" });
+    }
+
+    createRoomInStore(token, puzzleGrid);
+  } catch (error) {
+    console.error("Error creating room from puzzle:", error);
+    return res.status(500).json({ error: "Failed to create room from puzzle" });
+  }
   res.json({
     token: token,
   });

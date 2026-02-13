@@ -38,9 +38,13 @@
       </div>
     </div>
   </div>
+  <div>
+    <button @click="savePuzzle">Upload to Database</button>
+  </div>
 </template>
 
 <script setup lang="ts">
+import api from "@/services/api";
 import { computed, onBeforeMount, ref } from "vue";
 
 type CellData = {
@@ -194,6 +198,35 @@ const onClickCell = (cell: CellData) => {
       break;
   }
 };
+
+async function savePuzzle() {
+  const grid2 = grid.value.map((row) => {
+    return row.map((cell) => {
+      return cell.color === "white"
+        ? "."
+        : cell.symbol.text === ""
+          ? "#"
+          : cell.symbol.text;
+    });
+  });
+
+  const puzzleData = {
+    type: "akari",
+    grid: grid2,
+  };
+
+  try {
+    const response = await api.post("/puzzles/upload", {
+      title: "",
+      puzzleData: puzzleData,
+    });
+    alert("Puzzle uploaded successfully!");
+  } catch (error) {
+    alert(
+      `Failed to upload the puzzle: ${error instanceof Error ? error.message : "Unknown error"}`,
+    );
+  }
+}
 </script>
 
 <style scoped>
