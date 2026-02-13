@@ -1,6 +1,7 @@
 <template>
   <FilePicker @file-picked="onFilePicked" />
   <button @click="uploadFile">Upload</button>
+  <button @click="openEditor">Open Editor</button>
 </template>
 
 <script setup lang="ts">
@@ -59,6 +60,9 @@ async function uploadFile() {
   }
 }
 
+function openEditor() {
+  router.push("/editor");
+}
 // Normally called by FilePicker
 // During tests, call this directly
 function onFilePicked(file: File | null) {
