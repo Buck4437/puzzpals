@@ -34,15 +34,12 @@ function isMessageValid(raw: unknown): raw is RawChatMessage {
   );
 }
 
-function processChatMessage(raw: unknown): ChatMessage | null {
-  if (isMessageValid(raw)) {
-    return {
-      user: raw.user,
-      msgtext: raw.msgtext.trim(),
-      timestamp: Date.now(),
-    };
-  }
-  return null;
+function processChatMessage(raw: RawChatMessage): ChatMessage {
+  return {
+    user: raw.user,
+    msgtext: raw.msgtext.trim(),
+    timestamp: Date.now(),
+  };
 }
 
-export { processChatMessage };
+export { isMessageValid, processChatMessage };

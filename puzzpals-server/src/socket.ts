@@ -1,12 +1,15 @@
 import type { Server } from "socket.io";
 import { createEmptyGrid } from "@puzzpals/puzzle-parser";
 import { markAsDirty, getRoomFromStore } from "./memorystore.js";
-import { processChatMessage } from "./chat.js";
+import { isMessageValid, processChatMessage } from "./chat.js";
 import { randomUserID } from "./user.js";
 
 function init(io: Server) {
   io.on("connection", (socket) => {
-    socket.on("room:join", async (token) => {
+    socket.on("room:join", (token: unknown) => {
+      // Validate
+      if (typeof token !== "string") return;
+
       const userID = randomUserID(token);
       console.log("joined", userID);
       socket.join(token);
@@ -27,32 +30,45 @@ function init(io: Server) {
       }
     });
 
-    socket.on("grid:updateCell", (token, idx, value) => {
-      const room = getRoomFromStore(token);
-      if (!room) {
-        return;
-      }
+    socket.on(
+      "grid:updateCell",
+      (token: unknown, idx: unknown, value: unknown) => {
+        // Validate
+        if (
+          typeof token !== "string" ||
+          typeof idx !== "number" ||
+          typeof value !== "number"
+        )
+          return;
 
-      const grid = room.puzzleData;
+        const room = getRoomFromStore(token);
+        if (!room) {
+          return;
+        }
 
-      if (!grid) {
-        return;
-      }
+        const grid = room.puzzleData;
 
-      // TODO: Data validation
-      grid.cells[idx]?.setData(value);
-      markAsDirty(room);
+        if (!grid) {
+          return;
+        }
 
-      // Emit the update to all clients in the room (including the sender)
-      io.to(token).emit("grid:cellUpdated", idx, value);
-    });
+        // Ensure idx is not out of bounds
+        const cell = grid.cells[idx];
+        if (cell === undefined) return;
 
-    socket.on("chat:newMessage", (token, message) => {
+        cell.setInput(value);
+        markAsDirty(room);
+
+        // Emit the update to all clients in the room (including the sender)
+        io.to(token).emit("grid:cellUpdated", idx, value);
+      },
+    );
+
+    socket.on("chat:newMessage", (token: unknown, message: unknown) => {
+      // Validate
+      if (typeof token !== "string" || !isMessageValid(message)) return;
+
       const processed = processChatMessage(message);
-      if (!processed) {
-        console.log("Invalid chat message received:", message);
-        return;
-      }
       io.to(token).emit("chat:messageNew", processed);
     });
 
