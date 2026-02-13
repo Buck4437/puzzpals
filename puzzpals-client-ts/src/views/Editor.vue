@@ -15,9 +15,9 @@
     <br />
 
     Set dimensions: Row:
-    <input type="number" v-model.number="inputRowCount" min="1" max="100" />
+    <input type="number" v-model="inputRowCount" min="1" max="100" />
     Col:
-    <input type="number" v-model.number="inputColCount" min="1" max="100" />
+    <input type="number" v-model="inputColCount" min="1" max="100" />
 
     <button @click="setDimensions">Set</button>
   </div>
@@ -41,7 +41,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, type Ref } from "vue";
 
 type CellData = {
   symbol: {
@@ -51,11 +51,12 @@ type CellData = {
 };
 
 type CellText = "" | "0" | "1" | "2" | "3" | "4";
+type NumberRef = Ref<number | string, number | string>;
 
 const rowCount = ref(6);
 const colCount = ref(7);
-const inputRowCount = ref("6");
-const inputColCount = ref("7");
+const inputRowCount: NumberRef = ref(6);
+const inputColCount: NumberRef = ref(7);
 
 const tools = ["colors", "symbols"];
 const currentTool = ref(tools[0]);
@@ -93,9 +94,9 @@ const canExport = computed(() => {
 
 const setDimensions = () => {
   // Validate input
-  const [x, y] = [parseInt(inputRowCount.value), parseInt(inputColCount.value)];
+  const [x, y] = [inputRowCount.value, inputColCount.value];
 
-  if (isNaN(x) || isNaN(y) || x < 1 || y < 1) {
+  if (typeof x !== "number" || typeof y !== "number" || x <= 0 || y <= 0) {
     alert("Please enter valid positive integers for dimensions.");
     return;
   }
