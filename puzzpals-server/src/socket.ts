@@ -1,5 +1,4 @@
 import type { Server } from "socket.io";
-import { createEmptyGrid } from "@puzzpals/puzzle-parser";
 import { markAsDirty, getRoomFromStore } from "./memorystore.js";
 import { isMessageValid, processChatMessage } from "./chat.js";
 import { randomUserID } from "./user.js";
@@ -10,24 +9,16 @@ function init(io: Server) {
       // Validate
       if (typeof token !== "string") return;
 
+      // Verify that the room exists
+      const room = getRoomFromStore(token);
+      if (!room) return;
+
       const userID = randomUserID(token);
       console.log("joined", userID);
       socket.join(token);
 
-      const room = getRoomFromStore(token);
-
-      if (!room) {
-        return;
-      }
-
-      socket.emit("user:id", userID);
-
-      const grid = room.puzzleData || null;
-      if (!grid) {
-        socket.emit("grid:state", createEmptyGrid());
-      } else {
-        socket.emit("grid:state", grid);
-      }
+      const grid = room.puzzleData;
+      socket.emit("room:initialize", grid, userID);
     });
 
     socket.on(

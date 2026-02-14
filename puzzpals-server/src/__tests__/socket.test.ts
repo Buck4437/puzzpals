@@ -30,6 +30,21 @@ describe("Socket", () => {
 
   // As a player, I want to synchronise my progress with other players
   // so that we can collaborate on the same puzzle.
+  it("joins player to room", async () => {
+    const res = await request(app).post("/api/rooms/create").send(payload);
+    const token = res.body.token;
+
+    const socket = createMockSocket();
+    socket.call("room:join", token);
+
+    expect(socket.emit).toHaveBeenCalledWith(
+      "room:initialize",
+      expectedGrid,
+      // No need to escape the token, we know it's 6-char alphanumeric
+      expect.stringMatching(new RegExp(`^user_${token}_[A-Za-z0-9]{8}$`)),
+    );
+  });
+
   it("synchronizes grid with all players in same room", async () => {
     // Open room
     const res = await request(app).post("/api/rooms/create").send(payload);
@@ -37,9 +52,8 @@ describe("Socket", () => {
 
     const socket = createMockSocket();
     socket.call("room:join", token);
-    expect(socket.emit).toHaveBeenCalledWith("grid:state", expectedGrid);
-
     socket.call("grid:updateCell", token, 0, 0);
+
     expect(mockIo.to).toHaveBeenCalledWith(token);
     expect(mockBroadcast).toHaveBeenCalledWith("grid:cellUpdated", 0, 0);
   });
@@ -62,7 +76,13 @@ describe("Socket", () => {
 
     const socket = createMockSocket();
     socket.call("room:join", token);
-    expect(socket.emit).toHaveBeenCalledWith("grid:state", expectedGrid);
+
+    expect(socket.emit).toHaveBeenCalledWith(
+      "room:initialize",
+      expectedGrid,
+      // Already checked in another test
+      expect.anything(),
+    );
 
     // Restore timer
     vi.useRealTimers();

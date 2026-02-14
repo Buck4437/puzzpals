@@ -32,6 +32,9 @@ describe("RoomPage", () => {
     ],
   };
 
+  const token = "TestRm";
+  const user = "user_TestRm_00000000";
+
   beforeEach(() => {
     vi.clearAllMocks();
     socket.reset();
@@ -40,21 +43,21 @@ describe("RoomPage", () => {
   // As a player, I want to synchronise my progress with other players
   // so that we can collaborate on the same puzzle.
   it("joins room", async () => {
-    api.get.mockResolvedValueOnce({ data: { room: "TestRm" } });
+    api.get.mockResolvedValueOnce({ data: { room: token } });
 
     // Load the room page with 'TestRm' as token
-    mount(RoomPage, { props: { token: "TestRm" } });
+    mount(RoomPage, { props: { token: token } });
     await flushPromises();
 
     // Server receives request to join room
-    expect(socket.emit).toHaveBeenCalledWith("room:join", "TestRm");
+    expect(socket.emit).toHaveBeenCalledWith("room:join", token);
   });
 
   it("redirects to 404 if room does not exist", async () => {
     api.get.mockRejectedValueOnce({ response: { status: 404 } });
 
     // Load the room page with non-existent room
-    mount(RoomPage, { props: { token: "TestRn" } });
+    mount(RoomPage, { props: { token: token } });
     await flushPromises();
 
     // Redirect to 404
@@ -62,10 +65,10 @@ describe("RoomPage", () => {
   });
 
   it("leaves room when button pressed", async () => {
-    const wrapper = mount(RoomPage, { props: { token: "TestRm" } });
+    const wrapper = mount(RoomPage, { props: { token: token } });
     await flushPromises();
 
-    socket.call("grid:state", gridState);
+    socket.call("room:initialize", gridState, user);
     await nextTick();
 
     // Click leave room button
@@ -73,24 +76,24 @@ describe("RoomPage", () => {
     await flushPromises();
 
     // Server receives request to leave room
-    expect(socket.emit).toHaveBeenCalledWith("room:leave", "TestRm");
+    expect(socket.emit).toHaveBeenCalledWith("room:leave", token);
   });
 
   it("leaves room when leaving page", async () => {
-    const wrapper = mount(RoomPage, { props: { token: "TestRm" } });
+    const wrapper = mount(RoomPage, { props: { token: token } });
     await flushPromises();
 
     // Leave page by changing URL
     wrapper.unmount();
 
     // Server receives request to leave room
-    expect(socket.emit).toHaveBeenCalledWith("room:leave", "TestRm");
+    expect(socket.emit).toHaveBeenCalledWith("room:leave", token);
   });
 
   it("synchronises your grid upon entering room", async () => {
-    const wrapper = mount(RoomPage, { props: { token: "TestRm" } });
+    const wrapper = mount(RoomPage, { props: { token: token } });
 
-    socket.call("grid:state", gridState);
+    socket.call("room:initialize", gridState, user);
     await nextTick();
 
     const cells = wrapper.findAll("div.cell");
@@ -104,10 +107,10 @@ describe("RoomPage", () => {
   });
 
   it("synchronises your grid when others edit a cell", async () => {
-    const wrapper = mount(RoomPage, { props: { token: "TestRm" } });
+    const wrapper = mount(RoomPage, { props: { token: token } });
 
     // Set up the grid
-    socket.call("grid:state", gridState);
+    socket.call("room:initialize", gridState, user);
     await nextTick();
 
     const cellValue = {
@@ -125,10 +128,10 @@ describe("RoomPage", () => {
   });
 
   it("synchronises other grids when you edit a cell", async () => {
-    const wrapper = mount(RoomPage, { props: { token: "TestRm" } });
+    const wrapper = mount(RoomPage, { props: { token: token } });
 
     // Set up the grid
-    socket.call("grid:state", gridState);
+    socket.call("room:initialize", gridState, user);
     await nextTick();
 
     // Click the second cell
@@ -136,7 +139,7 @@ describe("RoomPage", () => {
     await cell?.trigger("click");
 
     // Assert data emitted to socket
-    expect(socket.emit).toHaveBeenCalledWith("grid:updateCell", "TestRm", 1, {
+    expect(socket.emit).toHaveBeenCalledWith("grid:updateCell", token, 1, {
       isBlack: false,
       number: null,
       input: NO_INPUT,
@@ -146,14 +149,11 @@ describe("RoomPage", () => {
   // As a player, I want to communicate with other players
   // so that we can share insights.
   it("can send messages to other players", async () => {
-    const token = "TestRm";
-    const user = "user_TestRm_00000000";
     const msgtext = "Hello, world!";
     const message = { user, msgtext };
 
     const wrapper = mount(RoomPage, { props: { token } });
-    socket.call("grid:state", gridState);
-    socket.call("user:id", user);
+    socket.call("room:initialize", gridState, user);
     await nextTick();
 
     const chatForm = wrapper.get("form.chat-input");
@@ -168,13 +168,12 @@ describe("RoomPage", () => {
   });
 
   it("can receive messages from other players", async () => {
-    const token = "TestRm";
-    const user = "user_TestRm_00000000";
+    const otherUser = "user_TestRm_00000001";
     const msgtext = "Hello, world!";
-    const message = { user, msgtext, timestamp: 0 };
+    const message = { user: otherUser, msgtext, timestamp: 0 };
 
     const wrapper = mount(RoomPage, { props: { token } });
-    socket.call("grid:state", gridState);
+    socket.call("room:initialize", gridState, user);
     await nextTick();
 
     // Receive "Hello, world!" from another user
@@ -191,7 +190,7 @@ describe("RoomPage", () => {
       minute: "2-digit",
     });
 
-    expect(chatBubble.get("div.chat-header").text()).toBe(user);
+    expect(chatBubble.get("div.chat-header").text()).toBe(otherUser);
     expect(chatBubble.get("div.chat-text").text()).toBe(msgtext);
     expect(chatBubble.get("div.chat-footer").text()).toBe(timeString);
   });

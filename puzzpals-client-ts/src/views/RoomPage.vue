@@ -97,13 +97,9 @@ function onChatSubmit(text: string) {
 }
 
 function initiateSocket() {
-  // TODO
-  socket.on("user:id", (id: string) => {
-    userID.value = id;
-  });
-
-  socket.on("grid:state", (data: GridState) => {
+  socket.on("room:initialize", (data: GridState, id: string) => {
     initialGridState.value = data;
+    userID.value = id;
   });
 
   socket.on("grid:cellUpdated", (idx: number, value: CellState) => {
