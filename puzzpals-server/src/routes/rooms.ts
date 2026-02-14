@@ -32,7 +32,7 @@ function generateToken() {
 // Create room by uploading a file
 router.post("/create", async (req, res) => {
   // Test parse file
-  const puzzleData = req.body;
+  const puzzleData: unknown = req.body;
   let token;
   try {
     const puzzle = parsePuzzle(puzzleData);
