@@ -86,7 +86,7 @@ async function leaveRoom() {
 }
 
 function onCellUpdated(idx: number, value: CellState) {
-  socket.emit("grid:updateCell", idx, value);
+  socket.emit("grid:updateCell", idx, value.input);
 }
 
 function onChatSubmit(text: string) {
@@ -102,11 +102,26 @@ function initiateSocket() {
     userID.value = id;
   });
 
-  socket.on("grid:cellUpdated", (idx: number, value: CellState) => {
+  socket.on("grid:cellUpdated", (idx: number, value: number) => {
     if (areaComponent.value === null) {
       throw new Error("areaComponent is missing");
     }
-    areaComponent.value.onCellUpdated(idx, value);
+
+    // For now, grid:cellUpdated accepts only the input instead of the whole cell state
+    // because the input is the only thing the player can modify.
+    // We reconstruct the cell state from the input and pass it to the grid.
+
+    // If later the player can modify more things (e.g., text and background color)
+    // and grid:cellUpdated needs to accept the whole cell state,
+    // then we can remove the reconstruction step.
+
+    const newState: CellState = {
+      isBlack: false,
+      number: null,
+      input: value,
+    };
+
+    areaComponent.value.onCellUpdated(idx, newState);
   });
 
   // socket.on('chat:records', (history) => {

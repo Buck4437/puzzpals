@@ -113,14 +113,8 @@ describe("RoomPage", () => {
     socket.call("room:initialize", gridState, user);
     await nextTick();
 
-    const cellValue = {
-      isBlack: false,
-      number: null,
-      input: NO_INPUT,
-    };
-
     // Update the second cell
-    socket.call("grid:cellUpdated", 1, cellValue);
+    socket.call("grid:cellUpdated", 1, NO_INPUT);
     await nextTick();
 
     const cell = wrapper.findAll("div.cell")[1];
@@ -139,11 +133,7 @@ describe("RoomPage", () => {
     await cell?.trigger("click");
 
     // Assert data emitted to socket
-    expect(socket.emit).toHaveBeenCalledWith("grid:updateCell", 1, {
-      isBlack: false,
-      number: null,
-      input: NO_INPUT,
-    });
+    expect(socket.emit).toHaveBeenCalledWith("grid:updateCell", 1, NO_INPUT);
   });
 
   // As a player, I want to communicate with other players
