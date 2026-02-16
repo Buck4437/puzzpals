@@ -3,7 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { createMockSocket, mockBroadcast, mockIo } from "../__mocks__/io.js";
 import app from "../app.js";
-import { __clearForTests, startAutosave } from "../memorystore.js";
+import { __clearStoreForTests, startAutosave } from "../memorystore.js";
 import { arrangeBeforeEach, cleanUpAfterEach } from "./utils/arrange.js";
 
 describe("Socket", () => {
@@ -52,10 +52,16 @@ describe("Socket", () => {
 
     const socket = createMockSocket();
     socket.call("room:join", token);
-    socket.call("grid:updateCell", token, 0, 0);
+    socket.call("grid:updateCell", 0, 0);
 
     expect(mockIo.to).toHaveBeenCalledWith(token);
     expect(mockBroadcast).toHaveBeenCalledWith("grid:cellUpdated", 0, 0);
+  });
+
+  it("blocks unauthorized calls to grid:updateCell", () => {
+    const socket = createMockSocket();
+    socket.call("grid:updateCell", 0, 0);
+    expect(mockIo.to).not.toHaveBeenCalled();
   });
 
   it("restores room progress after server shuts down", async () => {
@@ -72,7 +78,7 @@ describe("Socket", () => {
     vi.advanceTimersToNextTimer();
 
     // "Shut down" the server, wiping memory
-    __clearForTests();
+    __clearStoreForTests();
 
     const socket = createMockSocket();
     socket.call("room:join", token);
@@ -104,9 +110,9 @@ describe("Socket", () => {
     socket.call("room:join", token);
 
     // Send a message
-    const user = "00000000";
+    const user = `user_${token}_00000000`;
     const msgtext = "Hello, world!";
-    socket.call("chat:newMessage", token, { user, msgtext });
+    socket.call("chat:newMessage", { user, msgtext });
 
     // Assert message is broadcast
     expect(mockIo.to).toHaveBeenCalledWith(token);
@@ -118,5 +124,14 @@ describe("Socket", () => {
 
     // Restore time
     vi.useRealTimers();
+  });
+
+  it("blocks unauthorized calls to chat:newMessage", () => {
+    const socket = createMockSocket();
+    socket.call("chat:newMessage", {
+      user: "user_TestRm_00000000",
+      msg: "This message is unauthorized",
+    });
+    expect(mockIo.to).not.toHaveBeenCalled();
   });
 });

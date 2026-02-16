@@ -1,17 +1,22 @@
-import type { Server } from "socket.io";
+import { Socket, type Server } from "socket.io";
 import { markAsDirty, getRoomFromStore } from "./memorystore.js";
 import { isMessageValid, processChatMessage } from "./chat.js";
 import { randomUserID } from "./user.js";
 
-function init(io: Server) {
+const socketRoomMap = new Map<Socket, string>();
+
+export function init(io: Server) {
   io.on("connection", (socket) => {
     socket.on("room:join", (token: unknown) => {
-      // Validate
+      // Validate payload
       if (typeof token !== "string") return;
 
       // Verify that the room exists
       const room = getRoomFromStore(token);
       if (!room) return;
+
+      // Map socket to token
+      socketRoomMap.set(socket, token);
 
       const userID = randomUserID(token);
       console.log("joined", userID);
@@ -21,46 +26,50 @@ function init(io: Server) {
       socket.emit("room:initialize", grid, userID);
     });
 
-    socket.on(
-      "grid:updateCell",
-      (token: unknown, idx: unknown, value: unknown) => {
-        // Validate
-        if (
-          typeof token !== "string" ||
-          typeof idx !== "number" ||
-          typeof value !== "number"
-        )
-          return;
+    socket.on("grid:updateCell", (idx: unknown, value: unknown) => {
+      // Check socket has joined a room
+      const token = socketRoomMap.get(socket);
+      if (token === undefined) return;
 
-        const room = getRoomFromStore(token);
-        if (!room) {
-          return;
-        }
+      // Validate payload
+      if (typeof idx !== "number" || typeof value !== "number") return;
 
-        const grid = room.puzzleData;
+      const room = getRoomFromStore(token);
+      if (!room) {
+        return;
+      }
 
-        if (!grid) {
-          return;
-        }
+      const grid = room.puzzleData;
 
-        // Ensure idx is not out of bounds
-        const cell = grid.cells[idx];
-        if (cell === undefined) return;
+      if (!grid) {
+        return;
+      }
 
-        cell.setInput(value);
-        markAsDirty(room);
+      // Ensure idx is not out of bounds
+      const cell = grid.cells[idx];
+      if (cell === undefined) return;
 
-        // Emit the update to all clients in the room (including the sender)
-        io.to(token).emit("grid:cellUpdated", idx, value);
-      },
-    );
+      cell.setInput(value);
+      markAsDirty(room);
 
-    socket.on("chat:newMessage", (token: unknown, message: unknown) => {
-      // Validate
-      if (typeof token !== "string" || !isMessageValid(message)) return;
+      // Emit the update to all clients in the room (including the sender)
+      io.to(token).emit("grid:cellUpdated", idx, value);
+    });
+
+    socket.on("chat:newMessage", (message: unknown) => {
+      // Check socket has joined a room
+      const token = socketRoomMap.get(socket);
+      if (token === undefined) return;
+
+      // Validate payload
+      if (!isMessageValid(message)) return;
 
       const processed = processChatMessage(message);
       io.to(token).emit("chat:messageNew", processed);
+    });
+
+    socket.on("disconnect", () => {
+      socketRoomMap.delete(socket);
     });
 
     // https://github.com/minghinshi/puzzpals/issues/39
@@ -75,4 +84,6 @@ function init(io: Server) {
   });
 }
 
-export { init };
+export function __clearSocketsForTests() {
+  socketRoomMap.clear();
+}

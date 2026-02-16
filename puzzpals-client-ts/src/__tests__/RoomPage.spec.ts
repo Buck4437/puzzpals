@@ -139,7 +139,7 @@ describe("RoomPage", () => {
     await cell?.trigger("click");
 
     // Assert data emitted to socket
-    expect(socket.emit).toHaveBeenCalledWith("grid:updateCell", token, 1, {
+    expect(socket.emit).toHaveBeenCalledWith("grid:updateCell", 1, {
       isBlack: false,
       number: null,
       input: NO_INPUT,
@@ -164,7 +164,7 @@ describe("RoomPage", () => {
     chatForm.trigger("submit.prevent");
 
     // Assert message sent
-    expect(socket.emit).toHaveBeenCalledWith("chat:newMessage", token, message);
+    expect(socket.emit).toHaveBeenCalledWith("chat:newMessage", message);
   });
 
   it("can receive messages from other players", async () => {

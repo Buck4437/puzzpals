@@ -86,13 +86,13 @@ async function leaveRoom() {
 }
 
 function onCellUpdated(idx: number, value: CellState) {
-  socket.emit("grid:updateCell", props.token, idx, value);
+  socket.emit("grid:updateCell", idx, value);
 }
 
 function onChatSubmit(text: string) {
   if (userID.value) {
     const message = { msgtext: text, user: userID.value };
-    socket.emit("chat:newMessage", props.token, message);
+    socket.emit("chat:newMessage", message);
   }
 }
 
