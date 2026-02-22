@@ -71,16 +71,6 @@ export function init(io: Server) {
     socket.on("disconnect", () => {
       socketRoomMap.delete(socket);
     });
-
-    // https://github.com/minghinshi/puzzpals/issues/39
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const handleDisconnect = (data: any) => {
-      const token = data.token;
-      socket.leave(token);
-    };
-
-    socket.on("room:leave", (data) => handleDisconnect(data));
-    socket.on("disconnect", (data) => handleDisconnect(data));
   });
 }
 

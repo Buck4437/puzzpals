@@ -76,7 +76,7 @@ describe("RoomPage", () => {
     await flushPromises();
 
     // Server receives request to leave room
-    expect(socket.emit).toHaveBeenCalledWith("room:leave", token);
+    expect(socket.disconnect).toHaveBeenCalledOnce();
   });
 
   it("leaves room when leaving page", async () => {
@@ -87,7 +87,7 @@ describe("RoomPage", () => {
     wrapper.unmount();
 
     // Server receives request to leave room
-    expect(socket.emit).toHaveBeenCalledWith("room:leave", token);
+    expect(socket.disconnect).toHaveBeenCalledOnce();
   });
 
   it("synchronises your grid upon entering room", async () => {
