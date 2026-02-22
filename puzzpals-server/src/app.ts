@@ -1,6 +1,7 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { json, static as serveStatic, urlencoded } from "express";
+import helmet from "helmet";
 import logger from "morgan";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
@@ -19,6 +20,7 @@ app.use(logger("dev"));
 app.use(json());
 app.use(urlencoded({ extended: false }));
 app.use(cookieParser());
+app.use(helmet());
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
