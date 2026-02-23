@@ -15,9 +15,9 @@
     <br />
 
     Set dimensions: Row:
-    <input type="number" v-model="inputRowCount" min="1" max="100" />
+    <input type="number" v-model.number="inputRowCount" min="1" max="100" />
     Col:
-    <input type="number" v-model="inputColCount" min="1" max="100" />
+    <input type="number" v-model.number="inputColCount" min="1" max="100" />
 
     <button @click="setDimensions">Set</button>
   </div>
@@ -51,12 +51,11 @@ type CellData = {
 };
 
 type CellText = "" | "0" | "1" | "2" | "3" | "4";
-type NumberRef = Ref<number | string, number | string>;
 
 const rowCount = ref(6);
 const colCount = ref(7);
-const inputRowCount: NumberRef = ref(6);
-const inputColCount: NumberRef = ref(7);
+const inputRowCount: Ref<Number> = ref(6);
+const inputColCount: Ref<Number> = ref(7);
 
 const tools = ["colors", "symbols"];
 const currentTool = ref(tools[0]);
@@ -83,7 +82,6 @@ for (let i = 0; i < rowCount.value; i++) {
 const canExport = computed(() => {
   for (let row of grid.value) {
     for (let cell of row) {
-      if (cell === undefined) continue;
       if (cell.symbol.text !== "" && cell.color !== "black") {
         return false;
       }
@@ -96,8 +94,15 @@ const setDimensions = () => {
   // Validate input
   const [x, y] = [inputRowCount.value, inputColCount.value];
 
-  if (typeof x !== "number" || typeof y !== "number" || x <= 0 || y <= 0) {
-    alert("Please enter valid positive integers for dimensions.");
+  if (
+    typeof x !== "number" ||
+    typeof y !== "number" ||
+    x <= 0 ||
+    y <= 0 ||
+    x > 100 ||
+    y > 100
+  ) {
+    alert("Please enter valid positive integers for dimensions (1-100).");
     return;
   }
 
@@ -210,6 +215,7 @@ const onClickCell = (cell: CellData) => {
   justify-content: center;
   user-select: none;
   -moz-user-select: none;
+  cursor: pointer;
 }
 
 .cell-color-white {
@@ -219,5 +225,10 @@ const onClickCell = (cell: CellData) => {
 .cell-color-black {
   background-color: black;
   color: white;
+}
+
+button.active {
+  background-color: aqua;
+  color: black;
 }
 </style>
