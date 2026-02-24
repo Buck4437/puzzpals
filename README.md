@@ -32,3 +32,5 @@ First time setup:
 Starting the DB
 
 - The server should start in the background as you install postgres
+
+test
