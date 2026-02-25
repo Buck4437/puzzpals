@@ -12,7 +12,7 @@ function init(io: Server) {
       console.log("joined", userID);
       socket.join(token);
 
-      const room = getRoomFromStore(token);
+      const room = await getRoomFromStore(token);
 
       if (!room) {
         return;
@@ -28,10 +28,10 @@ function init(io: Server) {
       }
     });
 
-    socket.on("grid:updateCell", (data) => {
+    socket.on("grid:updateCell", async (data) => {
       const { token, idx, value } = data;
 
-      const room = getRoomFromStore(token);
+      const room = await getRoomFromStore(token);
       if (!room) {
         return;
       }
@@ -50,7 +50,7 @@ function init(io: Server) {
       io.to(token).emit("grid:cellUpdated", { idx, value });
     });
 
-    socket.on("chat:newMessage", (data) => {
+    socket.on("chat:newMessage", async (data) => {
       const { token, message } = data;
       const processed = processChatMessage(message);
       if (!processed) {

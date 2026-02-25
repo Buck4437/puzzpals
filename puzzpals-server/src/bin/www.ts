@@ -4,11 +4,11 @@ import debug from "debug";
 import { createServer } from "http";
 import { Server } from "socket.io";
 
-import app from "src/app.js";
-import env from "src/config.js";
-import { closeDb, initDb } from "src/db.js";
-import { startAutosave, stopAutosave } from "src/memorystore.js";
-import { init } from "src/socket.js";
+import app from "../app.js";
+import env from "../config.js";
+import { closeDb, initDb } from "../db.js";
+import { startAutosave, stopAutosave } from "../memorystore.js";
+import { init } from "../socket.js";
 
 const serverDebugger = debug("puzzpals-server:server");
 
@@ -100,21 +100,28 @@ function onListening() {
  * Shut down the server gracefully
  */
 
-function shutdown() {
+process.on("exit", function () {
   console.log("Shutting down...");
   server.close(() => {
     process.exit(0);
   });
 
-  // stop io and save data to DB to prevent data loss
+  // stop io
   io.close();
-  stopAutosave();
   closeDb();
-}
+});
 
-process.on("exit", () => shutdown());
-process.on("SIGHUP", () => process.exit(128 + 1));
-process.on("SIGINT", () => process.exit(128 + 2));
-process.on("SIGTERM", () => process.exit(128 + 15));
+process.on("SIGHUP", () => {
+  console.log("Received SIGHUP, shutting down...");
+  stopAutosave().finally(() => process.exit(128 + 1));
+});
+process.on("SIGINT", () => {
+  console.log("Received SIGHUP, shutting down...");
+  stopAutosave().finally(() => process.exit(128 + 2));
+});
+process.on("SIGTERM", () => {
+  console.log("Received SIGHUP, shutting down...");
+  stopAutosave().finally(() => process.exit(128 + 15));
+});
 
 console.log("Server loaded");

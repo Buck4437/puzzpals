@@ -10,14 +10,16 @@ interface RoomEntry {
 let interval: NodeJS.Timeout | null = null;
 const store = new Map<string, RoomEntry>();
 
-export function getRoomFromStore(token: string): RoomEntry | null {
+export async function getRoomFromStore(
+  token: string,
+): Promise<RoomEntry | null> {
   const roomEntry = store.get(token);
 
   if (roomEntry !== null && roomEntry !== undefined) {
     return roomEntry;
   }
   // Fetch from db
-  const dbEntry = fetchRoom(token);
+  const dbEntry = await fetchRoom(token);
   if (dbEntry && typeof dbEntry.puzzle_data === "string") {
     try {
       const parsedData = deserialize(dbEntry.puzzle_data);
@@ -64,26 +66,26 @@ export function startAutosave() {
   interval = setInterval(autosave, 60 * 1000);
 }
 
-export function stopAutosave() {
+export async function stopAutosave() {
   if (interval) {
     clearInterval(interval);
     interval = null;
   }
 
   // Save to the database one last time
-  autosave();
+  await autosave();
 }
 
-function autosave() {
+async function autosave() {
   for (const token of getListOfRooms()) {
-    const room = getRoomFromStore(token);
+    const room = await getRoomFromStore(token);
     if (room && isDirty(room)) {
       console.log("Autosaving room:", token);
       // If we put mark as clean after saving, then there's a chance that
       // new changes could be made before we mark as clean, which causes data loss.
       markAsClean(room);
       const serializedData = serialize(room.puzzleData);
-      upsertRoom(token, serializedData);
+      await upsertRoom(token, serializedData);
     }
   }
 }
