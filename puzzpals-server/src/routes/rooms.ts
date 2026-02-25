@@ -45,7 +45,8 @@ router.post("/create", async (req, res) => {
     }
 
     createRoomInStore(token, puzzle);
-  } catch {
+  } catch (err) {
+    console.log("Error creating room:", (err as Error).message);
     return res.status(400).json({ error: "Invalid puzzle data" });
   }
 
@@ -57,25 +58,40 @@ router.post("/create", async (req, res) => {
 // Get room by token
 router.get("/:token", async (req, res) => {
   const { token } = req.params;
-  const room = await getRoomFromStore(token);
-  if (!room) return res.status(404).json({ error: "Room not found" });
-  res.json({ room });
+  try {
+    const room = await getRoomFromStore(token);
+    if (!room) return res.status(404).json({ error: "Room not found" });
+    res.json({ room });
+  } catch (err) {
+    console.log("Error fetching room:", (err as Error).message);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 // Join room
 router.post("/:token/join", async (req, res) => {
   const { token } = req.params;
-  const room = await getRoomFromStore(token);
-  if (!room) return res.status(404).json({ error: "Room not found" });
-  res.json({ room });
+  try {
+    const room = await getRoomFromStore(token);
+    if (!room) return res.status(404).json({ error: "Room not found" });
+    res.json({ room });
+  } catch (err) {
+    console.log("Error joining room:", (err as Error).message);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 // Leave room
 router.post("/:token/leave", async (req, res) => {
   const { token } = req.params;
-  const room = await getRoomFromStore(token);
-  if (!room) return res.status(404).json({ error: "Room not found" });
-  res.json({ room });
+  try {
+    const room = await getRoomFromStore(token);
+    if (!room) return res.status(404).json({ error: "Room not found" });
+    res.json({ room });
+  } catch (err) {
+    console.log("Error leaving room:", (err as Error).message);
+    res.status(500).json({ error: "Internal server error" });
+  }
 });
 
 export default router;

@@ -24,7 +24,7 @@ First time setup:
 - `sudo -u postgres psql` to enter postgres
 - `ALTER USER postgres PASSWORD 'postgres'` to change the password for the user.
 - Run `\conninfo` to see your current connection
-- `CREATE TABLE puzzpals_dev;`
+- `CREATE DATABASE puzzpals_dev;`
 - Exit with `\q`
 - You can now access the created db with `sudo -u postgres psql puzzpals_dev`
 - You also need to update your `.env` in `puzzpals-server`. Refer to `.env.example`
@@ -32,5 +32,3 @@ First time setup:
 Starting the DB
 
 - The server should start in the background as you install postgres
-
-test
