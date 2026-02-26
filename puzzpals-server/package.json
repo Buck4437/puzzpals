@@ -7,7 +7,6 @@
     "build:parser": "cd ../packages/puzzle-parser && npm run build",
     "watch:parser": "cd ../packages/puzzle-parser && npm run watch",
     "build": "npm run build:parser && tsc",
-    "start": "node ./dist/bin/www.js",
     "dev": "npm run build:parser && npm run watch:parser & tsx watch ./src/bin/www.ts"
   },
   "dependencies": {

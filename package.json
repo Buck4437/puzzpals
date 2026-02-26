@@ -11,7 +11,9 @@
     "packages/*"
   ],
   "scripts": {
-    "prepare": "husky"
+    "prepare": "husky",
+    "build:server": "cd puzzpals-server && npm run build",
+    "postinstall": "npm run build:server"
   },
   "devDependencies": {
     "@eslint/compat": "^2.0.2",
