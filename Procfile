@@ -1,1 +1,1 @@
-web: npm run deploy-server
+web: cd puzzpals-server && npm run build && npm run start
