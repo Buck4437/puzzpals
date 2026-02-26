@@ -7,7 +7,7 @@ interface RoomEntry {
   isDirty?: boolean;
 }
 
-let interval: NodeJS.Timeout | null = null;
+let stopAutosaveFlag = false;
 const store = new Map<string, RoomEntry>();
 
 export async function getRoomFromStore(
@@ -61,23 +61,32 @@ function isDirty(room: RoomEntry): boolean {
   return room.isDirty === true;
 }
 
+function setAutosaveTimeout(delay: number) {
+  setTimeout(() => {
+    if (!stopAutosaveFlag) {
+      autosave().catch((e) => {
+        console.error("Autosave failed:", e);
+      });
+    }
+  }, delay);
+}
+
 export function startAutosave() {
-  // Autosave every 60 seconds
-  interval = setInterval(autosave, 60 * 1000);
+  setAutosaveTimeout(10 * 1000);
 }
 
 export async function stopAutosave() {
-  if (interval) {
-    clearInterval(interval);
-    interval = null;
-  }
+  stopAutosaveFlag = true;
 
   // Save to the database one last time
-  await autosave();
+  await autosave(true);
 }
 
-async function autosave() {
+async function autosave(forced = false) {
   for (const token of getListOfRooms()) {
+    if (stopAutosaveFlag && !forced) {
+      break;
+    }
     const room = await getRoomFromStore(token);
     if (room && isDirty(room)) {
       console.log("Autosaving room:", token);
@@ -88,6 +97,8 @@ async function autosave() {
       await upsertRoom(token, serializedData);
     }
   }
+
+  setAutosaveTimeout(60 * 1000);
 }
 
 // For tests only!
