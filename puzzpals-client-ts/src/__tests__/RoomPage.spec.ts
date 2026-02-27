@@ -140,7 +140,7 @@ describe("RoomPage", () => {
   // so that we can share insights.
   it("can send messages to other players", async () => {
     const msgtext = "Hello, world!";
-    const message = { user, msgtext };
+    const message = { msgtext };
 
     const wrapper = mount(RoomPage, { props: { token } });
     socket.call("room:initialize", gridState, user);

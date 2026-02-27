@@ -3,7 +3,12 @@ import { markAsDirty, getRoomFromStore } from "./memorystore.js";
 import { isMessageValid, processChatMessage } from "./chat.js";
 import { randomUserID } from "./user.js";
 
-const socketRoomMap = new Map<Socket, string>();
+interface User {
+  roomToken: string;
+  name: string;
+}
+
+const socketUserMap = new Map<Socket, User>();
 
 export function init(io: Server) {
   io.on("connection", (socket) => {
@@ -15,11 +20,12 @@ export function init(io: Server) {
       const room = getRoomFromStore(token);
       if (!room) return;
 
-      // Map socket to token
-      socketRoomMap.set(socket, token);
-
       const userID = randomUserID(token);
       console.log("joined", userID);
+
+      // Map socket to user
+      socketUserMap.set(socket, { roomToken: token, name: userID });
+
       socket.join(token);
 
       const grid = room.puzzleData;
@@ -28,13 +34,13 @@ export function init(io: Server) {
 
     socket.on("grid:updateCell", (idx: unknown, value: unknown) => {
       // Check socket has joined a room
-      const token = socketRoomMap.get(socket);
-      if (token === undefined) return;
+      const user = socketUserMap.get(socket);
+      if (user === undefined) return;
 
       // Validate payload
       if (typeof idx !== "number" || typeof value !== "number") return;
 
-      const room = getRoomFromStore(token);
+      const room = getRoomFromStore(user.roomToken);
       if (!room) {
         return;
       }
@@ -53,27 +59,27 @@ export function init(io: Server) {
       markAsDirty(room);
 
       // Emit the update to all clients in the room (including the sender)
-      io.to(token).emit("grid:cellUpdated", idx, value);
+      io.to(user.roomToken).emit("grid:cellUpdated", idx, value);
     });
 
     socket.on("chat:newMessage", (message: unknown) => {
       // Check socket has joined a room
-      const token = socketRoomMap.get(socket);
-      if (token === undefined) return;
+      const user = socketUserMap.get(socket);
+      if (user === undefined) return;
 
       // Validate payload
       if (!isMessageValid(message)) return;
 
-      const processed = processChatMessage(message);
-      io.to(token).emit("chat:messageNew", processed);
+      const processed = processChatMessage(message, user.name);
+      io.to(user.roomToken).emit("chat:messageNew", processed);
     });
 
     socket.on("disconnect", () => {
-      socketRoomMap.delete(socket);
+      socketUserMap.delete(socket);
     });
   });
 }
 
 export function __clearSocketsForTests() {
-  socketRoomMap.clear();
+  socketUserMap.clear();
 }

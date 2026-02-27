@@ -12,7 +12,6 @@
 // }
 
 interface RawChatMessage {
-  user: string;
   msgtext: string;
 }
 
@@ -26,17 +25,18 @@ function isMessageValid(raw: unknown): raw is RawChatMessage {
   return (
     typeof raw === "object" &&
     raw !== null &&
-    "user" in raw &&
-    typeof raw.user === "string" &&
     "msgtext" in raw &&
     typeof raw.msgtext === "string" &&
     raw.msgtext.trim() !== ""
   );
 }
 
-function processChatMessage(raw: RawChatMessage): ChatMessage {
+function processChatMessage(
+  raw: RawChatMessage,
+  username: string,
+): ChatMessage {
   return {
-    user: raw.user,
+    user: username,
     msgtext: raw.msgtext.trim(),
     timestamp: Date.now(),
   };

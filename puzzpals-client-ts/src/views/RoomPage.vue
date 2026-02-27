@@ -90,10 +90,8 @@ function onCellUpdated(idx: number, value: CellState) {
 }
 
 function onChatSubmit(text: string) {
-  if (userID.value) {
-    const message = { msgtext: text, user: userID.value };
-    socket.emit("chat:newMessage", message);
-  }
+  const message = { msgtext: text };
+  socket.emit("chat:newMessage", message);
 }
 
 function initiateSocket() {

@@ -1,10 +1,11 @@
 import request from "supertest";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { createMockSocket, mockBroadcast, mockIo } from "../__mocks__/io.js";
 import app from "../app.js";
 import { __clearStoreForTests, startAutosave } from "../memorystore.js";
 import { arrangeBeforeEach, cleanUpAfterEach } from "./utils/arrange.js";
+
+import { createMockSocket, mockBroadcast, mockIo } from "../__mocks__/io.js";
 
 describe("Socket", () => {
   beforeEach(arrangeBeforeEach);
@@ -110,9 +111,11 @@ describe("Socket", () => {
     socket.call("room:join", token);
 
     // Send a message
-    const user = `user_${token}_00000000`;
     const msgtext = "Hello, world!";
-    socket.call("chat:newMessage", { user, msgtext });
+    socket.call("chat:newMessage", { msgtext });
+
+    // Get generated user name from "room:initialize"
+    const user = socket.emit.mock.calls.at(0)?.at(2);
 
     // Assert message is broadcast
     expect(mockIo.to).toHaveBeenCalledWith(token);
@@ -129,8 +132,7 @@ describe("Socket", () => {
   it("blocks unauthorized calls to chat:newMessage", () => {
     const socket = createMockSocket();
     socket.call("chat:newMessage", {
-      user: "user_TestRm_00000000",
-      msg: "This message is unauthorized",
+      msgtext: "This message is unauthorized",
     });
     expect(mockIo.to).not.toHaveBeenCalled();
   });
