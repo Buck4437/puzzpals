@@ -98,7 +98,10 @@ async function autosave(forced = false) {
     }
   }
 
-  setAutosaveTimeout(60 * 1000);
+  // Don't schedule another autosave if it's been stopped
+  if (!stopAutosaveFlag) {
+    setAutosaveTimeout(60 * 1000);
+  }
 }
 
 // For tests only!
