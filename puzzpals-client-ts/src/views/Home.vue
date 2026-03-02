@@ -2,7 +2,14 @@
   <FilePicker @file-picked="onFilePicked" />
   <button @click="uploadFile">Upload</button>
 
-  <GridSVG :width="480" :height="480" :grid="grid" />
+  <GridSVG
+    :size="480"
+    :grid="grid"
+    @center-cell-click="logCenterCellClick"
+    @center-cell-enter="logCenterCellEnter"
+    @corner-cell-click="logCornerCellClick"
+    @corner-cell-enter="logCornerCellEnter"
+  />
 </template>
 
 <script setup lang="ts">
@@ -13,8 +20,24 @@ import { type Ref, ref } from "vue";
 import type { Grid } from "@/models/Grid";
 import { useRouter } from "vue-router";
 
+function logCenterCellClick(...args: any[]) {
+  console.log("Center cell clicked:", ...args);
+}
+
+function logCenterCellEnter(...args: any[]) {
+  console.log("Center cell entered:", ...args);
+}
+
+function logCornerCellClick(...args: any[]) {
+  console.log("Corner cell clicked:", ...args);
+}
+
+function logCornerCellEnter(...args: any[]) {
+  console.log("Corner cell entered:", ...args);
+}
+
 const grid: Ref<Grid> = ref({
-  size: [5, 5],
+  size: [6, 7],
   problem: {
     lineObjects: [
       {

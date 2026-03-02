@@ -1,11 +1,15 @@
 <template>
   <svg
     class="svg-grid"
-    :width="width"
-    :height="height"
-    viewBox="-20 -20 520 520"
-    pointer-events="none"
+    :width="size"
+    :height="size"
+    :viewBox="viewBoxStr"
     xmlns="http://www.w3.org/2000/svg"
+    @click="handlePointerClick"
+    @mousedown="handleMouseDown"
+    @mouseup="handleMouseUp"
+    @mousemove="handlePointerMove"
+    @mouseleave="handleMouseLeave"
   >
     <!-- Surface objects -->
     <rect
@@ -13,33 +17,36 @@
       :key="`surface-${surface.location}`"
       :x="toSvgCoordinates(topLeft(surface.location))[0]"
       :y="toSvgCoordinates(topLeft(surface.location))[1]"
-      :width="cellWidth"
-      :height="cellHeight"
+      :width="cellSize"
+      :height="cellSize"
       :fill="surface.color"
+      pointer-events="none"
     />
 
     <!-- Vertical lines -->
     <line
-      v-for="x in props.grid.size[0] + 1"
-      :key="`grid-v-line-${x}`"
-      :x1="toSvgCoordinates([x - 1, 0])[0]"
-      :y1="0"
-      :x2="toSvgCoordinates([x - 1, 0])[0]"
-      :y2="480"
+      v-for="col in props.grid.size[1] + 1"
+      :key="`grid-v-line-${col}`"
+      :x1="toSvgCoordinates([0, col - 1])[0]"
+      :y1="toSvgCoordinates([0, col - 1])[1]"
+      :x2="toSvgCoordinates([props.grid.size[0], col - 1])[0]"
+      :y2="toSvgCoordinates([props.grid.size[0], col - 1])[1]"
       stroke="black"
-      :stroke-width="x === 1 || x === props.grid.size[0] + 1 ? 3 : 1"
+      :stroke-width="col === 1 || col === props.grid.size[1] + 1 ? 3 : 1"
+      pointer-events="none"
     />
 
     <!-- Horizontal lines -->
     <line
-      v-for="y in props.grid.size[1] + 1"
-      :key="`grid-h-line-${y}`"
-      :x1="0"
-      :y1="toSvgCoordinates([0, y - 1])[1]"
-      :x2="480"
-      :y2="toSvgCoordinates([0, y - 1])[1]"
+      v-for="row in props.grid.size[0] + 1"
+      :key="`grid-h-line-${row}`"
+      :x1="toSvgCoordinates([row - 1, 0])[0]"
+      :y1="toSvgCoordinates([row - 1, 0])[1]"
+      :x2="toSvgCoordinates([row - 1, props.grid.size[1]])[0]"
+      :y2="toSvgCoordinates([row - 1, props.grid.size[1]])[1]"
       stroke="black"
-      :stroke-width="y === 1 || y === props.grid.size[1] + 1 ? 3 : 1"
+      :stroke-width="row === 1 || row === props.grid.size[0] + 1 ? 3 : 1"
+      pointer-events="none"
     />
 
     <!-- Line objects -->
@@ -52,6 +59,7 @@
       :y2="toSvgCoordinates(line.end)[1]"
       :stroke="line.color"
       :stroke-width="3"
+      pointer-events="none"
     />
 
     <!-- Cell objects -->
@@ -59,13 +67,14 @@
       v-for="cell in props.grid.problem.cellObjects"
       :key="`cell-${cell.location}`"
       :transform="`translate(${toSvgCoordinates(cell.location)[0]}, ${toSvgCoordinates(cell.location)[1]})`"
+      pointer-events="none"
     >
       <text
         x="0"
         y="0"
         text-anchor="middle"
         dominant-baseline="central"
-        :font-size="cellWidth / 2"
+        :font-size="cellSize / 2"
         :fill="cell.color"
       >
         {{ cell.content }}
@@ -76,27 +85,157 @@
 
 <script setup lang="ts">
 import { type Grid } from "../models/Grid";
-import { computed } from "vue";
+import { ref, computed } from "vue";
+
+const FULLSIZE = 480;
+const PADDING = 20;
+
+const VIEW_BOX_SIZE = FULLSIZE + 2 * PADDING;
+const viewBoxStr = ref(
+  `-${PADDING} -${PADDING} ${VIEW_BOX_SIZE} ${VIEW_BOX_SIZE}`,
+);
+
+let isDragging = false;
+
+/*
+    Grid file uses [r, c]
+    SVG uses [x, y]
+*/
+
+function toSvgCoordinates(coordinate: [number, number]): [number, number] {
+  const r = coordinate[0];
+  const c = coordinate[1];
+  return [
+    c * cellSize.value + offsetX.value,
+    r * cellSize.value + offsetY.value,
+  ];
+}
+
+function toGridCoordinates(coordinate: [number, number]): [number, number] {
+  const x = coordinate[0] - offsetX.value;
+  const y = coordinate[1] - offsetY.value;
+  return [y / cellSize.value, x / cellSize.value];
+}
 
 const props = defineProps<{
-  width: number;
-  height: number;
+  size: number;
   grid: Grid;
 }>();
 
-const emit = defineEmits(["updateCell"]);
+const emit = defineEmits<{
+  centerCellClick: [cell: [number, number]];
+  centerCellEnter: [cell: [number, number]];
+  cornerCellClick: [corner: [number, number]];
+  cornerCellEnter: [corner: [number, number]];
+}>();
 
-const cellWidth = computed(() => 480 / props.grid.size[0]);
-const cellHeight = computed(() => 480 / props.grid.size[1]);
+const cellSize = computed(
+  () => FULLSIZE / Math.max(props.grid.size[0], props.grid.size[1]),
+);
+
+const gridWidth = computed(() => props.grid.size[1] * cellSize.value); // numCols * cellSize
+const gridHeight = computed(() => props.grid.size[0] * cellSize.value); // numRows * cellSize
+
+const offsetX = computed(() => (FULLSIZE - gridWidth.value) / 2);
+const offsetY = computed(() => (FULLSIZE - gridHeight.value) / 2);
+
+let lastCenterCell: [number, number] | null = null;
+let lastCornerCell: [number, number] | null = null;
+
+// Returns [x, y] in SVG coordinate system (x=horizontal, y=vertical)
+function getGridCoordinatesFromEvent(event: MouseEvent): [number, number] {
+  const svg = event.currentTarget as SVGSVGElement;
+  const rect = svg.getBoundingClientRect();
+
+  const x = event.clientX - rect.left;
+  const y = event.clientY - rect.top;
+
+  const scaleX = VIEW_BOX_SIZE / rect.width;
+  const scaleY = VIEW_BOX_SIZE / rect.height;
+  const viewX = x * scaleX - PADDING;
+  const viewY = y * scaleY - PADDING;
+
+  return toGridCoordinates([viewX, viewY]);
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function toCenterCell(coord: [number, number]): [number, number] {
+  const [r, c] = coord;
+
+  const r1 = clamp(Math.floor(r) + 0.5, 0.5, props.grid.size[0] - 0.5);
+  const c1 = clamp(Math.floor(c) + 0.5, 0.5, props.grid.size[1] - 0.5);
+
+  return [r1, c1];
+}
+
+function toCornerCell(coord: [number, number]): [number, number] {
+  const [r, c] = coord;
+
+  const r1 = clamp(Math.round(r), 0, props.grid.size[0]);
+  const c1 = clamp(Math.round(c), 0, props.grid.size[1]);
+
+  return [r1, c1];
+}
+
+function sameCoordinate(a: [number, number], b: [number, number]): boolean {
+  return a[0] === b[0] && a[1] === b[1];
+}
+
+function handleMouseDown(event: MouseEvent) {
+  isDragging = true;
+  const coord = getGridCoordinatesFromEvent(event);
+  const centerCell = toCenterCell(coord);
+  const cornerCell = toCornerCell(coord);
+
+  lastCenterCell = centerCell;
+  lastCornerCell = cornerCell;
+
+  emit("centerCellEnter", centerCell);
+  emit("cornerCellEnter", cornerCell);
+}
+
+function handleMouseUp() {
+  isDragging = false;
+}
+
+function handleMouseLeave() {
+  isDragging = false;
+  lastCenterCell = null;
+  lastCornerCell = null;
+}
+
+function handlePointerClick(event: MouseEvent) {
+  const coord = getGridCoordinatesFromEvent(event);
+  const centerCell = toCenterCell(coord);
+  const cornerCell = toCornerCell(coord);
+
+  emit("centerCellClick", centerCell);
+  emit("cornerCellClick", cornerCell);
+}
+
+function handlePointerMove(event: MouseEvent) {
+  if (!isDragging) return;
+
+  const coord = getGridCoordinatesFromEvent(event);
+  const centerCell = toCenterCell(coord);
+  const cornerCell = toCornerCell(coord);
+
+  if (lastCenterCell === null || !sameCoordinate(lastCenterCell, centerCell)) {
+    lastCenterCell = centerCell;
+    emit("centerCellEnter", centerCell);
+  }
+
+  if (lastCornerCell === null || !sameCoordinate(lastCornerCell, cornerCell)) {
+    lastCornerCell = cornerCell;
+    emit("cornerCellEnter", cornerCell);
+  }
+}
 
 function topLeft(coordinate: [number, number]): [number, number] {
   return [coordinate[0] - 0.5, coordinate[1] - 0.5];
-}
-
-// Odd number: Refers to centers
-// Even number: Refers to edges
-function toSvgCoordinates(coordinate: [number, number]): [number, number] {
-  return [coordinate[0] * cellWidth.value, coordinate[1] * cellHeight.value];
 }
 </script>
 
