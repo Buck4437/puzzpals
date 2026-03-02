@@ -1,12 +1,43 @@
 <template>
   <FilePicker @file-picked="onFilePicked" />
   <button @click="uploadFile">Upload</button>
+
+  <GridSVG :width="480" :height="480" :grid="grid" />
 </template>
 
 <script setup lang="ts">
 import FilePicker from "@/components/FilePicker.vue";
+import GridSVG from "@/components/GridSVG.vue";
 import api from "@/services/api";
+import { type Ref, ref } from "vue";
+import type { Grid } from "@/models/Grid";
 import { useRouter } from "vue-router";
+
+const grid: Ref<Grid> = ref({
+  size: [5, 5],
+  problem: {
+    lineObjects: [
+      {
+        start: [0, 0],
+        end: [4, 4],
+        color: "red",
+      },
+    ],
+    surfaceObjects: [
+      {
+        location: [1.5, 1.5],
+        color: "blue",
+      },
+    ],
+    cellObjects: [
+      {
+        location: [2.5, 2.5],
+        content: "A",
+        color: "green",
+      },
+    ],
+  },
+});
 
 const router = useRouter();
 
