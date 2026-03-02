@@ -30,7 +30,14 @@
 import { computed, ref, type Ref } from "vue";
 
 import GridSVG from "@/components/GridSVG.vue";
-import type { Coordinate, Grid } from "@/models/Grid";
+import {
+  type Coordinate,
+  type Grid,
+  KeyToCoordinate,
+  KeyToPairCoordinate,
+  CoordinateToKey,
+  PairCoordinateToKey,
+} from "@/models/Grid";
 
 const rowCount = ref(6);
 const colCount = ref(7);
@@ -43,9 +50,9 @@ const currentTool = ref(tools[0]);
 const grid = ref<Grid>({
   size: [rowCount.value, colCount.value],
   problem: {
-    lineObjects: [],
-    surfaceObjects: [],
-    symbolObjects: [],
+    lineObjects: {},
+    surfaceObjects: {},
+    symbolObjects: {},
   },
 });
 
@@ -75,22 +82,42 @@ const setDimensions = () => {
   grid.value.size = [newRowCount, newColCount];
 
   // Remove objects that are out of bounds
-  grid.value.problem.lineObjects = grid.value.problem.lineObjects.filter(
-    (line) =>
-      line.start[0] < newRowCount &&
-      line.start[1] < newColCount &&
-      line.end[0] < newRowCount &&
-      line.end[1] < newColCount,
+  grid.value.problem.lineObjects = Object.fromEntries(
+    Object.entries(grid.value.problem.lineObjects).filter(([key, line]) => {
+      const pair = KeyToPairCoordinate(key);
+      if (pair === null) {
+        return false;
+      }
+      const [start, end] = pair;
+      return (
+        start[0] < newRowCount &&
+        start[1] < newColCount &&
+        end[0] < newRowCount &&
+        end[1] < newColCount
+      );
+    }),
   );
 
-  grid.value.problem.surfaceObjects = grid.value.problem.surfaceObjects.filter(
-    (surface) =>
-      surface.location[0] < newRowCount && surface.location[1] < newColCount,
+  grid.value.problem.surfaceObjects = Object.fromEntries(
+    Object.entries(grid.value.problem.surfaceObjects).filter(
+      ([key, surface]) => {
+        const coordinate = KeyToCoordinate(key);
+        if (coordinate === null) {
+          return false;
+        }
+        return coordinate[0] < newRowCount && coordinate[1] < newColCount;
+      },
+    ),
   );
 
-  grid.value.problem.symbolObjects = grid.value.problem.symbolObjects.filter(
-    (symbol) =>
-      symbol.location[0] < newRowCount && symbol.location[1] < newColCount,
+  grid.value.problem.symbolObjects = Object.fromEntries(
+    Object.entries(grid.value.problem.symbolObjects).filter(([key, symbol]) => {
+      const coordinate = KeyToCoordinate(key);
+      if (coordinate === null) {
+        return false;
+      }
+      return coordinate[0] < newRowCount && coordinate[1] < newColCount;
+    }),
   );
 
   rowCount.value = newRowCount;
@@ -110,37 +137,63 @@ const downloadObjectAsJson = (exportObj: object, exportName: string) => {
 };
 
 const exportGrid = () => {
-  if (!canExport.value) {
-    alert("cannot export: numbers can only be on black cells");
-    return;
+  const emptyMatrix = Array.from({ length: grid.value.size[0] }, () =>
+    Array.from({ length: grid.value.size[1] }, () => "."),
+  );
+
+  const validSymbols = new Set(["0", "1", "2", "3", "4"]);
+
+  for (const [key, surface] of Object.entries(
+    grid.value.problem.surfaceObjects,
+  )) {
+    const coordinate = KeyToCoordinate(key);
+
+    if (coordinate === null) {
+      continue;
+    }
+
+    const [r, c] = coordinate;
+
+    const row = emptyMatrix[r - 0.5];
+    if (!row) {
+      continue;
+    }
+
+    if (row[c - 0.5] === undefined) {
+      continue;
+    }
+
+    if (surface.color === "white") {
+      continue;
+    }
+
+    // check if it has numbers
+    if (grid.value.problem.symbolObjects[key]) {
+      const symbol = grid.value.problem.symbolObjects[key];
+      if (validSymbols.has(symbol.content)) {
+        row[c - 0.5] = symbol.content;
+      }
+      continue;
+    } else {
+      row[c - 0.5] = "#";
+    }
   }
-  return;
-  // const grid2 = grid.value.map((row) => {
-  //   return row.map((cell) => {
-  //     return cell.color === "white"
-  //       ? "."
-  //       : cell.symbol.text === ""
-  //         ? "#"
-  //         : cell.symbol.text;
-  //   });
-  // });
-  // console.log(grid2);
-  // const exportData = {
-  //   type: "akari",
-  //   grid: grid2,
-  // };
-  // downloadObjectAsJson(exportData, "akari-puzzle");
+
+  const grid2 = emptyMatrix;
+  const exportData = {
+    type: "akari",
+    grid: grid2,
+  };
+  downloadObjectAsJson(exportData, "akari-puzzle");
 };
 
 const logCenterCellClick = (coordinate: Coordinate) => {
+  const key = CoordinateToKey(coordinate);
+
   switch (currentTool.value) {
     case "symbols":
       {
-        const prev = grid.value.problem.symbolObjects.find(
-          (cell) =>
-            cell.location[0] === coordinate[0] &&
-            cell.location[1] === coordinate[1],
-        );
+        const prev = grid.value.problem.symbolObjects[key];
 
         const newSymbol =
           {
@@ -153,95 +206,64 @@ const logCenterCellClick = (coordinate: Coordinate) => {
           }[prev?.content || ""] || "";
 
         if (prev) {
-          grid.value.problem.symbolObjects =
-            grid.value.problem.symbolObjects.map((cell) => {
-              if (
-                cell.location[0] === coordinate[0] &&
-                cell.location[1] === coordinate[1]
-              ) {
-                return { ...cell, content: newSymbol };
-              }
-              return cell;
-            });
+          if (newSymbol === "") {
+            delete grid.value.problem.symbolObjects[key];
+          } else {
+            grid.value.problem.symbolObjects[key] = {
+              ...prev,
+              content: newSymbol,
+            };
+          }
         } else {
           if (newSymbol === "") {
             return;
           }
           const textColor =
-            grid.value.problem.surfaceObjects.find(
-              (cell) =>
-                cell.location[0] === coordinate[0] &&
-                cell.location[1] === coordinate[1],
-            )?.color === "black"
+            grid.value.problem.surfaceObjects[key]?.color === "black"
               ? "white"
               : "black";
 
-          grid.value.problem.symbolObjects.push({
+          grid.value.problem.symbolObjects[key] = {
             location: coordinate,
             content: newSymbol,
             color: textColor,
-          });
+          };
         }
       }
       break;
     case "colors":
       {
-        const prev = grid.value.problem.surfaceObjects.find(
-          (cell) =>
-            cell.location[0] === coordinate[0] &&
-            cell.location[1] === coordinate[1],
-        );
+        const prev = grid.value.problem.surfaceObjects[key];
         if (prev?.color === "black") {
-          grid.value.problem.surfaceObjects =
-            grid.value.problem.surfaceObjects.map((cell) => {
-              if (
-                cell.location[0] === coordinate[0] &&
-                cell.location[1] === coordinate[1]
-              ) {
-                return { ...cell, color: "white" };
-              }
-              return cell;
-            });
+          grid.value.problem.surfaceObjects[key] = { ...prev, color: "white" };
           // Change the text to black as well
-          grid.value.problem.symbolObjects =
-            grid.value.problem.symbolObjects.map((cell) => {
-              if (
-                cell.location[0] === coordinate[0] &&
-                cell.location[1] === coordinate[1]
-              ) {
-                return { ...cell, color: "black" };
-              }
-              return cell;
-            });
+          const symbol = grid.value.problem.symbolObjects[key];
+          if (symbol) {
+            grid.value.problem.symbolObjects[key] = {
+              ...symbol,
+              color: "black",
+            };
+          }
         } else {
-          // Change the text to white as well
-          grid.value.problem.symbolObjects =
-            grid.value.problem.symbolObjects.map((cell) => {
-              if (
-                cell.location[0] === coordinate[0] &&
-                cell.location[1] === coordinate[1]
-              ) {
-                return { ...cell, color: "white" };
-              }
-              return cell;
-            });
           if (prev === undefined) {
-            grid.value.problem.surfaceObjects.push({
+            grid.value.problem.surfaceObjects[key] = {
               location: coordinate,
               color: "black",
-            });
-            return;
+            };
+          } else {
+            grid.value.problem.surfaceObjects[key] = {
+              ...prev,
+              color: "black",
+            };
           }
-          grid.value.problem.surfaceObjects =
-            grid.value.problem.surfaceObjects.map((cell) => {
-              if (
-                cell.location[0] === coordinate[0] &&
-                cell.location[1] === coordinate[1]
-              ) {
-                return { ...cell, color: "black" };
-              }
-              return cell;
-            });
+          // Change the text to white as well
+          const symbol = grid.value.problem.symbolObjects[key];
+          if (symbol) {
+            grid.value.problem.symbolObjects[key] = {
+              ...symbol,
+              color: "white",
+            };
+          }
         }
       }
       break;
