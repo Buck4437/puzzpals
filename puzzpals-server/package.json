@@ -7,7 +7,8 @@
     "build:parser": "cd ../packages/puzzle-parser && npm run build",
     "watch:parser": "cd ../packages/puzzle-parser && npm run watch",
     "build": "npm run build:parser && tsc",
-    "dev": "npm run build:parser && npm run watch:parser & tsx watch ./src/bin/www.ts"
+    "dev": "npm run build:parser && npm run watch:parser & tsx watch ./src/bin/www.ts",
+    "start": "node dist/bin/www.js"
   },
   "dependencies": {
     "cookie-parser": "~1.4.7",
