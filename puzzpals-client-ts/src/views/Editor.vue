@@ -23,34 +23,14 @@
   </div>
   Current tool: {{ currentTool }}
   <button @click="exportGrid" :disabled="!canExport">Export as akari</button>
-  <div class="grid-wrapper">
-    <div>
-      <div v-for="(row, rowIdx) in grid" :key="rowIdx" class="grid-row">
-        <div
-          v-for="(cell, colIdx) in row"
-          class="cell"
-          :class="`cell-color-${cell.color}`"
-          @click="onClickCell(cell)"
-          :key="colIdx"
-        >
-          {{ cell.symbol.text }}
-        </div>
-      </div>
-    </div>
-  </div>
+  <GridSVG :size="480" :grid="grid" @center-cell-click="logCenterCellClick" />
 </template>
 
 <script setup lang="ts">
 import { computed, ref, type Ref } from "vue";
 
-type CellData = {
-  symbol: {
-    text: CellText;
-  };
-  color: string;
-};
-
-type CellText = "" | "0" | "1" | "2" | "3" | "4";
+import GridSVG from "@/components/GridSVG.vue";
+import type { Coordinate, Grid } from "@/models/Grid";
 
 const rowCount = ref(6);
 const colCount = ref(7);
@@ -60,33 +40,16 @@ const inputColCount: Ref<Number> = ref(7);
 const tools = ["colors", "symbols"];
 const currentTool = ref(tools[0]);
 
-const grid = ref<CellData[][]>([]);
-
-const createEmptyCell = () => {
-  return {
-    symbol: {
-      text: "" as CellText,
-    },
-    color: "white",
-  };
-};
-
-for (let i = 0; i < rowCount.value; i++) {
-  const row: CellData[] = [];
-  for (let j = 0; j < colCount.value; j++) {
-    row.push(createEmptyCell());
-  }
-  grid.value.push(row);
-}
+const grid = ref<Grid>({
+  size: [rowCount.value, colCount.value],
+  problem: {
+    lineObjects: [],
+    surfaceObjects: [],
+    symbolObjects: [],
+  },
+});
 
 const canExport = computed(() => {
-  for (let row of grid.value) {
-    for (let cell of row) {
-      if (cell.symbol.text !== "" && cell.color !== "black") {
-        return false;
-      }
-    }
-  }
   return true;
 });
 
@@ -109,26 +72,27 @@ const setDimensions = () => {
   const newRowCount = x;
   const newColCount = y;
 
-  const newGrid: CellData[][] = [];
-  for (let i = 0; i < newRowCount; i++) {
-    const row: CellData[] = [];
-    for (let j = 0; j < newColCount; j++) {
-      const oldRow = grid.value[i] || [];
-      if (i < grid.value.length && j < oldRow.length) {
-        const cell = oldRow[j];
-        if (cell) {
-          row.push(cell);
-        } else {
-          row.push(createEmptyCell());
-        }
-      } else {
-        row.push(createEmptyCell());
-      }
-    }
-    newGrid.push(row);
-  }
+  grid.value.size = [newRowCount, newColCount];
 
-  grid.value = newGrid;
+  // Remove objects that are out of bounds
+  grid.value.problem.lineObjects = grid.value.problem.lineObjects.filter(
+    (line) =>
+      line.start[0] < newRowCount &&
+      line.start[1] < newColCount &&
+      line.end[0] < newRowCount &&
+      line.end[1] < newColCount,
+  );
+
+  grid.value.problem.surfaceObjects = grid.value.problem.surfaceObjects.filter(
+    (surface) =>
+      surface.location[0] < newRowCount && surface.location[1] < newColCount,
+  );
+
+  grid.value.problem.symbolObjects = grid.value.problem.symbolObjects.filter(
+    (symbol) =>
+      symbol.location[0] < newRowCount && symbol.location[1] < newColCount,
+  );
+
   rowCount.value = newRowCount;
   colCount.value = newColCount;
 };
@@ -150,45 +114,134 @@ const exportGrid = () => {
     alert("cannot export: numbers can only be on black cells");
     return;
   }
-  const grid2 = grid.value.map((row) => {
-    return row.map((cell) => {
-      return cell.color === "white"
-        ? "."
-        : cell.symbol.text === ""
-          ? "#"
-          : cell.symbol.text;
-    });
-  });
-  console.log(grid2);
-  const exportData = {
-    type: "akari",
-    grid: grid2,
-  };
-  downloadObjectAsJson(exportData, "akari-puzzle");
+  return;
+  // const grid2 = grid.value.map((row) => {
+  //   return row.map((cell) => {
+  //     return cell.color === "white"
+  //       ? "."
+  //       : cell.symbol.text === ""
+  //         ? "#"
+  //         : cell.symbol.text;
+  //   });
+  // });
+  // console.log(grid2);
+  // const exportData = {
+  //   type: "akari",
+  //   grid: grid2,
+  // };
+  // downloadObjectAsJson(exportData, "akari-puzzle");
 };
 
-const onClickCell = (cell: CellData) => {
+const logCenterCellClick = (coordinate: Coordinate) => {
   switch (currentTool.value) {
     case "symbols":
       {
-        const prev = cell.symbol.text;
-        cell.symbol.text = {
-          "": "0",
-          "0": "1",
-          "1": "2",
-          "2": "3",
-          "3": "4",
-          "4": "",
-        }[prev] as CellText;
+        const prev = grid.value.problem.symbolObjects.find(
+          (cell) =>
+            cell.location[0] === coordinate[0] &&
+            cell.location[1] === coordinate[1],
+        );
+
+        const newSymbol =
+          {
+            "": "0",
+            "0": "1",
+            "1": "2",
+            "2": "3",
+            "3": "4",
+            "4": "",
+          }[prev?.content || ""] || "";
+
+        if (prev) {
+          grid.value.problem.symbolObjects =
+            grid.value.problem.symbolObjects.map((cell) => {
+              if (
+                cell.location[0] === coordinate[0] &&
+                cell.location[1] === coordinate[1]
+              ) {
+                return { ...cell, content: newSymbol };
+              }
+              return cell;
+            });
+        } else {
+          if (newSymbol === "") {
+            return;
+          }
+          const textColor =
+            grid.value.problem.surfaceObjects.find(
+              (cell) =>
+                cell.location[0] === coordinate[0] &&
+                cell.location[1] === coordinate[1],
+            )?.color === "black"
+              ? "white"
+              : "black";
+
+          grid.value.problem.symbolObjects.push({
+            location: coordinate,
+            content: newSymbol,
+            color: textColor,
+          });
+        }
       }
       break;
     case "colors":
       {
-        const prev = cell.color;
-        if (prev === "black") {
-          cell.color = "white";
+        const prev = grid.value.problem.surfaceObjects.find(
+          (cell) =>
+            cell.location[0] === coordinate[0] &&
+            cell.location[1] === coordinate[1],
+        );
+        if (prev?.color === "black") {
+          grid.value.problem.surfaceObjects =
+            grid.value.problem.surfaceObjects.map((cell) => {
+              if (
+                cell.location[0] === coordinate[0] &&
+                cell.location[1] === coordinate[1]
+              ) {
+                return { ...cell, color: "white" };
+              }
+              return cell;
+            });
+          // Change the text to black as well
+          grid.value.problem.symbolObjects =
+            grid.value.problem.symbolObjects.map((cell) => {
+              if (
+                cell.location[0] === coordinate[0] &&
+                cell.location[1] === coordinate[1]
+              ) {
+                return { ...cell, color: "black" };
+              }
+              return cell;
+            });
         } else {
-          cell.color = "black";
+          // Change the text to white as well
+          grid.value.problem.symbolObjects =
+            grid.value.problem.symbolObjects.map((cell) => {
+              if (
+                cell.location[0] === coordinate[0] &&
+                cell.location[1] === coordinate[1]
+              ) {
+                return { ...cell, color: "white" };
+              }
+              return cell;
+            });
+          if (prev === undefined) {
+            grid.value.problem.surfaceObjects.push({
+              location: coordinate,
+              color: "black",
+            });
+            return;
+          }
+          grid.value.problem.surfaceObjects =
+            grid.value.problem.surfaceObjects.map((cell) => {
+              if (
+                cell.location[0] === coordinate[0] &&
+                cell.location[1] === coordinate[1]
+              ) {
+                return { ...cell, color: "black" };
+              }
+              return cell;
+            });
         }
       }
       break;

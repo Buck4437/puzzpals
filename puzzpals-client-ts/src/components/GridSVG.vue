@@ -62,11 +62,11 @@
       pointer-events="none"
     />
 
-    <!-- Cell objects -->
+    <!-- symbol objects -->
     <g
-      v-for="cell in props.grid.problem.cellObjects"
-      :key="`cell-${cell.location}`"
-      :transform="`translate(${toSvgCoordinates(cell.location)[0]}, ${toSvgCoordinates(cell.location)[1]})`"
+      v-for="symbol in props.grid.problem.symbolObjects"
+      :key="`symbol-${symbol.location}`"
+      :transform="`translate(${toSvgCoordinates(symbol.location)[0]}, ${toSvgCoordinates(symbol.location)[1]})`"
       pointer-events="none"
     >
       <text
@@ -75,9 +75,9 @@
         text-anchor="middle"
         dominant-baseline="central"
         :font-size="cellSize / 2"
-        :fill="cell.color"
+        :fill="symbol.color"
       >
-        {{ cell.content }}
+        {{ symbol.content }}
       </text>
     </g>
   </svg>
@@ -240,14 +240,10 @@ function topLeft(coordinate: [number, number]): [number, number] {
 </script>
 
 <style scoped>
-.grid-wrapper {
-  width: 100%;
-  max-width: 480px;
-  margin: 0 auto;
-  padding: 12px;
-}
-
-.grid {
-  display: grid;
+svg text {
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
 }
 </style>

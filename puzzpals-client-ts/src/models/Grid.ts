@@ -1,7 +1,7 @@
 export type Coordinate = [number, number];
 export type LineThickness = "thin" | "thick";
 
-export type TypeToCheck = "lineObjects" | "surfaceObjects" | "cellObjects";
+export type TypeToCheck = "lineObjects" | "surfaceObjects" | "symbolObjects";
 
 export interface LineObject {
   start: Coordinate;
@@ -14,7 +14,7 @@ export interface SurfaceObject {
   color: string;
 }
 
-export interface CellObject {
+export interface SymbolObject {
   location: Coordinate;
   content: string;
   color: string;
@@ -23,13 +23,13 @@ export interface CellObject {
 export interface LayerData {
   lineObjects: LineObject[];
   surfaceObjects: SurfaceObject[];
-  cellObjects: CellObject[];
+  symbolObjects: SymbolObject[];
 }
 
 export interface SolutionData {
   lineObjects: LineObject[];
   surfaceObjects: SurfaceObject[];
-  cellObjects: CellObject[];
+  symbolObjects: SymbolObject[];
   typeToCheck: TypeToCheck;
 }
 
