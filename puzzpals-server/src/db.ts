@@ -1,43 +1,71 @@
-import { join } from "path";
-import Database from "better-sqlite3";
 import type { Room } from "./models/Room.js";
+import { Pool } from "pg";
 
-export type DB = InstanceType<typeof Database>;
-
-let db: DB | null = null;
-
-function initDb(dbPath?: string) {
-  const file = dbPath ?? join(process.cwd(), "puzzpals-data.db");
-
-  db = new Database(file);
-  console.log("sqlite initialized at", file);
-
-  createTable();
-}
-
-function createTable() {
-  if (!db) {
-    console.error(
-      "Failed to create tables: database is not initialized. Call initDb() before using the database.",
+function getConnectionString(): string {
+  const {
+    POSTGRES_HOST,
+    POSTGRES_USER,
+    POSTGRES_PASSWORD,
+    POSTGRES_DB,
+    POSTGRES_PORT,
+  } = process.env;
+  if (
+    !POSTGRES_HOST ||
+    !POSTGRES_USER ||
+    !POSTGRES_PASSWORD ||
+    !POSTGRES_DB ||
+    !POSTGRES_PORT
+  ) {
+    if (process.env.DATABASE_URL) {
+      return process.env.DATABASE_URL;
+    }
+    throw new Error(
+      "Database configuration is missing. Please set either DATABASE_URL or POSTGRES_HOST, POSTGRES_USER, POSTGRES_PASSWORD, POSTGRES_DB, and POSTGRES_PORT in .env",
     );
-    throw new Error("Cannot create tables: database is not initialized.");
+  } else {
+    return `postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DB}`;
   }
-
-  const sql = `CREATE TABLE IF NOT EXISTS Room (
-        token TEXT PRIMARY KEY UNIQUE,
-        puzzle_data TEXT
-    )`;
-  db.prepare(sql).run();
 }
 
-function upsertRoom(token: string, puzzleJson: string) {
-  const sql = `INSERT OR REPLACE INTO Room (token, puzzle_data) VALUES (?, ?)`;
-  db?.prepare(sql).run(token, puzzleJson);
+const pool = new Pool({
+  connectionString: getConnectionString(),
+  ssl: {
+    rejectUnauthorized: false,
+  },
+});
+
+console.log("Initializing database connection...");
+
+async function initDb() {
+  try {
+    await pool.query("SELECT 1");
+    console.log("Connected to database");
+    await createTable();
+  } catch (err) {
+    console.error("Database connection error:", (err as Error).message);
+    throw err;
+  }
 }
 
-function fetchRoom(token: string) {
-  const sql = "SELECT * FROM Room WHERE token = ?";
-  const row = db?.prepare(sql).get(token) as Room | undefined;
+async function createTable() {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS Room (
+      token TEXT PRIMARY KEY UNIQUE,
+      puzzle_data TEXT
+    )
+  `);
+}
+
+async function upsertRoom(token: string, puzzleJson: string) {
+  const sql = `INSERT INTO Room (token, puzzle_data) VALUES ($1, $2)
+               ON CONFLICT (token) DO UPDATE SET puzzle_data = EXCLUDED.puzzle_data`;
+  await pool.query(sql, [token, puzzleJson]);
+}
+
+async function fetchRoom(token: string) {
+  const sql = "SELECT * FROM Room WHERE token = $1";
+  const result = await pool.query(sql, [token]);
+  const row = result.rows[0] as Room | undefined;
 
   if (!row) {
     return null;
@@ -46,11 +74,8 @@ function fetchRoom(token: string) {
   return row;
 }
 
-function closeDb() {
-  if (db) {
-    db.close();
-    db = null;
-  }
+async function closeDb() {
+  await pool.end();
 }
 
 export { initDb, upsertRoom, fetchRoom, closeDb };

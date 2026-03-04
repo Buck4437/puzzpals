@@ -7,17 +7,20 @@ interface RoomEntry {
   isDirty?: boolean;
 }
 
-let interval: NodeJS.Timeout | null = null;
+let timeout: NodeJS.Timeout;
+let stopAutosaveFlag = false;
 const store = new Map<string, RoomEntry>();
 
-export function getRoomFromStore(token: string): RoomEntry | null {
+export async function getRoomFromStore(
+  token: string,
+): Promise<RoomEntry | null> {
   const roomEntry = store.get(token);
 
   if (roomEntry !== null && roomEntry !== undefined) {
     return roomEntry;
   }
   // Fetch from db
-  const dbEntry = fetchRoom(token);
+  const dbEntry = await fetchRoom(token);
   if (dbEntry && typeof dbEntry.puzzle_data === "string") {
     try {
       const parsedData = deserialize(dbEntry.puzzle_data);
@@ -59,32 +62,47 @@ function isDirty(room: RoomEntry): boolean {
   return room.isDirty === true;
 }
 
-export function startAutosave() {
-  // Autosave every 60 seconds
-  interval = setInterval(autosave, 60 * 1000);
+function setAutosaveTimeout(delay: number) {
+  timeout = setTimeout(() => {
+    if (!stopAutosaveFlag) {
+      autosave().catch((e) => {
+        console.error("Autosave failed:", e);
+      });
+    }
+  }, delay);
 }
 
-export function stopAutosave() {
-  if (interval) {
-    clearInterval(interval);
-    interval = null;
-  }
+export function startAutosave() {
+  setAutosaveTimeout(10 * 1000);
+}
+
+export async function stopAutosave() {
+  stopAutosaveFlag = true;
+  clearTimeout(timeout);
 
   // Save to the database one last time
-  autosave();
+  await autosave(true);
 }
 
-function autosave() {
+async function autosave(forced = false) {
   for (const token of getListOfRooms()) {
-    const room = getRoomFromStore(token);
+    if (stopAutosaveFlag && !forced) {
+      break;
+    }
+    const room = await getRoomFromStore(token);
     if (room && isDirty(room)) {
       console.log("Autosaving room:", token);
       // If we put mark as clean after saving, then there's a chance that
       // new changes could be made before we mark as clean, which causes data loss.
       markAsClean(room);
       const serializedData = serialize(room.puzzleData);
-      upsertRoom(token, serializedData);
+      await upsertRoom(token, serializedData);
     }
+  }
+
+  // Don't schedule another autosave if it's been stopped
+  if (!stopAutosaveFlag) {
+    setAutosaveTimeout(60 * 1000);
   }
 }
 

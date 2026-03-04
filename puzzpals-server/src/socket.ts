@@ -12,12 +12,12 @@ const socketUserMap = new Map<Socket, User>();
 
 export function init(io: Server) {
   io.on("connection", (socket) => {
-    socket.on("room:join", (token: unknown) => {
+    socket.on("room:join", async (token: unknown) => {
       // Validate payload
       if (typeof token !== "string") return;
 
       // Verify that the room exists
-      const room = getRoomFromStore(token);
+      const room = await getRoomFromStore(token);
       if (!room) return;
 
       const userID = randomUserID(token);
@@ -32,7 +32,7 @@ export function init(io: Server) {
       socket.emit("room:initialize", grid, userID);
     });
 
-    socket.on("grid:updateCell", (idx: unknown, value: unknown) => {
+    socket.on("grid:updateCell", async (idx: unknown, value: unknown) => {
       // Check socket has joined a room
       const user = socketUserMap.get(socket);
       if (user === undefined) return;
@@ -40,7 +40,7 @@ export function init(io: Server) {
       // Validate payload
       if (typeof idx !== "number" || typeof value !== "number") return;
 
-      const room = getRoomFromStore(user.roomToken);
+      const room = await getRoomFromStore(user.roomToken);
       if (!room) {
         return;
       }
