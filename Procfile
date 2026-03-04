@@ -1,1 +1,1 @@
-web: npm run deploy-server
+web: cd puzzpals-server && node ./dist/bin/www.js

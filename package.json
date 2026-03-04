@@ -2,8 +2,8 @@
   "name": "@puzzpals/puzzpals",
   "private": true,
   "engines": {
-    "node": "22.20.0",
-    "npm": "10.9.3"
+    "node": "v24.12.0",
+    "npm": "11.6.2"
   },
   "workspaces": [
     "puzzpals-client-ts",
@@ -12,7 +12,8 @@
   ],
   "scripts": {
     "prepare": "husky",
-    "deploy-server": "cd puzzpals-server && npm run build && npm run start"
+    "build:server": "cd puzzpals-server && npm run build",
+    "postinstall": "npm run build:server"
   },
   "devDependencies": {
     "@eslint/compat": "^2.0.2",
