@@ -5,7 +5,6 @@
     :height="size"
     :viewBox="viewBoxStr"
     xmlns="http://www.w3.org/2000/svg"
-    @click="handlePointerClick"
     @mousedown="handleMouseDown"
     @mouseup="handleMouseUp"
     @mousemove="handlePointerMove"
@@ -127,6 +126,7 @@ const emit = defineEmits<{
   centerCellEnter: [cell: [number, number]];
   cornerCellClick: [corner: [number, number]];
   cornerCellEnter: [corner: [number, number]];
+  mouseRelease: [];
 }>();
 
 const cellSize = computed(
@@ -193,27 +193,21 @@ function handleMouseDown(event: MouseEvent) {
   lastCenterCell = centerCell;
   lastCornerCell = cornerCell;
 
+  emit("centerCellClick", centerCell);
+  emit("cornerCellClick", cornerCell);
   emit("centerCellEnter", centerCell);
   emit("cornerCellEnter", cornerCell);
 }
 
 function handleMouseUp() {
   isDragging = false;
+  emit("mouseRelease");
 }
 
 function handleMouseLeave() {
   isDragging = false;
   lastCenterCell = null;
   lastCornerCell = null;
-}
-
-function handlePointerClick(event: MouseEvent) {
-  const coord = getGridCoordinatesFromEvent(event);
-  const centerCell = toCenterCell(coord);
-  const cornerCell = toCornerCell(coord);
-
-  emit("centerCellClick", centerCell);
-  emit("cornerCellClick", cornerCell);
 }
 
 function handlePointerMove(event: MouseEvent) {

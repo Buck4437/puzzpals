@@ -23,7 +23,12 @@
   </div>
   Current tool: {{ currentTool }}
   <button @click="exportGrid" :disabled="!canExport">Export as akari</button>
-  <GridSVG :size="480" :grid="grid" @center-cell-click="logCenterCellClick" />
+  <GridSVG
+    :size="480"
+    :grid="grid"
+    @center-cell-enter="onCenterEnter"
+    @mouse-release="onMouseRelease"
+  />
 </template>
 
 <script setup lang="ts">
@@ -37,6 +42,7 @@ import {
   KeyToPairCoordinate,
   CoordinateToKey,
   PairCoordinateToKey,
+  type CoordinateKey,
 } from "@/models/Grid";
 
 const rowCount = ref(6);
@@ -187,15 +193,31 @@ const exportGrid = () => {
   downloadObjectAsJson(exportData, "akari-puzzle");
 };
 
-const logCenterCellClick = (coordinate: Coordinate) => {
+let firstClickColor: "black" | "white" | null = null;
+let firstClickSymbol: string | null = null;
+let visitedCells: Set<CoordinateKey> = new Set();
+
+const onMouseRelease = () => {
+  visitedCells = new Set(); // Clear visited cells on mouse release
+  firstClickColor = null;
+  firstClickSymbol = null;
+};
+
+const onCenterEnter = (coordinate: Coordinate) => {
   const key = CoordinateToKey(coordinate);
+
+  if (visitedCells.has(key)) {
+    return;
+  }
+
+  visitedCells.add(key);
 
   switch (currentTool.value) {
     case "symbols":
       {
         const prev = grid.value.problem.symbolObjects[key];
 
-        const newSymbol =
+        let newSymbol =
           {
             "": "0",
             "0": "1",
@@ -204,6 +226,13 @@ const logCenterCellClick = (coordinate: Coordinate) => {
             "3": "4",
             "4": "",
           }[prev?.content || ""] || "";
+
+        if (firstClickSymbol === null) {
+          firstClickSymbol = newSymbol;
+        } else if (newSymbol !== firstClickSymbol) {
+          // If it's not the same as the first click, use the first click's symbol instead
+          newSymbol = firstClickSymbol;
+        }
 
         if (prev) {
           if (newSymbol === "") {
@@ -234,36 +263,30 @@ const logCenterCellClick = (coordinate: Coordinate) => {
     case "colors":
       {
         const prev = grid.value.problem.surfaceObjects[key];
-        if (prev?.color === "black") {
-          grid.value.problem.surfaceObjects[key] = { ...prev, color: "white" };
-          // Change the text to black as well
-          const symbol = grid.value.problem.symbolObjects[key];
-          if (symbol) {
-            grid.value.problem.symbolObjects[key] = {
-              ...symbol,
-              color: "black",
-            };
-          }
-        } else {
-          if (prev === undefined) {
-            grid.value.problem.surfaceObjects[key] = {
-              location: coordinate,
-              color: "black",
-            };
-          } else {
-            grid.value.problem.surfaceObjects[key] = {
-              ...prev,
-              color: "black",
-            };
-          }
-          // Change the text to white as well
-          const symbol = grid.value.problem.symbolObjects[key];
-          if (symbol) {
-            grid.value.problem.symbolObjects[key] = {
-              ...symbol,
-              color: "white",
-            };
-          }
+        let prevColor = prev?.color || "white";
+        let currColor: "black" | "white" =
+          prevColor === "white" ? "black" : "white";
+        if (firstClickColor === null) {
+          firstClickColor = currColor;
+        } else if (currColor !== firstClickColor) {
+          // If it's not the same as the first click, use the first click's color instead
+          currColor = firstClickColor;
+        }
+
+        let textColor = currColor === "white" ? "black" : "white";
+
+        grid.value.problem.surfaceObjects[key] = {
+          location: coordinate,
+          color: currColor,
+        };
+
+        // Change the text color
+        const symbol = grid.value.problem.symbolObjects[key];
+        if (symbol) {
+          grid.value.problem.symbolObjects[key] = {
+            ...symbol,
+            color: textColor,
+          };
         }
       }
       break;
