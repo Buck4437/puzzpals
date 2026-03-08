@@ -1,0 +1,85 @@
+export type Coordinate = [number, number];
+export type PairCoordinate = [Coordinate, Coordinate];
+export type CoordinateKey = string;
+export type PairCoordinateKey = string;
+
+export function CoordinateToKey(coordinate: Coordinate): CoordinateKey {
+  return `${coordinate[0]},${coordinate[1]}`;
+}
+
+export function PairCoordinateToKey(pair: PairCoordinate): PairCoordinateKey {
+  const [coord1, coord2] = pair;
+  return `${CoordinateToKey(coord1)}|${CoordinateToKey(coord2)}`;
+}
+
+export function KeyToCoordinate(key: CoordinateKey): Coordinate | null {
+  const [x, y] = key.split(",").map(Number);
+  if (x === undefined || y === undefined || isNaN(x) || isNaN(y)) {
+    return null;
+  }
+  return [x, y];
+}
+
+export function KeyToPairCoordinate(
+  key: PairCoordinateKey,
+): PairCoordinate | null {
+  const [coord1Key, coord2Key] = key.split("|");
+  if (coord1Key === undefined || coord2Key === undefined) {
+    return null;
+  }
+  const coord1 = KeyToCoordinate(coord1Key);
+  const coord2 = KeyToCoordinate(coord2Key);
+  if (coord1 === null || coord2 === null) {
+    return null;
+  }
+  return [coord1, coord2];
+}
+
+export type LineThickness = "thin" | "thick";
+
+export type TypeToCheck = "lineObjects" | "surfaceObjects" | "symbolObjects";
+
+export interface LineObject {
+  start: Coordinate;
+  end: Coordinate;
+  color: string;
+}
+
+export interface SurfaceObject {
+  location: Coordinate;
+  color: string;
+}
+
+export interface SymbolObject {
+  location: Coordinate;
+  content: string;
+  color: string;
+}
+
+export type LineObjectDict = Record<PairCoordinateKey, LineObject>;
+export type SurfaceObjectDict = Record<CoordinateKey, SurfaceObject>;
+export type SymbolObjectDict = Record<CoordinateKey, SymbolObject>;
+
+export interface LayerData {
+  lineObjects: LineObjectDict;
+  surfaceObjects: SurfaceObjectDict;
+  symbolObjects: SymbolObjectDict;
+}
+
+export interface SolutionData {
+  lineObjects: LineObjectDict;
+  surfaceObjects: SurfaceObjectDict;
+  symbolObjects: SymbolObjectDict;
+  typeToCheck: TypeToCheck;
+}
+
+export interface Grid {
+  size: [number, number];
+  problem: LayerData;
+  solution?: SolutionData;
+}
+
+export interface GameState {
+  grid: Grid;
+  answer: LayerData;
+}
