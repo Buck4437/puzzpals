@@ -52,10 +52,45 @@ async function createTable() {
     CREATE TABLE IF NOT EXISTS Room (
       token TEXT PRIMARY KEY UNIQUE,
       puzzle_data TEXT
-    )
+    );
+    CREATE TABLE IF NOT EXISTS Puzzle (
+      id SERIAL PRIMARY KEY,
+      author TEXT NOT NULL,
+      description TEXT,
+      puzzle_json JSONB NOT NULL,
+      publish_date TIMESTAMP NOT NULL DEFAULT NOW()
+    );
   `);
 }
 
+// Puzzle DB functions
+export async function addPuzzle(
+  author: string,
+  description: string,
+  puzzleJson: object,
+  publishDate?: Date,
+) {
+  const sql = `INSERT INTO Puzzle (author, description, puzzle_json, publish_date) VALUES ($1, $2, $3, $4) RETURNING *`;
+  const result = await pool.query(sql, [
+    author,
+    description,
+    puzzleJson,
+    publishDate || new Date(),
+  ]);
+  return result.rows[0];
+}
+
+export async function getPuzzles(limit = 5) {
+  const sql = `SELECT * FROM Puzzle ORDER BY publish_date DESC LIMIT $1`;
+  const result = await pool.query(sql, [limit]);
+  return result.rows;
+}
+
+export async function getPuzzleById(id: number) {
+  const sql = `SELECT * FROM Puzzle WHERE id = $1`;
+  const result = await pool.query(sql, [id]);
+  return result.rows[0];
+}
 async function upsertRoom(token: string, puzzleJson: string) {
   const sql = `INSERT INTO Room (token, puzzle_data) VALUES ($1, $2)
                ON CONFLICT (token) DO UPDATE SET puzzle_data = EXCLUDED.puzzle_data`;
