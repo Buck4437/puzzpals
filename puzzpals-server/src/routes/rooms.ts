@@ -59,6 +59,12 @@ router.post("/create", async (req, res) => {
 // Get room by token
 router.get("/:token", async (req, res) => {
   const { token } = req.params;
+
+  // Return if token length is incorrect, saving a memory lookup
+  if (token.length !== 10) {
+    return res.status(404).json({ error: "Room not found" });
+  }
+
   try {
     const room = await getRoomFromStore(token);
     if (!room) return res.status(404).json({ error: "Room not found" });

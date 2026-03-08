@@ -14,7 +14,7 @@ export function init(io: Server) {
   io.on("connection", (socket) => {
     socket.on("room:join", async (token: unknown) => {
       // Validate payload
-      if (typeof token !== "string") return;
+      if (typeof token !== "string" || token.length !== 10) return;
 
       // Verify that the room exists
       const room = await getRoomFromStore(token);

@@ -27,6 +27,7 @@ function isMessageValid(raw: unknown): raw is RawChatMessage {
     raw !== null &&
     "msgtext" in raw &&
     typeof raw.msgtext === "string" &&
+    raw.msgtext.length <= 1000 &&
     raw.msgtext.trim() !== ""
   );
 }
