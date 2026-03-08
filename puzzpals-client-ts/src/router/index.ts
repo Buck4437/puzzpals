@@ -13,6 +13,7 @@ const router = createRouter({
     { path: "/404", component: NotFound },
     { path: "/room/:token", component: RoomPage, props: true },
     { path: "/editor", component: EditorPage },
+    { path: "/catalogue", component: () => import("@/views/Catalogue.vue") },
   ],
 });
 

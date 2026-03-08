@@ -531,6 +531,10 @@ onBeforeUnmount(() => {
   window.removeEventListener("keydown", handleKeyboardInput);
 });
 
+defineExpose({
+  grid,
+});
+
 const updateSelectedCell = () => {
   if (!cursor.value) {
     return;

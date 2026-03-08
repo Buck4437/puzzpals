@@ -4,7 +4,8 @@ import { parsePuzzle } from "@puzzpals/puzzle-parser";
 
 const router = Router();
 
-function makeToken(length = 6) {
+function makeToken() {
+  const length = 10;
   const chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   const bytes = crypto.getRandomValues(new Uint8Array(length));
@@ -20,7 +21,7 @@ async function generateToken() {
   let token;
   // Collision check
   for (let i = 0; i < 5; i++) {
-    token = makeToken(6);
+    token = makeToken();
     const exists = await getRoomFromStore(token);
     if (!exists) {
       return token;
@@ -32,7 +33,7 @@ async function generateToken() {
 // Create room by uploading a file
 router.post("/create", async (req, res) => {
   // Test parse file
-  const puzzleData = req.body;
+  const puzzleData: unknown = req.body;
   let token;
   try {
     const puzzle = parsePuzzle(puzzleData);
@@ -58,38 +59,18 @@ router.post("/create", async (req, res) => {
 // Get room by token
 router.get("/:token", async (req, res) => {
   const { token } = req.params;
+
+  // Return if token length is incorrect, saving a memory lookup
+  if (token.length !== 10) {
+    return res.status(404).json({ error: "Room not found" });
+  }
+
   try {
     const room = await getRoomFromStore(token);
     if (!room) return res.status(404).json({ error: "Room not found" });
     res.json({ room });
   } catch (err) {
     console.log("Error fetching room:", (err as Error).message);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-// Join room
-router.post("/:token/join", async (req, res) => {
-  const { token } = req.params;
-  try {
-    const room = await getRoomFromStore(token);
-    if (!room) return res.status(404).json({ error: "Room not found" });
-    res.json({ room });
-  } catch (err) {
-    console.log("Error joining room:", (err as Error).message);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-// Leave room
-router.post("/:token/leave", async (req, res) => {
-  const { token } = req.params;
-  try {
-    const room = await getRoomFromStore(token);
-    if (!room) return res.status(404).json({ error: "Room not found" });
-    res.json({ room });
-  } catch (err) {
-    console.log("Error leaving room:", (err as Error).message);
     res.status(500).json({ error: "Internal server error" });
   }
 });

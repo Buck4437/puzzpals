@@ -15,7 +15,7 @@ First time setup:
 
 - Install postgres on linux
 - `sudo -u postgres psql` to enter postgres
-- `ALTER USER postgres PASSWORD 'postgres'` to change the password for the user.
+- `ALTER USER postgres PASSWORD 'postgres';` to change the password for the user.
 - Run `\conninfo` to see your current connection
 - `CREATE DATABASE puzzpals_dev;`
 - Exit with `\q`

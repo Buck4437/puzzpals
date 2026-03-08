@@ -1,7 +1,9 @@
-import { closeDb } from "src/db.js";
-import { __clearForTests, stopAutosave } from "src/memorystore.js";
-import { init } from "src/socket.js";
-import { mockIo } from "src/__mocks__/io.js";
+import { vi } from "vitest";
+
+import { mockIo } from "../../__mocks__/io.js";
+import { closeDb } from "../../db.js";
+import { __clearStoreForTests, stopAutosave } from "../../memorystore.js";
+import { __clearSocketsForTests, init } from "../../socket.js";
 
 export function arrangeBeforeEach() {
   // @ts-expect-error, we're inserting a mock object
@@ -14,5 +16,7 @@ export function arrangeBeforeEach() {
 export function cleanUpAfterEach() {
   stopAutosave();
   closeDb();
-  __clearForTests();
+  __clearSocketsForTests();
+  __clearStoreForTests();
+  vi.clearAllMocks();
 }

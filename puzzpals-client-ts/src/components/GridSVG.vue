@@ -133,7 +133,7 @@ function toGridCoordinates(coordinate: [number, number]): [number, number] {
 const props = defineProps<{
   size: number;
   grid: Grid;
-  cursor: Coordinate | null;
+  cursor?: Coordinate | null;
 }>();
 
 const emit = defineEmits<{

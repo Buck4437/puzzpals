@@ -1,33 +1,32 @@
-import assert from "node:assert/strict";
-import { afterEach, beforeEach, describe, it } from "node:test";
 import request from "supertest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 
-import app from "src/app.js";
+import app from "../app.js";
 import { arrangeBeforeEach, cleanUpAfterEach } from "./utils/arrange.js";
+
+const validPayload = {
+  type: "akari",
+  grid: [
+    [".", "2"],
+    ["#", "."],
+  ],
+};
 
 describe("Create room API", () => {
   beforeEach(arrangeBeforeEach);
   afterEach(cleanUpAfterEach);
 
   it("can create room", async () => {
-    const payload = {
-      type: "akari",
-      grid: [
-        [".", "2"],
-        ["#", "."],
-      ],
-    };
+    const res = await request(app).post("/api/rooms/create").send(validPayload);
+    expect(res.ok).toBe(true);
 
-    const res = await request(app).post("/api/rooms/create").send(payload);
-    assert.ok(res.ok);
-
-    // Room token specification: 6 character alphanumeric
-    assert.match(res.body.token, /^[a-zA-Z0-9]{6}$/);
+    // Room token specification: 10 character alphanumeric
+    expect(res.body.token).toMatch(/^[a-zA-Z0-9]{10}$/);
   });
 
   async function assertBadRequest(payload?: string | object) {
     const res = await request(app).post("/api/rooms/create").send(payload);
-    assert.ok(res.badRequest);
+    expect(res.badRequest).toBe(true);
   }
 
   it("rejects request missing payload", async () => {
@@ -129,30 +128,17 @@ describe("Create room API", () => {
   });
 });
 
-describe("Join room API", () => {
-  beforeEach(arrangeBeforeEach);
-  afterEach(cleanUpAfterEach);
-
-  it("can join players to rooms", async () => {
-    const payload = {
-      type: "akari",
-      grid: [
-        [".", "2"],
-        ["#", "."],
-      ],
-    };
-
-    const createRes = await request(app)
+describe("Get room API", () => {
+  it("succeeds when room exists", async () => {
+    const res1 = await request(app)
       .post("/api/rooms/create")
-      .send(payload);
-    const token = createRes.body.token;
-
-    const joinRes = await request(app).post(`/api/rooms/${token}/join`);
-    assert.equal(joinRes.status, 200);
+      .send(validPayload);
+    const res2 = await request(app).get(`/api/rooms/${res1.body.token}`);
+    expect(res2.ok).toBe(true);
   });
 
-  it("rejects request to join non-existent room", async () => {
-    const res = await request(app).post(`/api/rooms/TestRm/join`);
-    assert.equal(res.status, 404);
+  it("responds 404 when room does not exist", async () => {
+    const res = await request(app).get("/api/rooms/abcdefghij");
+    expect(res.notFound).toBe(true);
   });
 });
