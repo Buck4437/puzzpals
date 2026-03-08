@@ -3,14 +3,14 @@
     <button
       v-for="(tool, i) in tools"
       :key="i"
-      :class="{ active: currentToolId === i }"
+      :class="{ active: currentTool.codename === tool.codename }"
       @click="currentToolId = i"
     >
       {{ tool.name }}
     </button>
   </div>
   <div>
-    <div v-show="currentToolId === 0">
+    <div v-show="currentTool.codename === 'surface'">
       <div>
         Surface color:
         <select v-model="selectedSurfaceColor">
@@ -20,7 +20,57 @@
         </select>
       </div>
     </div>
-    <div v-show="currentToolId === 1">
+    <div v-show="currentTool.codename === 'line'">
+      <p>Line tool: connect cell centers</p>
+      <div>
+        Line color:
+        <select v-model="selectedLineColor">
+          <option v-for="color in colorTable" :key="color" :value="color">
+            {{ color }}
+          </option>
+        </select>
+      </div>
+      <div>
+        <button
+          :class="{ active: currentSubtoolId === 0 }"
+          @click="currentSubtoolId = 0"
+        >
+          Normal
+        </button>
+        <button
+          :class="{ active: currentSubtoolId === 1 }"
+          @click="currentSubtoolId = 1"
+        >
+          Diagonal
+        </button>
+      </div>
+    </div>
+    <div v-show="currentTool.codename === 'edge'">
+      <p>Edge tool: connect cell corners</p>
+      <div>
+        Line color:
+        <select v-model="selectedLineColor">
+          <option v-for="color in colorTable" :key="color" :value="color">
+            {{ color }}
+          </option>
+        </select>
+      </div>
+      <div>
+        <button
+          :class="{ active: currentSubtoolId === 0 }"
+          @click="currentSubtoolId = 0"
+        >
+          Normal
+        </button>
+        <button
+          :class="{ active: currentSubtoolId === 1 }"
+          @click="currentSubtoolId = 1"
+        >
+          Diagonal
+        </button>
+      </div>
+    </div>
+    <div v-show="currentTool.codename === 'text'">
       <div>
         Text color:
         <select v-model="selectedTextColor">
@@ -73,8 +123,9 @@
   <GridSVG
     :size="480"
     :grid="grid"
-    :cursor="currentToolId === 1 ? cursor : null"
+    :cursor="currentTool.codename === 'text' ? cursor : null"
     @center-cell-enter="onCenterEnter"
+    @corner-cell-enter="onCornerEnter"
     @mouse-release="onMouseRelease"
   />
 </template>
@@ -107,6 +158,8 @@ interface Tool {
 const colorTable = [
   "black",
   "white",
+  "lightgray",
+  "darkgray",
   "blue",
   "green",
   "red",
@@ -116,7 +169,8 @@ const colorTable = [
 
 const currentToolId = ref(0);
 const currentSubtoolId = ref(0);
-const selectedSurfaceColor = ref(colorTable[0]);
+const selectedSurfaceColor = ref<string>(colorTable[0] ?? "black");
+const selectedLineColor = ref<string>(colorTable[0] ?? "black");
 const selectedTextColor = ref("auto");
 const cursor = ref<Coordinate | null>(null);
 const textInput = ref<HTMLInputElement | null>(null);
@@ -129,6 +183,16 @@ const tools: Tool[] = [
     subtools: [],
   },
   {
+    name: "Line",
+    codename: "line",
+    subtools: ["Normal", "Diagonal"],
+  },
+  {
+    name: "Edge",
+    codename: "edge",
+    subtools: ["Normal", "Diagonal"],
+  },
+  {
     name: "Text",
     codename: "text",
     subtools: ["Simple", "Input box"],
@@ -138,7 +202,7 @@ const tools: Tool[] = [
 const currentTool = computed(() => {
   const curTool = tools[currentToolId.value];
   if (curTool === undefined) {
-    return { name: "unknown", subtools: [] };
+    return { name: "unknown", codename: "unknown", subtools: [] };
   }
   return curTool;
 });
@@ -235,7 +299,7 @@ const setDimensions = () => {
       cursor.value = [newR, newC];
 
       // Update selected cell if in text mode
-      if (currentToolId.value === 1) {
+      if (currentTool.value.codename === "text") {
         const key = CoordinateToKey(cursor.value);
         const existing = grid.value.problem.symbolObjects[key];
         textInputValue.value = existing?.content || "";
@@ -308,7 +372,52 @@ const exportGrid = () => {
 };
 
 let firstClickColor: string | null = null;
-let visitedCells: Set<CoordinateKey> = new Set();
+let visitedSurfaces: Set<CoordinateKey> = new Set();
+let lastLineCenter: Coordinate | null = null;
+let lastEdgeCorner: Coordinate | null = null;
+let lineStrokeMode: "draw" | "erase" | null = null;
+let edgeStrokeMode: "draw" | "erase" | null = null;
+
+const canDrawSegment = (
+  start: Coordinate,
+  end: Coordinate,
+  allowDiagonal: boolean,
+) => {
+  const absDr = Math.abs(end[0] - start[0]);
+  const absDc = Math.abs(end[1] - start[1]);
+
+  const isNormalAdjacent =
+    (absDr === 1 && absDc === 0) || (absDr === 0 && absDc === 1);
+  const isDiagonalAdjacent = absDr === 1 && absDc === 1;
+
+  return allowDiagonal
+    ? isDiagonalAdjacent || isNormalAdjacent
+    : isNormalAdjacent;
+};
+
+const applyLineSegment = (
+  start: Coordinate,
+  end: Coordinate,
+  strokeMode: "draw" | "erase" | null,
+) => {
+  const lineKey = PairCoordinateToKey([start, end]);
+  let nextMode = strokeMode;
+  if (strokeMode === null) {
+    nextMode = grid.value.problem.lineObjects[lineKey] ? "erase" : "draw";
+  }
+
+  if (nextMode === "erase") {
+    delete grid.value.problem.lineObjects[lineKey];
+  } else {
+    grid.value.problem.lineObjects[lineKey] = {
+      start,
+      end,
+      color: selectedLineColor.value,
+    };
+  }
+
+  return nextMode;
+};
 
 // Arrow-key cursor movement
 const moveCursorBy = (dr: number, dc: number) => {
@@ -348,7 +457,7 @@ const handleKeyboardInput = (event: KeyboardEvent) => {
     return;
   }
 
-  if (currentToolId.value !== 1) {
+  if (currentTool.value.codename !== "text") {
     return;
   }
 
@@ -457,8 +566,12 @@ const updateSelectedCell = () => {
 };
 
 const onMouseRelease = () => {
-  visitedCells = new Set(); // Clear visited cells on mouse release
+  visitedSurfaces = new Set();
   firstClickColor = null;
+  lastLineCenter = null;
+  lastEdgeCorner = null;
+  lineStrokeMode = null;
+  edgeStrokeMode = null;
 };
 
 const onCenterEnter = (coordinate: Coordinate) => {
@@ -466,15 +579,15 @@ const onCenterEnter = (coordinate: Coordinate) => {
 
   const key = CoordinateToKey(coordinate);
 
-  if (visitedCells.has(key)) {
-    return;
-  }
-
-  visitedCells.add(key);
-
-  switch (currentToolId.value) {
-    case 0:
+  switch (currentTool.value.codename) {
+    case "surface":
       {
+        if (visitedSurfaces.has(key)) {
+          return;
+        }
+
+        visitedSurfaces.add(key);
+
         const selectedColor = selectedSurfaceColor.value;
         if (typeof selectedColor !== "string") {
           return;
@@ -501,7 +614,31 @@ const onCenterEnter = (coordinate: Coordinate) => {
         };
       }
       break;
-    case 1:
+    case "line":
+      {
+        if (lastLineCenter === null) {
+          lastLineCenter = coordinate;
+          break;
+        }
+
+        if (
+          canDrawSegment(
+            lastLineCenter,
+            coordinate,
+            currentSubtoolId.value === 1,
+          )
+        ) {
+          lineStrokeMode = applyLineSegment(
+            lastLineCenter,
+            coordinate,
+            lineStrokeMode,
+          );
+        }
+
+        lastLineCenter = coordinate;
+      }
+      break;
+    case "text":
       {
         const existing = grid.value.problem.symbolObjects[key];
 
@@ -515,6 +652,29 @@ const onCenterEnter = (coordinate: Coordinate) => {
       }
       break;
   }
+};
+
+const onCornerEnter = (coordinate: Coordinate) => {
+  if (currentTool.value.codename !== "edge") {
+    return;
+  }
+
+  if (lastEdgeCorner === null) {
+    lastEdgeCorner = coordinate;
+    return;
+  }
+
+  if (
+    canDrawSegment(lastEdgeCorner, coordinate, currentSubtoolId.value === 1)
+  ) {
+    edgeStrokeMode = applyLineSegment(
+      lastEdgeCorner,
+      coordinate,
+      edgeStrokeMode,
+    );
+  }
+
+  lastEdgeCorner = coordinate;
 };
 </script>
 

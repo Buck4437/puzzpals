@@ -199,6 +199,16 @@ function sameCoordinate(a: [number, number], b: [number, number]): boolean {
   return a[0] === b[0] && a[1] === b[1];
 }
 
+function isWithinSnapRadius(
+  coord: [number, number],
+  target: [number, number],
+  radius: number,
+): boolean {
+  const dr = coord[0] - target[0];
+  const dc = coord[1] - target[1];
+  return Math.hypot(dr, dc) <= radius;
+}
+
 function handleMouseDown(event: MouseEvent) {
   isDragging = true;
   const coord = getGridCoordinatesFromEvent(event);
@@ -231,15 +241,32 @@ function handlePointerMove(event: MouseEvent) {
   const coord = getGridCoordinatesFromEvent(event);
   const centerCell = toCenterCell(coord);
   const cornerCell = toCornerCell(coord);
+  const snapRadius = 0.5;
+  const nearCenter = isWithinSnapRadius(coord, centerCell, snapRadius);
+  const nearCorner = isWithinSnapRadius(coord, cornerCell, snapRadius);
 
-  if (lastCenterCell === null || !sameCoordinate(lastCenterCell, centerCell)) {
-    lastCenterCell = centerCell;
-    emit("centerCellEnter", centerCell);
+  if (nearCenter) {
+    if (
+      lastCenterCell === null ||
+      !sameCoordinate(lastCenterCell, centerCell)
+    ) {
+      lastCenterCell = centerCell;
+      emit("centerCellEnter", centerCell);
+    }
+  } else {
+    lastCenterCell = null;
   }
 
-  if (lastCornerCell === null || !sameCoordinate(lastCornerCell, cornerCell)) {
-    lastCornerCell = cornerCell;
-    emit("cornerCellEnter", cornerCell);
+  if (nearCorner) {
+    if (
+      lastCornerCell === null ||
+      !sameCoordinate(lastCornerCell, cornerCell)
+    ) {
+      lastCornerCell = cornerCell;
+      emit("cornerCellEnter", cornerCell);
+    }
+  } else {
+    lastCornerCell = null;
   }
 }
 

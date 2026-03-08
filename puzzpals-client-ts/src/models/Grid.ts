@@ -9,7 +9,13 @@ export function CoordinateToKey(coordinate: Coordinate): CoordinateKey {
 
 export function PairCoordinateToKey(pair: PairCoordinate): PairCoordinateKey {
   const [coord1, coord2] = pair;
-  return `${CoordinateToKey(coord1)}|${CoordinateToKey(coord2)}`;
+  // Canonicalize order so A|B and B|A produce the same key
+  const a = coord1;
+  const b = coord2;
+  if (a[0] < b[0] || (a[0] === b[0] && a[1] <= b[1])) {
+    return `${CoordinateToKey(a)}|${CoordinateToKey(b)}`;
+  }
+  return `${CoordinateToKey(b)}|${CoordinateToKey(a)}`;
 }
 
 export function KeyToCoordinate(key: CoordinateKey): Coordinate | null {
