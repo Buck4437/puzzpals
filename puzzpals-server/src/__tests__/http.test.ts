@@ -20,8 +20,8 @@ describe("Create room API", () => {
     const res = await request(app).post("/api/rooms/create").send(validPayload);
     expect(res.ok).toBe(true);
 
-    // Room token specification: 6 character alphanumeric
-    expect(res.body.token).toMatch(/^[a-zA-Z0-9]{6}$/);
+    // Room token specification: 10 character alphanumeric
+    expect(res.body.token).toMatch(/^[a-zA-Z0-9]{10}$/);
   });
 
   async function assertBadRequest(payload?: string | object) {
@@ -138,7 +138,7 @@ describe("Get room API", () => {
   });
 
   it("responds 404 when room does not exist", async () => {
-    const res = await request(app).get("/api/rooms/TestRm");
+    const res = await request(app).get("/api/rooms/abcdefghij");
     expect(res.notFound).toBe(true);
   });
 });

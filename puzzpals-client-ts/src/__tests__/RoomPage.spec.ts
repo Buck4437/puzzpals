@@ -32,8 +32,8 @@ describe("RoomPage", () => {
     ],
   };
 
-  const token = "TestRm";
-  const user = "user_TestRm_00000000";
+  const token = "abcdefghij";
+  const user = "user_abcdefghij_00000000";
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -45,7 +45,7 @@ describe("RoomPage", () => {
   it("joins room", async () => {
     api.get.mockResolvedValueOnce({ data: { room: token } });
 
-    // Load the room page with 'TestRm' as token
+    // Load the room page
     mount(RoomPage, { props: { token: token } });
     await flushPromises();
 
@@ -158,7 +158,7 @@ describe("RoomPage", () => {
   });
 
   it("can receive messages from other players", async () => {
-    const otherUser = "user_TestRm_00000001";
+    const otherUser = "user_abcdefghij_00000001";
     const msgtext = "Hello, world!";
     const message = { user: otherUser, msgtext, timestamp: 0 };
 

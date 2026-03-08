@@ -32,7 +32,7 @@ describe("Home", () => {
     // via the <input> element, so we expose `onFilePicked`
     wrapper.vm.onFilePicked(puzzleFile);
 
-    api.post.mockResolvedValueOnce({ data: { token: "TestRm" } });
+    api.post.mockResolvedValueOnce({ data: { token: "abcdefghij" } });
 
     wrapper.get("button").trigger("click");
     await flushPromises(); // Read file
@@ -45,7 +45,7 @@ describe("Home", () => {
     expect(body).toStrictEqual(puzzle);
 
     // Join room
-    expect(pushMock).toHaveBeenCalledWith("/room/TestRm");
+    expect(pushMock).toHaveBeenCalledWith("/room/abcdefghij");
   });
 
   it("shows alert when no file is picked", () => {

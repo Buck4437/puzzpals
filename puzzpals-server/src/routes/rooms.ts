@@ -4,7 +4,8 @@ import { parsePuzzle } from "@puzzpals/puzzle-parser";
 
 const router = Router();
 
-function makeToken(length = 6) {
+function makeToken() {
+  const length = 10;
   const chars =
     "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   const bytes = crypto.getRandomValues(new Uint8Array(length));
@@ -20,7 +21,7 @@ async function generateToken() {
   let token;
   // Collision check
   for (let i = 0; i < 5; i++) {
-    token = makeToken(6);
+    token = makeToken();
     const exists = await getRoomFromStore(token);
     if (!exists) {
       return token;
