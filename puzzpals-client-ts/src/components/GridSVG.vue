@@ -79,11 +79,25 @@
         {{ symbol.content }}
       </text>
     </g>
+
+    <!-- Cursor -->
+    <rect
+      v-if="props.cursor"
+      :x="toSvgCoordinates(topLeft(props.cursor))[0]"
+      :y="toSvgCoordinates(topLeft(props.cursor))[1]"
+      :width="cellSize"
+      :height="cellSize"
+      fill="none"
+      stroke="red"
+      stroke-width="5"
+      opacity="0.7"
+      pointer-events="none"
+    />
   </svg>
 </template>
 
 <script setup lang="ts">
-import { type Grid } from "../models/Grid";
+import { type Grid, type Coordinate } from "../models/Grid";
 import { ref, computed } from "vue";
 
 const FULLSIZE = 480;
@@ -119,6 +133,7 @@ function toGridCoordinates(coordinate: [number, number]): [number, number] {
 const props = defineProps<{
   size: number;
   grid: Grid;
+  cursor: Coordinate | null;
 }>();
 
 const emit = defineEmits<{

@@ -2,8 +2,7 @@
   "name": "@puzzpals/puzzpals",
   "private": true,
   "engines": {
-    "node": "22.20.0",
-    "npm": "10.9.3"
+    "node": "22.20.0"
   },
   "workspaces": [
     "puzzpals-client-ts",

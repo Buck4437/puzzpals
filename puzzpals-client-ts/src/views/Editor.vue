@@ -1,13 +1,61 @@
 <template>
   <div>
     <button
-      v-for="tool in tools"
-      :key="tool"
-      :class="{ active: currentTool === tool }"
-      @click="currentTool = tool"
+      v-for="(tool, i) in tools"
+      :key="i"
+      :class="{ active: currentToolId === i }"
+      @click="currentToolId = i"
     >
-      {{ tool }}
+      {{ tool.name }}
     </button>
+  </div>
+  <div>
+    <div v-show="currentToolId === 0">
+      <div>
+        Surface color:
+        <select v-model="selectedSurfaceColor">
+          <option v-for="color in colorTable" :key="color" :value="color">
+            {{ color }}
+          </option>
+        </select>
+      </div>
+    </div>
+    <div v-show="currentToolId === 1">
+      <div>
+        Text color:
+        <select v-model="selectedTextColor">
+          <option value="auto">Auto</option>
+          <option v-for="color in colorTable" :key="color" :value="color">
+            {{ color }}
+          </option>
+        </select>
+      </div>
+      <div>
+        <button
+          v-for="(tool, i) in subtools"
+          :key="i"
+          :class="{ active: currentSubtoolId === i }"
+          @click="currentSubtoolId = i"
+        >
+          {{ tool }}
+        </button>
+      </div>
+      <div v-show="currentSubtoolId === 0">
+        <p>Simple mode: Type directly (max 2 characters)</p>
+      </div>
+      <div v-show="currentSubtoolId === 1">
+        <label>Text: </label>
+        <input
+          ref="textInput"
+          v-model="textInputValue"
+          type="text"
+          @input="updateSelectedCell"
+          :disabled="!cursor"
+        />
+        <p v-if="cursor">Selected: [{{ cursor[0] }}, {{ cursor[1] }}]</p>
+        <p v-else>Click a cell to select</p>
+      </div>
+    </div>
   </div>
   <div>
     Current dimensions: Row: {{ rowCount }}, Col: {{ colCount }}
@@ -21,18 +69,18 @@
 
     <button @click="setDimensions">Set</button>
   </div>
-  Current tool: {{ currentTool }}
   <button @click="exportGrid" :disabled="!canExport">Export as akari</button>
   <GridSVG
     :size="480"
     :grid="grid"
+    :cursor="currentToolId === 1 ? cursor : null"
     @center-cell-enter="onCenterEnter"
     @mouse-release="onMouseRelease"
   />
 </template>
 
 <script setup lang="ts">
-import { computed, ref, type Ref } from "vue";
+import { computed, ref, type Ref, onMounted, onBeforeUnmount } from "vue";
 
 import GridSVG from "@/components/GridSVG.vue";
 import {
@@ -50,8 +98,54 @@ const colCount = ref(7);
 const inputRowCount: Ref<Number> = ref(6);
 const inputColCount: Ref<Number> = ref(7);
 
-const tools = ["colors", "symbols"];
-const currentTool = ref(tools[0]);
+interface Tool {
+  name: string;
+  codename: string;
+  subtools: string[];
+}
+
+const colorTable = [
+  "black",
+  "white",
+  "blue",
+  "green",
+  "red",
+  "yellow",
+  "purple",
+];
+
+const currentToolId = ref(0);
+const currentSubtoolId = ref(0);
+const selectedSurfaceColor = ref(colorTable[0]);
+const selectedTextColor = ref("auto");
+const cursor = ref<Coordinate | null>(null);
+const textInput = ref<HTMLInputElement | null>(null);
+const textInputValue = ref("");
+
+const tools: Tool[] = [
+  {
+    name: "Surface",
+    codename: "surface",
+    subtools: [],
+  },
+  {
+    name: "Text",
+    codename: "text",
+    subtools: ["Simple", "Input box"],
+  },
+];
+
+const currentTool = computed(() => {
+  const curTool = tools[currentToolId.value];
+  if (curTool === undefined) {
+    return { name: "unknown", subtools: [] };
+  }
+  return curTool;
+});
+
+const subtools = computed(() => {
+  return currentTool.value.subtools;
+});
 
 const grid = ref<Grid>({
   size: [rowCount.value, colCount.value],
@@ -128,6 +222,26 @@ const setDimensions = () => {
 
   rowCount.value = newRowCount;
   colCount.value = newColCount;
+
+  // Move cursor if out of bounds
+  if (cursor.value) {
+    const [r, c] = cursor.value;
+
+    if (r > newRowCount || c > newColCount) {
+      const rOffset = r - Math.floor(r);
+      const cOffset = c - Math.floor(c);
+      const newR = Math.min(r, newRowCount + rOffset - 1);
+      const newC = Math.min(c, newColCount + cOffset - 1);
+      cursor.value = [newR, newC];
+
+      // Update selected cell if in text mode
+      if (currentToolId.value === 1) {
+        const key = CoordinateToKey(cursor.value);
+        const existing = grid.value.problem.symbolObjects[key];
+        textInputValue.value = existing?.content || "";
+      }
+    }
+  }
 };
 
 const downloadObjectAsJson = (exportObj: object, exportName: string) => {
@@ -193,17 +307,163 @@ const exportGrid = () => {
   downloadObjectAsJson(exportData, "akari-puzzle");
 };
 
-let firstClickColor: "black" | "white" | null = null;
-let firstClickSymbol: string | null = null;
+let firstClickColor: string | null = null;
 let visitedCells: Set<CoordinateKey> = new Set();
+
+// Arrow-key cursor movement
+const moveCursorBy = (dr: number, dc: number) => {
+  const numRows = grid.value.size[0];
+  const numCols = grid.value.size[1];
+
+  // Start from current cursor or top-left cell
+  let base: Coordinate = cursor.value ? cursor.value : [0.5, 0.5];
+
+  const [r, c] = base;
+  const [newR, newC] = [r + dr, c + dc];
+
+  const minR = 0;
+  const maxR = numRows;
+  const minC = 0;
+  const maxC = numCols;
+
+  // Prevent movement if cursor goes out of bounds
+  if (newR < minR || newR >= maxR || newC < minC || newC >= maxC) {
+    return;
+  }
+
+  const newCoord: Coordinate = [newR, newC];
+  cursor.value = newCoord;
+};
+
+const handleKeyboardInput = (event: KeyboardEvent) => {
+  // Ignore key events when typing in form fields
+  const target = event.target as HTMLElement | null;
+  if (
+    target &&
+    (target.tagName === "INPUT" ||
+      target.tagName === "TEXTAREA" ||
+      target.tagName === "SELECT" ||
+      target.isContentEditable)
+  ) {
+    return;
+  }
+
+  if (currentToolId.value !== 1) {
+    return;
+  }
+
+  // Only active in text tool simple mode
+  switch (event.key) {
+    case "ArrowUp":
+      event.preventDefault();
+      moveCursorBy(-1, 0);
+      return;
+    case "ArrowDown":
+      event.preventDefault();
+      moveCursorBy(1, 0);
+      return;
+    case "ArrowLeft":
+      event.preventDefault();
+      moveCursorBy(0, -1);
+      return;
+    case "ArrowRight":
+      event.preventDefault();
+      moveCursorBy(0, 1);
+      return;
+  }
+
+  if (currentSubtoolId.value !== 0) {
+    return;
+  }
+
+  if (!cursor.value) {
+    return;
+  }
+
+  const key = CoordinateToKey(cursor.value);
+  const prev = grid.value.problem.symbolObjects[key];
+  let currentText = prev?.content || "";
+  const maxTextLength = 2;
+
+  if (event.key === "Backspace") {
+    event.preventDefault();
+    if (prev) {
+      // Delete all characters
+      delete grid.value.problem.symbolObjects[key];
+    }
+  } else if (event.key.length === 1 && currentText.length < maxTextLength) {
+    // Max 2 characters
+    event.preventDefault();
+    const newText = currentText + event.key;
+
+    let textColor: string;
+    if (selectedTextColor.value === "auto") {
+      textColor =
+        grid.value.problem.surfaceObjects[key]?.color === "black"
+          ? "white"
+          : "black";
+    } else {
+      textColor = selectedTextColor.value;
+    }
+
+    grid.value.problem.symbolObjects[key] = {
+      location: cursor.value,
+      content: newText,
+      color: textColor,
+    };
+  }
+};
+
+onMounted(() => {
+  window.addEventListener("keydown", handleKeyboardInput);
+});
+
+onBeforeUnmount(() => {
+  window.removeEventListener("keydown", handleKeyboardInput);
+});
+
+const updateSelectedCell = () => {
+  if (!cursor.value) {
+    return;
+  }
+
+  const key = CoordinateToKey(cursor.value);
+  const prev = grid.value.problem.symbolObjects[key];
+
+  if (textInputValue.value === "") {
+    // Delete the symbol if text is empty
+    if (prev) {
+      delete grid.value.problem.symbolObjects[key];
+    }
+  } else {
+    // Calculate text color
+    let textColor: string;
+    if (selectedTextColor.value === "auto") {
+      textColor =
+        grid.value.problem.surfaceObjects[key]?.color === "black"
+          ? "white"
+          : "black";
+    } else {
+      textColor = selectedTextColor.value;
+    }
+
+    // Update or create the symbol
+    grid.value.problem.symbolObjects[key] = {
+      location: cursor.value,
+      content: textInputValue.value,
+      color: textColor,
+    };
+  }
+};
 
 const onMouseRelease = () => {
   visitedCells = new Set(); // Clear visited cells on mouse release
   firstClickColor = null;
-  firstClickSymbol = null;
 };
 
 const onCenterEnter = (coordinate: Coordinate) => {
+  cursor.value = coordinate;
+
   const key = CoordinateToKey(coordinate);
 
   if (visitedCells.has(key)) {
@@ -212,81 +472,45 @@ const onCenterEnter = (coordinate: Coordinate) => {
 
   visitedCells.add(key);
 
-  switch (currentTool.value) {
-    case "symbols":
+  switch (currentToolId.value) {
+    case 0:
       {
-        const prev = grid.value.problem.symbolObjects[key];
-
-        let newSymbol =
-          {
-            "": "0",
-            "0": "1",
-            "1": "2",
-            "2": "3",
-            "3": "4",
-            "4": "",
-          }[prev?.content || ""] || "";
-
-        if (firstClickSymbol === null) {
-          firstClickSymbol = newSymbol;
-        } else if (newSymbol !== firstClickSymbol) {
-          // If it's not the same as the first click, use the first click's symbol instead
-          newSymbol = firstClickSymbol;
+        const selectedColor = selectedSurfaceColor.value;
+        if (typeof selectedColor !== "string") {
+          return;
         }
 
-        if (prev) {
-          if (newSymbol === "") {
-            delete grid.value.problem.symbolObjects[key];
-          } else {
-            grid.value.problem.symbolObjects[key] = {
-              ...prev,
-              content: newSymbol,
-            };
-          }
-        } else {
-          if (newSymbol === "") {
-            return;
-          }
-          const textColor =
-            grid.value.problem.surfaceObjects[key]?.color === "black"
-              ? "white"
-              : "black";
+        // If the clicked cell has the same color, set to white. Otherwise, set to that color
+        let paintedColor: string;
 
-          grid.value.problem.symbolObjects[key] = {
-            location: coordinate,
-            content: newSymbol,
-            color: textColor,
-          };
-        }
-      }
-      break;
-    case "colors":
-      {
-        const prev = grid.value.problem.surfaceObjects[key];
-        let prevColor = prev?.color || "white";
-        let currColor: "black" | "white" =
-          prevColor === "white" ? "black" : "white";
         if (firstClickColor === null) {
-          firstClickColor = currColor;
-        } else if (currColor !== firstClickColor) {
-          // If it's not the same as the first click, use the first click's color instead
-          currColor = firstClickColor;
+          const prev = grid.value.problem.surfaceObjects[key];
+          if (!prev || prev.color != selectedColor) {
+            paintedColor = selectedColor;
+          } else {
+            paintedColor = "white";
+          }
+          firstClickColor = paintedColor;
+        } else {
+          paintedColor = firstClickColor;
         }
-
-        let textColor = currColor === "white" ? "black" : "white";
 
         grid.value.problem.surfaceObjects[key] = {
           location: coordinate,
-          color: currColor,
+          color: paintedColor,
         };
+      }
+      break;
+    case 1:
+      {
+        const existing = grid.value.problem.symbolObjects[key];
 
-        // Change the text color
-        const symbol = grid.value.problem.symbolObjects[key];
-        if (symbol) {
-          grid.value.problem.symbolObjects[key] = {
-            ...symbol,
-            color: textColor,
-          };
+        // In input box mode, set the input value and focus
+        if (currentSubtoolId.value === 1) {
+          textInputValue.value = existing?.content || "";
+          setTimeout(() => {
+            textInput.value?.focus();
+          }, 0);
         }
       }
       break;
