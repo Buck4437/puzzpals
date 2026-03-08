@@ -9,6 +9,7 @@ router.get("/", async (req, res) => {
   const limit = Number(req.query.limit) || 5;
   if (!Number.isFinite(limit) || !Number.isInteger(limit) || limit < 0) {
     res.status(400).json({ error: "Invalid limit param" });
+    return;
   }
   try {
     const puzzles: Puzzle[] = await getPuzzles(limit);

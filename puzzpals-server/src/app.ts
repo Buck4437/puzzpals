@@ -7,6 +7,7 @@ import { fileURLToPath } from "url";
 
 import env from "./config.js";
 import roomsRouter from "./routes/rooms.js";
+import puzzlesRouter from "./routes/puzzles.js";
 
 const app = express();
 
@@ -24,7 +25,6 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 app.use(serveStatic(join(__dirname, "../public")));
 
-import puzzlesRouter from "./routes/puzzles.js";
 app.use("/api/rooms", roomsRouter);
 app.use("/api/puzzles", puzzlesRouter);
 
