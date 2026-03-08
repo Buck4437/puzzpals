@@ -32,9 +32,9 @@ describe("Home", () => {
     // via the <input> element, so we expose `onFilePicked`
     wrapper.vm.onFilePicked(puzzleFile);
 
-    api.post.mockResolvedValueOnce({ data: { token: "TestRm" } });
+    api.post.mockResolvedValueOnce({ data: { token: "abcdefghij" } });
 
-    wrapper.find("button").trigger("click");
+    wrapper.get("button").trigger("click");
     await flushPromises(); // Read file
     await flushPromises(); // Call API
 
@@ -45,13 +45,13 @@ describe("Home", () => {
     expect(body).toStrictEqual(puzzle);
 
     // Join room
-    expect(pushMock).toHaveBeenCalledWith("/room/TestRm");
+    expect(pushMock).toHaveBeenCalledWith("/room/abcdefghij");
   });
 
   it("shows alert when no file is picked", () => {
     const wrapper = mount(Home);
     wrapper.vm.onFilePicked(null);
-    wrapper.find("button").trigger("click");
+    wrapper.get("button").trigger("click");
 
     expect(alert).toHaveBeenCalledOnce();
   });
@@ -61,7 +61,7 @@ describe("Home", () => {
     const invalidFile = new File(["Hello, world!"], "puzzle.json");
     wrapper.vm.onFilePicked(invalidFile);
 
-    wrapper.find("button").trigger("click");
+    wrapper.get("button").trigger("click");
     await flushPromises(); // Attempt to read file
     await flushPromises(); // TODO: Investigate why this line is needed for tests to pass
 
@@ -83,7 +83,7 @@ describe("Home", () => {
 
     api.post.mockRejectedValueOnce(new Error("API error"));
 
-    wrapper.find("button").trigger("click");
+    wrapper.get("button").trigger("click");
     await flushPromises(); // Read file
     await flushPromises(); // Call API
 

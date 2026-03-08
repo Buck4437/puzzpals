@@ -107,6 +107,6 @@ async function autosave(forced = false) {
 }
 
 // For tests only!
-export function __clearForTests() {
+export function __clearStoreForTests() {
   store.clear();
 }

@@ -1,37 +1,46 @@
-import type { Server } from "socket.io";
-import { createEmptyGrid } from "@puzzpals/puzzle-parser";
+import { Socket, type Server } from "socket.io";
 import { markAsDirty, getRoomFromStore } from "./memorystore.js";
-import { processChatMessage } from "./chat.js";
+import { isMessageValid, processChatMessage } from "./chat.js";
 import { randomUserID } from "./user.js";
 
-function init(io: Server) {
+interface User {
+  roomToken: string;
+  name: string;
+}
+
+const socketUserMap = new Map<Socket, User>();
+
+export function init(io: Server) {
   io.on("connection", (socket) => {
-    socket.on("room:join", async (data) => {
-      const token = data.token;
+    socket.on("room:join", async (token: unknown) => {
+      // Validate payload
+      if (typeof token !== "string" || token.length !== 10) return;
+
+      // Verify that the room exists
+      const room = await getRoomFromStore(token);
+      if (!room) return;
+
       const userID = randomUserID(token);
       console.log("joined", userID);
+
+      // Map socket to user
+      socketUserMap.set(socket, { roomToken: token, name: userID });
+
       socket.join(token);
 
-      const room = await getRoomFromStore(token);
-
-      if (!room) {
-        return;
-      }
-
-      socket.emit("user:id", userID);
-
-      const grid = room.puzzleData || null;
-      if (!grid) {
-        socket.emit("grid:state", createEmptyGrid());
-      } else {
-        socket.emit("grid:state", grid);
-      }
+      const grid = room.puzzleData;
+      socket.emit("room:initialize", grid, userID);
     });
 
-    socket.on("grid:updateCell", async (data) => {
-      const { token, idx, value } = data;
+    socket.on("grid:updateCell", async (idx: unknown, value: unknown) => {
+      // Check socket has joined a room
+      const user = socketUserMap.get(socket);
+      if (user === undefined) return;
 
-      const room = await getRoomFromStore(token);
+      // Validate payload
+      if (typeof idx !== "number" || typeof value !== "number") return;
+
+      const room = await getRoomFromStore(user.roomToken);
       if (!room) {
         return;
       }
@@ -42,24 +51,35 @@ function init(io: Server) {
         return;
       }
 
-      // TODO: Data validation
-      grid.cells[idx]?.setData(value);
+      // Ensure idx is not out of bounds
+      const cell = grid.cells[idx];
+      if (cell === undefined) return;
+
+      cell.setInput(value);
       markAsDirty(room);
 
       // Emit the update to all clients in the room (including the sender)
-      io.to(token).emit("grid:cellUpdated", { idx, value });
+      io.to(user.roomToken).emit("grid:cellUpdated", idx, value);
     });
 
-    socket.on("chat:newMessage", async (data) => {
-      const { token, message } = data;
-      const processed = processChatMessage(message);
-      if (!processed) {
-        console.log("Invalid chat message received:", message);
-        return;
-      }
-      io.to(token).emit("chat:messageNew", processed);
+    socket.on("chat:newMessage", (message: unknown) => {
+      // Check socket has joined a room
+      const user = socketUserMap.get(socket);
+      if (user === undefined) return;
+
+      // Validate payload
+      if (!isMessageValid(message)) return;
+
+      const processed = processChatMessage(message, user.name);
+      io.to(user.roomToken).emit("chat:messageNew", processed);
+    });
+
+    socket.on("disconnect", () => {
+      socketUserMap.delete(socket);
     });
   });
 }
 
-export { init };
+export function __clearSocketsForTests() {
+  socketUserMap.clear();
+}

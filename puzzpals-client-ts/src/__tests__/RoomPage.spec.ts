@@ -32,6 +32,9 @@ describe("RoomPage", () => {
     ],
   };
 
+  const token = "abcdefghij";
+  const user = "user_abcdefghij_00000000";
+
   beforeEach(() => {
     vi.clearAllMocks();
     socket.reset();
@@ -40,21 +43,21 @@ describe("RoomPage", () => {
   // As a player, I want to synchronise my progress with other players
   // so that we can collaborate on the same puzzle.
   it("joins room", async () => {
-    api.get.mockResolvedValueOnce({ data: { room: "TestRm" } });
+    api.get.mockResolvedValueOnce({ data: { room: token } });
 
-    // Load the room page with 'TestRm' as token
-    mount(RoomPage, { props: { token: "TestRm" } });
+    // Load the room page
+    mount(RoomPage, { props: { token: token } });
     await flushPromises();
 
     // Server receives request to join room
-    expect(socket.emit).toHaveBeenCalledWith("room:join", { token: "TestRm" });
+    expect(socket.emit).toHaveBeenCalledWith("room:join", token);
   });
 
   it("redirects to 404 if room does not exist", async () => {
     api.get.mockRejectedValueOnce({ response: { status: 404 } });
 
     // Load the room page with non-existent room
-    mount(RoomPage, { props: { token: "TestRn" } });
+    mount(RoomPage, { props: { token: token } });
     await flushPromises();
 
     // Redirect to 404
@@ -62,14 +65,14 @@ describe("RoomPage", () => {
   });
 
   it("leaves room when button pressed", async () => {
-    const wrapper = mount(RoomPage, { props: { token: "TestRm" } });
+    const wrapper = mount(RoomPage, { props: { token: token } });
     await flushPromises();
 
-    socket.emitServerEvent("grid:state", gridState);
+    socket.call("room:initialize", gridState, user);
     await nextTick();
 
     // Click leave room button
-    wrapper.find("button").trigger("click");
+    wrapper.get("button").trigger("click");
     await flushPromises();
 
     // Server receives request to leave room
@@ -77,7 +80,7 @@ describe("RoomPage", () => {
   });
 
   it("leaves room when leaving page", async () => {
-    const wrapper = mount(RoomPage, { props: { token: "TestRm" } });
+    const wrapper = mount(RoomPage, { props: { token: token } });
     await flushPromises();
 
     // Leave page by changing URL
@@ -88,9 +91,9 @@ describe("RoomPage", () => {
   });
 
   it("synchronises your grid upon entering room", async () => {
-    const wrapper = mount(RoomPage, { props: { token: "TestRm" } });
+    const wrapper = mount(RoomPage, { props: { token: token } });
 
-    socket.emitServerEvent("grid:state", gridState);
+    socket.call("room:initialize", gridState, user);
     await nextTick();
 
     const cells = wrapper.findAll("div.cell");
@@ -104,23 +107,14 @@ describe("RoomPage", () => {
   });
 
   it("synchronises your grid when others edit a cell", async () => {
-    const wrapper = mount(RoomPage, { props: { token: "TestRm" } });
+    const wrapper = mount(RoomPage, { props: { token: token } });
 
     // Set up the grid
-    socket.emitServerEvent("grid:state", gridState);
+    socket.call("room:initialize", gridState, user);
     await nextTick();
 
-    const data = {
-      idx: 1,
-      value: {
-        isBlack: false,
-        number: null,
-        input: NO_INPUT,
-      },
-    };
-
     // Update the second cell
-    socket.emitServerEvent("grid:cellUpdated", data);
+    socket.call("grid:cellUpdated", 1, NO_INPUT);
     await nextTick();
 
     const cell = wrapper.findAll("div.cell")[1];
@@ -128,30 +122,66 @@ describe("RoomPage", () => {
   });
 
   it("synchronises other grids when you edit a cell", async () => {
-    const wrapper = mount(RoomPage, { props: { token: "TestRm" } });
+    const wrapper = mount(RoomPage, { props: { token: token } });
 
     // Set up the grid
-    socket.emitServerEvent("grid:state", gridState);
+    socket.call("room:initialize", gridState, user);
     await nextTick();
 
     // Click the second cell
     const cell = wrapper.findAll("div.cell")[1];
     await cell?.trigger("click");
 
-    const expectedPayload = {
-      token: "TestRm",
-      idx: 1,
-      value: {
-        isBlack: false,
-        number: null,
-        input: NO_INPUT,
-      },
-    };
-
     // Assert data emitted to socket
-    expect(socket.emit).toHaveBeenCalledWith(
-      "grid:updateCell",
-      expectedPayload,
-    );
+    expect(socket.emit).toHaveBeenCalledWith("grid:updateCell", 1, NO_INPUT);
+  });
+
+  // As a player, I want to communicate with other players
+  // so that we can share insights.
+  it("can send messages to other players", async () => {
+    const msgtext = "Hello, world!";
+    const message = { msgtext };
+
+    const wrapper = mount(RoomPage, { props: { token } });
+    socket.call("room:initialize", gridState, user);
+    await nextTick();
+
+    const chatForm = wrapper.get("form.chat-input");
+    const textInput = chatForm.get("input");
+
+    // Type "Hello, world!" and send
+    textInput.setValue(msgtext);
+    chatForm.trigger("submit.prevent");
+
+    // Assert message sent
+    expect(socket.emit).toHaveBeenCalledWith("chat:newMessage", message);
+  });
+
+  it("can receive messages from other players", async () => {
+    const otherUser = "user_abcdefghij_00000001";
+    const msgtext = "Hello, world!";
+    const message = { user: otherUser, msgtext, timestamp: 0 };
+
+    const wrapper = mount(RoomPage, { props: { token } });
+    socket.call("room:initialize", gridState, user);
+    await nextTick();
+
+    // Receive "Hello, world!" from another user
+    socket.call("chat:messageNew", message);
+    await nextTick();
+
+    // Assert message shown
+    const chatBubble = wrapper.find("div.chat-message");
+    expect(chatBubble.exists()).toBe(true);
+
+    // Assert message has correct text
+    const timeString = new Date(0).toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    expect(chatBubble.get("div.chat-header").text()).toBe(otherUser);
+    expect(chatBubble.get("div.chat-text").text()).toBe(msgtext);
+    expect(chatBubble.get("div.chat-footer").text()).toBe(timeString);
   });
 });

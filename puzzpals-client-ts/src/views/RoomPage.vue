@@ -36,7 +36,6 @@ import type CellState from "@/models/CellState";
 import type GridState from "@/models/GridState";
 import Chat from "@/components/Chat.vue";
 import type ChatState from "@/models/ChatState";
-import type { ChatMessage } from "@/models/ChatState";
 
 const router = useRouter();
 
@@ -78,7 +77,7 @@ async function checkRoomExists() {
 }
 
 async function joinRoom() {
-  socket.emit("room:join", { token: props.token });
+  socket.emit("room:join", props.token);
 }
 
 async function leaveRoom() {
@@ -87,32 +86,40 @@ async function leaveRoom() {
 }
 
 function onCellUpdated(idx: number, value: CellState) {
-  socket.emit("grid:updateCell", { token: props.token, idx, value });
+  socket.emit("grid:updateCell", idx, value.input);
 }
 
-function onChatSubmit(message: ChatMessage) {
-  if (userID.value) {
-    message.user = userID.value;
-  }
-  socket.emit("chat:newMessage", { token: props.token, message: message });
+function onChatSubmit(text: string) {
+  const message = { msgtext: text };
+  socket.emit("chat:newMessage", message);
 }
 
 function initiateSocket() {
-  // TODO
-  socket.on("user:id", (id: string) => {
+  socket.on("room:initialize", (data: GridState, id: string) => {
+    initialGridState.value = data;
     userID.value = id;
   });
 
-  socket.on("grid:state", (data: GridState) => {
-    initialGridState.value = data;
-  });
-
-  socket.on("grid:cellUpdated", (data: { idx: number; value: CellState }) => {
-    const { idx, value } = data;
+  socket.on("grid:cellUpdated", (idx: number, value: number) => {
     if (areaComponent.value === null) {
       throw new Error("areaComponent is missing");
     }
-    areaComponent.value.onCellUpdated(idx, value);
+
+    // For now, grid:cellUpdated accepts only the input instead of the whole cell state
+    // because the input is the only thing the player can modify.
+    // We reconstruct the cell state from the input and pass it to the grid.
+
+    // If later the player can modify more things (e.g., text and background color)
+    // and grid:cellUpdated needs to accept the whole cell state,
+    // then we can remove the reconstruction step.
+
+    const newState: CellState = {
+      isBlack: false,
+      number: null,
+      input: value,
+    };
+
+    areaComponent.value.onCellUpdated(idx, newState);
   });
 
   // socket.on('chat:records', (history) => {

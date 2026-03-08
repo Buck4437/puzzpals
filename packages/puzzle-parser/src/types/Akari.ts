@@ -27,6 +27,10 @@ class Cell {
     this.number = number;
   }
 
+  setInput(input: number) {
+    this.input = input;
+  }
+
   setData(data: CellData) {
     this.isBlack = data.isBlack;
     this.number = data.number;

@@ -23,7 +23,7 @@ function getGridWrapper(initialInput: number) {
 }
 
 function getFirstCellElement(gridWrapper: VueWrapper) {
-  return gridWrapper.find("div.cell");
+  return gridWrapper.get("div.cell");
 }
 
 describe("Grid", () => {
