@@ -7,6 +7,9 @@ const router = express.Router();
 // Get all puzzles
 router.get("/", async (req, res) => {
   const limit = Number(req.query.limit) || 5;
+  if (!Number.isFinite(limit) || !Number.isInteger(limit) || limit < 0) {
+    res.status(400).json({ error: "Invalid limit param" });
+  }
   try {
     const puzzles: Puzzle[] = await getPuzzles(limit);
     res.json(puzzles);
@@ -50,7 +53,7 @@ router.post("/", async (req, res) => {
 // Get puzzle by id
 router.get("/:id", async (req, res) => {
   const id = Number(req.params.id);
-  if (!id) {
+  if (!Number.isInteger(id) || id < 0) {
     return res.status(400).json({ error: "Invalid puzzle id" });
   }
   try {

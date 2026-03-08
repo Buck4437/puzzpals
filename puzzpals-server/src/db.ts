@@ -81,8 +81,10 @@ export async function addPuzzle(
 }
 
 export async function getPuzzles(limit = 5) {
+  const safeLimit = limit <= 0 ? 5 : limit;
+
   const sql = `SELECT * FROM Puzzle ORDER BY publish_date DESC LIMIT $1`;
-  const result = await pool.query(sql, [limit]);
+  const result = await pool.query(sql, [safeLimit]);
   return result.rows;
 }
 
