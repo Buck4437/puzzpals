@@ -1,1 +1,1 @@
-web: cd puzzpals-server && npm run build && npm run start
+web: cd puzzpals-server && node ./dist/bin/www.js

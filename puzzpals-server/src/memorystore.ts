@@ -7,6 +7,7 @@ interface RoomEntry {
   isDirty?: boolean;
 }
 
+let timeout: NodeJS.Timeout;
 let stopAutosaveFlag = false;
 const store = new Map<string, RoomEntry>();
 
@@ -62,7 +63,7 @@ function isDirty(room: RoomEntry): boolean {
 }
 
 function setAutosaveTimeout(delay: number) {
-  setTimeout(() => {
+  timeout = setTimeout(() => {
     if (!stopAutosaveFlag) {
       autosave().catch((e) => {
         console.error("Autosave failed:", e);
@@ -77,6 +78,7 @@ export function startAutosave() {
 
 export async function stopAutosave() {
   stopAutosaveFlag = true;
+  clearTimeout(timeout);
 
   // Save to the database one last time
   await autosave(true);
@@ -98,7 +100,10 @@ async function autosave(forced = false) {
     }
   }
 
-  setAutosaveTimeout(60 * 1000);
+  // Don't schedule another autosave if it's been stopped
+  if (!stopAutosaveFlag) {
+    setAutosaveTimeout(60 * 1000);
+  }
 }
 
 // For tests only!
