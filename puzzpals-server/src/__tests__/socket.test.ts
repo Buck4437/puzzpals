@@ -41,7 +41,7 @@ describe("Socket", () => {
     expect(socket.emit).toHaveBeenCalledWith(
       "room:initialize",
       expectedGrid,
-      // No need to escape the token, we know it's 6-char alphanumeric
+      // No need to escape the token, we know it's 10-char alphanumeric
       expect.stringMatching(new RegExp(`^user_${token}_[A-Za-z0-9]{8}$`)),
     );
   });
