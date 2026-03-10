@@ -1,4 +1,19 @@
+// Utility functions
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+// Declarations for coordinates and keys
 export type Coordinate = [number, number];
+
+export function isCoordinate(value: unknown): value is Coordinate {
+  return (
+    Array.isArray(value) &&
+    value.length === 2 &&
+    value.every((entry) => typeof entry === "number" && Number.isFinite(entry))
+  );
+}
+
 export type PairCoordinate = [Coordinate, Coordinate];
 export type CoordinateKey = string;
 export type PairCoordinateKey = string;
@@ -45,7 +60,16 @@ export function KeyToPairCoordinate(
   return [coord1, coord2];
 }
 
-export type LineThickness = "thin" | "thick";
+// Puzzle data structures
+export type ObjectTypes = "lineObjects" | "surfaceObjects" | "symbolObjects";
+
+export function isObjectType(value: unknown): value is ObjectTypes {
+  return (
+    value === "lineObjects" ||
+    value === "surfaceObjects" ||
+    value === "symbolObjects"
+  );
+}
 
 export type TypeToCheck = "lineObjects" | "surfaceObjects" | "symbolObjects";
 
@@ -55,15 +79,41 @@ export interface LineObject {
   color: string;
 }
 
+export function isLineObject(value: unknown): value is LineObject {
+  return (
+    isPlainObject(value) &&
+    isCoordinate(value.start) &&
+    isCoordinate(value.end) &&
+    typeof value.color === "string"
+  );
+}
+
 export interface SurfaceObject {
   location: Coordinate;
   color: string;
+}
+
+export function isSurfaceObject(value: unknown): value is SurfaceObject {
+  return (
+    isPlainObject(value) &&
+    isCoordinate(value.location) &&
+    typeof value.color === "string"
+  );
 }
 
 export interface SymbolObject {
   location: Coordinate;
   content: string;
   color: string;
+}
+
+export function isSymbolObject(value: unknown): value is SymbolObject {
+  return (
+    isPlainObject(value) &&
+    isCoordinate(value.location) &&
+    typeof value.content === "string" &&
+    typeof value.color === "string"
+  );
 }
 
 export type LineObjectDict = Record<PairCoordinateKey, LineObject>;

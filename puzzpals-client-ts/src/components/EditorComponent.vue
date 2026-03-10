@@ -108,20 +108,23 @@
     </div>
   </div>
   <div>
-    Current dimensions: Row: {{ rowCount }}, Col: {{ colCount }}
+    <template v-if="!hasPlayerSolutionLayer">
+      Current dimensions: Row: {{ rowCount }}, Col: {{ colCount }}
 
-    <br />
+      <br />
 
-    Set dimensions: Row:
-    <input type="number" v-model.number="inputRowCount" min="1" max="100" />
-    Col:
-    <input type="number" v-model.number="inputColCount" min="1" max="100" />
+      Set dimensions: Row:
+      <input type="number" v-model.number="inputRowCount" min="1" max="100" />
+      Col:
+      <input type="number" v-model.number="inputColCount" min="1" max="100" />
 
-    <button @click="setDimensions">Set</button>
+      <button @click="setDimensions">Set</button>
+    </template>
   </div>
   <GridSVG
     :size="480"
     :grid="grid"
+    :player-solution="playerSolution"
     :cursor="currentTool.codename === 'text' ? cursor : null"
     @center-cell-enter="onCenterEnter"
     @corner-cell-enter="onCornerEnter"
@@ -130,23 +133,62 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, type Ref, onMounted, onBeforeUnmount } from "vue";
+import { computed, ref, onMounted, onBeforeUnmount, watch } from "vue";
 
 import GridSVG from "@/components/GridSVG.vue";
 import {
   type Coordinate,
+  type SurfaceObject,
+  type LineObject,
+  type SymbolObject,
+  type EditMessage,
   type Grid,
-  KeyToCoordinate,
-  KeyToPairCoordinate,
+  type LayerData,
   CoordinateToKey,
   PairCoordinateToKey,
   type CoordinateKey,
 } from "@puzzpals/puzzle-models";
 
-const rowCount = ref(6);
-const colCount = ref(7);
-const inputRowCount: Ref<Number> = ref(6);
-const inputColCount: Ref<Number> = ref(7);
+const props = defineProps<{
+  grid: Grid;
+  playerSolution?: LayerData | null;
+}>();
+
+const emit = defineEmits<{
+  "edit-message": [message: EditMessage];
+  "resize-grid": [size: [number, number]];
+}>();
+
+const grid = computed(() => props.grid);
+const playerSolution = computed(() => props.playerSolution ?? null);
+const hasPlayerSolutionLayer = computed(() => playerSolution.value !== null);
+const editableLayer = computed<LayerData>(() => {
+  return playerSolution.value ?? grid.value.problem;
+});
+const renderedLayer = computed<LayerData>(() => {
+  if (playerSolution.value === null) {
+    return grid.value.problem;
+  }
+
+  return {
+    lineObjects: {
+      ...grid.value.problem.lineObjects,
+      ...playerSolution.value.lineObjects,
+    },
+    surfaceObjects: {
+      ...grid.value.problem.surfaceObjects,
+      ...playerSolution.value.surfaceObjects,
+    },
+    symbolObjects: {
+      ...grid.value.problem.symbolObjects,
+      ...playerSolution.value.symbolObjects,
+    },
+  };
+});
+const rowCount = computed(() => grid.value.size[0]);
+const colCount = computed(() => grid.value.size[1]);
+const inputRowCount = ref(rowCount.value);
+const inputColCount = ref(colCount.value);
 
 interface Tool {
   name: string;
@@ -174,6 +216,15 @@ const selectedTextColor = ref("auto");
 const cursor = ref<Coordinate | null>(null);
 const textInput = ref<HTMLInputElement | null>(null);
 const textInputValue = ref("");
+
+watch(
+  () => grid.value.size,
+  ([rows, cols]) => {
+    inputRowCount.value = rows;
+    inputColCount.value = cols;
+  },
+  { immediate: true },
+);
 
 const tools: Tool[] = [
   {
@@ -210,14 +261,57 @@ const subtools = computed(() => {
   return currentTool.value.subtools;
 });
 
-const grid = ref<Grid>({
-  size: [rowCount.value, colCount.value],
-  problem: {
-    lineObjects: {},
-    surfaceObjects: {},
-    symbolObjects: {},
-  },
-});
+function emitRemoveMessage(type: EditMessage["type"], key: string) {
+  emit("edit-message", {
+    messageType: "remove",
+    type,
+    data: key,
+  });
+}
+
+function emitLineUpdate(value: LineObject) {
+  emit("edit-message", {
+    messageType: "edit",
+    type: "lineObjects",
+    data: value,
+  });
+}
+
+function emitSurfaceUpdate(value: SurfaceObject) {
+  emit("edit-message", {
+    messageType: "edit",
+    type: "surfaceObjects",
+    data: value,
+  });
+}
+
+function emitSymbolUpdate(value: SymbolObject) {
+  emit("edit-message", {
+    messageType: "edit",
+    type: "symbolObjects",
+    data: value,
+  });
+}
+
+function getTextColor(key: string): string {
+  if (selectedTextColor.value !== "auto") {
+    return selectedTextColor.value;
+  }
+
+  return renderedLayer.value.surfaceObjects[key]?.color === "black"
+    ? "white"
+    : "black";
+}
+
+function syncTextInputFromGrid() {
+  if (cursor.value === null) {
+    textInputValue.value = "";
+    return;
+  }
+
+  const key = CoordinateToKey(cursor.value);
+  textInputValue.value = editableLayer.value.symbolObjects[key]?.content ?? "";
+}
 
 const setDimensions = () => {
   // Validate input
@@ -237,50 +331,7 @@ const setDimensions = () => {
 
   const newRowCount = x;
   const newColCount = y;
-
-  grid.value.size = [newRowCount, newColCount];
-
-  // Remove objects that are out of bounds
-  grid.value.problem.lineObjects = Object.fromEntries(
-    Object.entries(grid.value.problem.lineObjects).filter(([key, line]) => {
-      const pair = KeyToPairCoordinate(key);
-      if (pair === null) {
-        return false;
-      }
-      const [start, end] = pair;
-      return (
-        start[0] < newRowCount &&
-        start[1] < newColCount &&
-        end[0] < newRowCount &&
-        end[1] < newColCount
-      );
-    }),
-  );
-
-  grid.value.problem.surfaceObjects = Object.fromEntries(
-    Object.entries(grid.value.problem.surfaceObjects).filter(
-      ([key, surface]) => {
-        const coordinate = KeyToCoordinate(key);
-        if (coordinate === null) {
-          return false;
-        }
-        return coordinate[0] < newRowCount && coordinate[1] < newColCount;
-      },
-    ),
-  );
-
-  grid.value.problem.symbolObjects = Object.fromEntries(
-    Object.entries(grid.value.problem.symbolObjects).filter(([key, symbol]) => {
-      const coordinate = KeyToCoordinate(key);
-      if (coordinate === null) {
-        return false;
-      }
-      return coordinate[0] < newRowCount && coordinate[1] < newColCount;
-    }),
-  );
-
-  rowCount.value = newRowCount;
-  colCount.value = newColCount;
+  emit("resize-grid", [newRowCount, newColCount]);
 
   // Move cursor if out of bounds
   if (cursor.value) {
@@ -295,15 +346,13 @@ const setDimensions = () => {
 
       // Update selected cell if in text mode
       if (currentTool.value.codename === "text") {
-        const key = CoordinateToKey(cursor.value);
-        const existing = grid.value.problem.symbolObjects[key];
-        textInputValue.value = existing?.content || "";
+        syncTextInputFromGrid();
       }
     }
   }
 };
 
-let firstClickColor: string | null = null;
+let surfaceStrokeMode: "draw" | "erase" | null = null;
 let visitedSurfaces: Set<CoordinateKey> = new Set();
 let lastLineCenter: Coordinate | null = null;
 let lastEdgeCorner: Coordinate | null = null;
@@ -335,17 +384,17 @@ const applyLineSegment = (
   const lineKey = PairCoordinateToKey([start, end]);
   let nextMode = strokeMode;
   if (strokeMode === null) {
-    nextMode = grid.value.problem.lineObjects[lineKey] ? "erase" : "draw";
+    nextMode = editableLayer.value.lineObjects[lineKey] ? "erase" : "draw";
   }
 
   if (nextMode === "erase") {
-    delete grid.value.problem.lineObjects[lineKey];
+    emitRemoveMessage("lineObjects", lineKey);
   } else {
-    grid.value.problem.lineObjects[lineKey] = {
+    emitLineUpdate({
       start,
       end,
       color: selectedLineColor.value,
-    };
+    });
   }
 
   return nextMode;
@@ -422,36 +471,24 @@ const handleKeyboardInput = (event: KeyboardEvent) => {
   }
 
   const key = CoordinateToKey(cursor.value);
-  const prev = grid.value.problem.symbolObjects[key];
-  let currentText = prev?.content || "";
+  const prev = editableLayer.value.symbolObjects[key];
+  const currentText = prev?.content || "";
   const maxTextLength = 2;
 
   if (event.key === "Backspace") {
     event.preventDefault();
     if (prev) {
-      // Delete all characters
-      delete grid.value.problem.symbolObjects[key];
+      emitRemoveMessage("symbolObjects", key);
     }
   } else if (event.key.length === 1 && currentText.length < maxTextLength) {
-    // Max 2 characters
     event.preventDefault();
     const newText = currentText + event.key;
 
-    let textColor: string;
-    if (selectedTextColor.value === "auto") {
-      textColor =
-        grid.value.problem.surfaceObjects[key]?.color === "black"
-          ? "white"
-          : "black";
-    } else {
-      textColor = selectedTextColor.value;
-    }
-
-    grid.value.problem.symbolObjects[key] = {
+    emitSymbolUpdate({
       location: cursor.value,
       content: newText,
-      color: textColor,
-    };
+      color: getTextColor(key),
+    });
   }
 };
 
@@ -463,47 +500,31 @@ onBeforeUnmount(() => {
   window.removeEventListener("keydown", handleKeyboardInput);
 });
 
-defineExpose({
-  grid,
-});
-
 const updateSelectedCell = () => {
   if (!cursor.value) {
     return;
   }
 
   const key = CoordinateToKey(cursor.value);
-  const prev = grid.value.problem.symbolObjects[key];
+  const prev = editableLayer.value.symbolObjects[key];
 
   if (textInputValue.value === "") {
     // Delete the symbol if text is empty
     if (prev) {
-      delete grid.value.problem.symbolObjects[key];
+      emitRemoveMessage("symbolObjects", key);
     }
   } else {
-    // Calculate text color
-    let textColor: string;
-    if (selectedTextColor.value === "auto") {
-      textColor =
-        grid.value.problem.surfaceObjects[key]?.color === "black"
-          ? "white"
-          : "black";
-    } else {
-      textColor = selectedTextColor.value;
-    }
-
-    // Update or create the symbol
-    grid.value.problem.symbolObjects[key] = {
+    emitSymbolUpdate({
       location: cursor.value,
       content: textInputValue.value,
-      color: textColor,
-    };
+      color: getTextColor(key),
+    });
   }
 };
 
 const onMouseRelease = () => {
   visitedSurfaces = new Set();
-  firstClickColor = null;
+  surfaceStrokeMode = null;
   lastLineCenter = null;
   lastEdgeCorner = null;
   lineStrokeMode = null;
@@ -529,25 +550,19 @@ const onCenterEnter = (coordinate: Coordinate) => {
           return;
         }
 
-        // If the clicked cell has the same color, set to white. Otherwise, set to that color
-        let paintedColor: string;
-
-        if (firstClickColor === null) {
-          const prev = grid.value.problem.surfaceObjects[key];
-          if (!prev || prev.color != selectedColor) {
-            paintedColor = selectedColor;
-          } else {
-            paintedColor = "white";
-          }
-          firstClickColor = paintedColor;
-        } else {
-          paintedColor = firstClickColor;
+        if (surfaceStrokeMode === null) {
+          const prev = editableLayer.value.surfaceObjects[key];
+          surfaceStrokeMode = prev?.color === selectedColor ? "erase" : "draw";
         }
 
-        grid.value.problem.surfaceObjects[key] = {
-          location: coordinate,
-          color: paintedColor,
-        };
+        if (surfaceStrokeMode === "erase") {
+          emitRemoveMessage("surfaceObjects", key);
+        } else {
+          emitSurfaceUpdate({
+            location: coordinate,
+            color: selectedColor,
+          });
+        }
       }
       break;
     case "line":
@@ -576,7 +591,7 @@ const onCenterEnter = (coordinate: Coordinate) => {
       break;
     case "text":
       {
-        const existing = grid.value.problem.symbolObjects[key];
+        const existing = editableLayer.value.symbolObjects[key];
 
         // In input box mode, set the input value and focus
         if (currentSubtoolId.value === 1) {
@@ -612,6 +627,14 @@ const onCornerEnter = (coordinate: Coordinate) => {
 
   lastEdgeCorner = coordinate;
 };
+
+watch(
+  () => [grid.value.problem, playerSolution.value],
+  () => {
+    syncTextInputFromGrid();
+  },
+  { deep: true },
+);
 </script>
 
 <style scoped>

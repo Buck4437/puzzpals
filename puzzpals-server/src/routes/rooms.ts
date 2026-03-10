@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { getRoomFromStore, createRoomInStore } from "../memorystore.js";
-import { parsePuzzle } from "@puzzpals/puzzle-parser";
+import { parsePuzzle, createEmptyLayerData } from "@puzzpals/puzzle-parser";
+import type { GameData } from "@puzzpals/puzzle-models";
 
 const router = Router();
 
@@ -38,6 +39,11 @@ router.post("/create", async (req, res) => {
   try {
     const puzzle = parsePuzzle(puzzleData);
 
+    const gameData = {
+      puzzle,
+      playerSolution: createEmptyLayerData(),
+    } as GameData;
+
     token = await generateToken();
     if (token === null) {
       return res
@@ -45,7 +51,7 @@ router.post("/create", async (req, res) => {
         .json({ error: "Could not create room, please try again" });
     }
 
-    createRoomInStore(token, puzzle);
+    createRoomInStore(token, gameData);
   } catch (err) {
     console.log("Error creating room:", (err as Error).message);
     return res.status(400).json({ error: "Invalid puzzle data" });

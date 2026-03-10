@@ -1,40 +1,108 @@
 <template>
-  <AkariGrid
-    :initial-grid-state="initialGridState"
-    @update-cell="(idx, val) => emit('updateCell', idx, val)"
-    ref="gridComponent"
-  />
-  <button @click="undo" aria-label="Undo last move">Undo</button>
-  <button @click="redo" aria-label="Redo last move">Redo</button>
+  <div>
+    <EditorComponent
+      :grid="props.grid"
+      :player-solution="props.playerSolution ?? null"
+      @edit-message="onEditMessage"
+      @resize-grid="emit('resize-grid', $event)"
+    />
+    <div class="undo-redo-button">
+      <button
+        @click="undo"
+        :disabled="undoStack.length === 0"
+        aria-label="Undo last edit"
+      >
+        Undo
+      </button>
+      <button
+        @click="redo"
+        :disabled="redoStack.length === 0"
+        aria-label="Redo last undone edit"
+      >
+        Redo
+      </button>
+    </div>
+  </div>
 </template>
 <script setup lang="ts">
-import { useTemplateRef } from "vue";
-import AkariGrid from "./AkariGrid.vue";
-import type GridState from "@/models/GridState";
-import type CellState from "@/models/CellState";
+import { computed, ref } from "vue";
+import EditorComponent from "./EditorComponent.vue";
+import {
+  createInverseEditMessage,
+  type EditMessage,
+  type Grid,
+  type LayerData,
+} from "@puzzpals/puzzle-models";
 
-const emit = defineEmits(["updateCell"]);
-
-const props = defineProps<{
-  initialGridState: GridState;
+const emit = defineEmits<{
+  "edit-message": [message: EditMessage];
+  "resize-grid": [size: [number, number]];
 }>();
 
-const gridComponent = useTemplateRef("gridComponent");
+const props = defineProps<{
+  grid: Grid;
+  playerSolution?: LayerData | null;
+}>();
+
+const MAX_UNDO = 300;
+
+type UndoRedoStackEntry = {
+  undoMessage: EditMessage;
+  redoMessage: EditMessage;
+};
+
+const editableLayer = computed(
+  () => props.playerSolution ?? props.grid.problem,
+);
+const undoStack = ref<UndoRedoStackEntry[]>([]);
+const redoStack = ref<UndoRedoStackEntry[]>([]);
+
+function pushUndoEntry(entry: UndoRedoStackEntry) {
+  undoStack.value.push(entry);
+  if (undoStack.value.length > MAX_UNDO) {
+    undoStack.value.shift();
+  }
+  redoStack.value = [];
+}
+
+function onEditMessage(message: EditMessage) {
+  const inverseMessage = createInverseEditMessage(editableLayer.value, message);
+  if (inverseMessage === null) {
+    return;
+  }
+
+  pushUndoEntry({
+    undoMessage: inverseMessage,
+    redoMessage: message,
+  });
+  emit("edit-message", message);
+}
 
 function undo() {
-  gridComponent.value?.undo();
+  const entry = undoStack.value.pop();
+  if (entry === undefined) {
+    return;
+  }
+
+  redoStack.value.push(entry);
+  emit("edit-message", entry.undoMessage);
 }
 
 function redo() {
-  gridComponent.value?.redo();
-}
-
-function onCellUpdated(idx: number, newState: CellState) {
-  if (gridComponent.value === null) {
-    throw new Error("Grid is missing");
+  const entry = redoStack.value.pop();
+  if (entry === undefined) {
+    return;
   }
-  gridComponent.value.onCellUpdated(idx, newState);
-}
 
-defineExpose({ onCellUpdated });
+  undoStack.value.push(entry);
+  emit("edit-message", entry.redoMessage);
+}
 </script>
+
+<style scoped>
+.undo-redo-button {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
+}
+</style>

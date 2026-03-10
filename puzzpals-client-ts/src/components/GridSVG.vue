@@ -10,94 +10,100 @@
     @mousemove="handlePointerMove"
     @mouseleave="handleMouseLeave"
   >
-    <!-- Surface objects -->
-    <rect
-      v-for="surface in props.grid.problem.surfaceObjects"
-      :key="`surface-${surface.location}`"
-      :x="toSvgCoordinates(topLeft(surface.location))[0]"
-      :y="toSvgCoordinates(topLeft(surface.location))[1]"
-      :width="cellSize"
-      :height="cellSize"
-      :fill="surface.color"
-      pointer-events="none"
-    />
+    <g v-for="layer in layers">
+      <!-- Surface objects -->
+      <rect
+        v-for="surface in layer.surfaceObjects"
+        :key="`surface-${surface.location}`"
+        :x="toSvgCoordinates(topLeft(surface.location))[0]"
+        :y="toSvgCoordinates(topLeft(surface.location))[1]"
+        :width="cellSize"
+        :height="cellSize"
+        :fill="surface.color"
+        pointer-events="none"
+      />
 
-    <!-- Vertical lines -->
-    <line
-      v-for="col in props.grid.size[1] + 1"
-      :key="`grid-v-line-${col}`"
-      :x1="toSvgCoordinates([0, col - 1])[0]"
-      :y1="toSvgCoordinates([0, col - 1])[1]"
-      :x2="toSvgCoordinates([props.grid.size[0], col - 1])[0]"
-      :y2="toSvgCoordinates([props.grid.size[0], col - 1])[1]"
-      stroke="black"
-      :stroke-width="col === 1 || col === props.grid.size[1] + 1 ? 3 : 1"
-      pointer-events="none"
-    />
+      <!-- Vertical lines -->
+      <line
+        v-for="col in props.grid.size[1] + 1"
+        :key="`grid-v-line-${col}`"
+        :x1="toSvgCoordinates([0, col - 1])[0]"
+        :y1="toSvgCoordinates([0, col - 1])[1]"
+        :x2="toSvgCoordinates([props.grid.size[0], col - 1])[0]"
+        :y2="toSvgCoordinates([props.grid.size[0], col - 1])[1]"
+        stroke="black"
+        :stroke-width="col === 1 || col === props.grid.size[1] + 1 ? 3 : 1"
+        pointer-events="none"
+      />
 
-    <!-- Horizontal lines -->
-    <line
-      v-for="row in props.grid.size[0] + 1"
-      :key="`grid-h-line-${row}`"
-      :x1="toSvgCoordinates([row - 1, 0])[0]"
-      :y1="toSvgCoordinates([row - 1, 0])[1]"
-      :x2="toSvgCoordinates([row - 1, props.grid.size[1]])[0]"
-      :y2="toSvgCoordinates([row - 1, props.grid.size[1]])[1]"
-      stroke="black"
-      :stroke-width="row === 1 || row === props.grid.size[0] + 1 ? 3 : 1"
-      pointer-events="none"
-    />
+      <!-- Horizontal lines -->
+      <line
+        v-for="row in props.grid.size[0] + 1"
+        :key="`grid-h-line-${row}`"
+        :x1="toSvgCoordinates([row - 1, 0])[0]"
+        :y1="toSvgCoordinates([row - 1, 0])[1]"
+        :x2="toSvgCoordinates([row - 1, props.grid.size[1]])[0]"
+        :y2="toSvgCoordinates([row - 1, props.grid.size[1]])[1]"
+        stroke="black"
+        :stroke-width="row === 1 || row === props.grid.size[0] + 1 ? 3 : 1"
+        pointer-events="none"
+      />
 
-    <!-- Line objects -->
-    <line
-      v-for="line in props.grid.problem.lineObjects"
-      :key="`line-${line.start}-${line.end}`"
-      :x1="toSvgCoordinates(line.start)[0]"
-      :y1="toSvgCoordinates(line.start)[1]"
-      :x2="toSvgCoordinates(line.end)[0]"
-      :y2="toSvgCoordinates(line.end)[1]"
-      :stroke="line.color"
-      :stroke-width="3"
-      pointer-events="none"
-    />
+      <!-- Line objects -->
+      <line
+        v-for="line in layer.lineObjects"
+        :key="`line-${line.start}-${line.end}`"
+        :x1="toSvgCoordinates(line.start)[0]"
+        :y1="toSvgCoordinates(line.start)[1]"
+        :x2="toSvgCoordinates(line.end)[0]"
+        :y2="toSvgCoordinates(line.end)[1]"
+        :stroke="line.color"
+        :stroke-width="3"
+        pointer-events="none"
+      />
 
-    <!-- symbol objects -->
-    <g
-      v-for="symbol in props.grid.problem.symbolObjects"
-      :key="`symbol-${symbol.location}`"
-      :transform="`translate(${toSvgCoordinates(symbol.location)[0]}, ${toSvgCoordinates(symbol.location)[1]})`"
-      pointer-events="none"
-    >
-      <text
-        x="0"
-        y="0"
-        text-anchor="middle"
-        dominant-baseline="central"
-        :font-size="cellSize / 2"
-        :fill="symbol.color"
+      <!-- symbol objects -->
+      <g
+        v-for="symbol in layer.symbolObjects"
+        :key="`symbol-${symbol.location}`"
+        :transform="`translate(${toSvgCoordinates(symbol.location)[0]}, ${toSvgCoordinates(symbol.location)[1]})`"
+        pointer-events="none"
       >
-        {{ symbol.content }}
-      </text>
-    </g>
+        <text
+          x="0"
+          y="0"
+          text-anchor="middle"
+          dominant-baseline="central"
+          :font-size="cellSize / 2"
+          :fill="symbol.color"
+        >
+          {{ symbol.content }}
+        </text>
+      </g>
 
-    <!-- Cursor -->
-    <rect
-      v-if="props.cursor"
-      :x="toSvgCoordinates(topLeft(props.cursor))[0]"
-      :y="toSvgCoordinates(topLeft(props.cursor))[1]"
-      :width="cellSize"
-      :height="cellSize"
-      fill="none"
-      stroke="red"
-      stroke-width="5"
-      opacity="0.7"
-      pointer-events="none"
-    />
+      <!-- Cursor -->
+      <rect
+        v-if="props.cursor"
+        :x="toSvgCoordinates(topLeft(props.cursor))[0]"
+        :y="toSvgCoordinates(topLeft(props.cursor))[1]"
+        :width="cellSize"
+        :height="cellSize"
+        fill="none"
+        stroke="red"
+        stroke-width="5"
+        opacity="0.7"
+        pointer-events="none"
+      />
+    </g>
   </svg>
 </template>
 
 <script setup lang="ts">
-import { type Grid, type Coordinate } from "@puzzpals/puzzle-models";
+import {
+  type Grid,
+  type Coordinate,
+  type LayerData,
+} from "@puzzpals/puzzle-models";
 import { ref, computed } from "vue";
 
 const FULLSIZE = 480;
@@ -133,6 +139,7 @@ function toGridCoordinates(coordinate: [number, number]): [number, number] {
 const props = defineProps<{
   size: number;
   grid: Grid;
+  playerSolution?: LayerData | null;
   cursor?: Coordinate | null;
 }>();
 
@@ -143,6 +150,13 @@ const emit = defineEmits<{
   cornerCellEnter: [corner: [number, number]];
   mouseRelease: [];
 }>();
+
+const layers = computed(() => {
+  if (props.playerSolution === null || props.playerSolution === undefined) {
+    return [props.grid.problem];
+  }
+  return [props.grid.problem, props.playerSolution] as LayerData[];
+});
 
 const cellSize = computed(
   () => FULLSIZE / Math.max(props.grid.size[0], props.grid.size[1]),

@@ -3,7 +3,6 @@ import {
   type LayerData,
   type SolutionData,
 } from "@puzzpals/puzzle-models";
-import { serialize, deserialize } from "./parsers/AkariParser.js";
 
 type PlainObject = Record<string, unknown>;
 
@@ -142,6 +141,4 @@ function parsePuzzle(input: unknown): Grid {
   return puzzle;
 }
 
-export { parsePuzzle, serialize, deserialize };
-export type { Grid, LayerData, SolutionData };
-export type { Grid as AkariGrid } from "./types (dep)/Akari.js";
+export { parsePuzzle, createEmptyLayerData };

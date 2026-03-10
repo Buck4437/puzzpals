@@ -1,5 +1,9 @@
 <template>
-  <EditorComponent ref="editor" />
+  <EditorComponent
+    :grid="grid"
+    @edit-message="onEditMessage"
+    @resize-grid="onResizeGrid"
+  />
 
   <div style="margin-top: 2em">
     <h2>Export puzzle</h2>
@@ -15,22 +19,80 @@ import EditorComponent from "../components/EditorComponent.vue";
 
 import { ref } from "vue";
 import api from "@/services/api";
-import type { Grid } from "@puzzpals/puzzle-models";
+import {
+  applyEditMessage,
+  KeyToCoordinate,
+  KeyToPairCoordinate,
+  type EditMessage,
+  type Grid,
+} from "@puzzpals/puzzle-models";
 
-type EditorComponentExposed = {
-  grid: Grid;
-};
-
-const editor = ref<EditorComponentExposed | null>(null);
 const uploadStatus = ref("");
+const grid = ref<Grid>({
+  size: [6, 7],
+  problem: {
+    lineObjects: {},
+    surfaceObjects: {},
+    symbolObjects: {},
+  },
+});
+
+function onEditMessage(message: EditMessage) {
+  grid.value = {
+    ...grid.value,
+    problem: applyEditMessage(grid.value.problem, message),
+  };
+}
+
+function onResizeGrid(size: [number, number]) {
+  const [rowCount, colCount] = size;
+
+  grid.value = {
+    ...grid.value,
+    size,
+    problem: {
+      lineObjects: Object.fromEntries(
+        Object.entries(grid.value.problem.lineObjects).filter(([key]) => {
+          const pair = KeyToPairCoordinate(key);
+          if (pair === null) {
+            return false;
+          }
+
+          const [start, end] = pair;
+          return (
+            start[0] < rowCount &&
+            start[1] < colCount &&
+            end[0] < rowCount &&
+            end[1] < colCount
+          );
+        }),
+      ),
+      surfaceObjects: Object.fromEntries(
+        Object.entries(grid.value.problem.surfaceObjects).filter(([key]) => {
+          const coordinate = KeyToCoordinate(key);
+          return (
+            coordinate !== null &&
+            coordinate[0] < rowCount &&
+            coordinate[1] < colCount
+          );
+        }),
+      ),
+      symbolObjects: Object.fromEntries(
+        Object.entries(grid.value.problem.symbolObjects).filter(([key]) => {
+          const coordinate = KeyToCoordinate(key);
+          return (
+            coordinate !== null &&
+            coordinate[0] < rowCount &&
+            coordinate[1] < colCount
+          );
+        }),
+      ),
+    },
+  };
+}
 
 const exportPuzzle = () => {
-  const object = editor.value?.grid;
-  if (!object) {
-    alert("Editor is not ready yet");
-    return;
-  }
-  downloadObjectAsJson(object, "puzzpals-puzzle");
+  downloadObjectAsJson(grid.value, "puzzpals-puzzle");
 };
 
 const downloadObjectAsJson = (exportObj: object, exportName: string) => {
@@ -48,11 +110,7 @@ const downloadObjectAsJson = (exportObj: object, exportName: string) => {
 async function publishPuzzle() {
   uploadStatus.value = "Publishing...";
   try {
-    if (!editor.value) {
-      throw new Error("Editor is not ready yet");
-    }
-
-    const puzzleObj = JSON.parse(JSON.stringify(editor.value.grid));
+    const puzzleObj = JSON.parse(JSON.stringify(grid.value));
 
     console.log(puzzleObj);
 
