@@ -1,8 +1,10 @@
 import request from "supertest";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import app from "../app.js";
 import { arrangeBeforeEach, cleanUpAfterEach } from "./utils/arrange.js";
+
+vi.mock("../pool.js");
 
 const validPayload = {
   type: "akari",
