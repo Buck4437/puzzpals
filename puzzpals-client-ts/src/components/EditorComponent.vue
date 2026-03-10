@@ -119,7 +119,6 @@
 
     <button @click="setDimensions">Set</button>
   </div>
-  <button @click="exportGrid" :disabled="!canExport">Export as akari</button>
   <GridSVG
     :size="480"
     :grid="grid"
@@ -142,7 +141,7 @@ import {
   CoordinateToKey,
   PairCoordinateToKey,
   type CoordinateKey,
-} from "@/models/Grid";
+} from "@puzzpals/puzzle-models";
 
 const rowCount = ref(6);
 const colCount = ref(7);
@@ -218,10 +217,6 @@ const grid = ref<Grid>({
     surfaceObjects: {},
     symbolObjects: {},
   },
-});
-
-const canExport = computed(() => {
-  return true;
 });
 
 const setDimensions = () => {
@@ -306,69 +301,6 @@ const setDimensions = () => {
       }
     }
   }
-};
-
-const downloadObjectAsJson = (exportObj: object, exportName: string) => {
-  const dataStr =
-    "data:text/json;charset=utf-8," +
-    encodeURIComponent(JSON.stringify(exportObj));
-  const downloadAnchorNode = document.createElement("a");
-  downloadAnchorNode.setAttribute("href", dataStr);
-  downloadAnchorNode.setAttribute("download", exportName + ".json");
-  document.body.appendChild(downloadAnchorNode); // required for firefox
-  downloadAnchorNode.click();
-  downloadAnchorNode.remove();
-};
-
-const exportGrid = () => {
-  const emptyMatrix = Array.from({ length: grid.value.size[0] }, () =>
-    Array.from({ length: grid.value.size[1] }, () => "."),
-  );
-
-  const validSymbols = new Set(["0", "1", "2", "3", "4"]);
-
-  for (const [key, surface] of Object.entries(
-    grid.value.problem.surfaceObjects,
-  )) {
-    const coordinate = KeyToCoordinate(key);
-
-    if (coordinate === null) {
-      continue;
-    }
-
-    const [r, c] = coordinate;
-
-    const row = emptyMatrix[r - 0.5];
-    if (!row) {
-      continue;
-    }
-
-    if (row[c - 0.5] === undefined) {
-      continue;
-    }
-
-    if (surface.color === "white") {
-      continue;
-    }
-
-    // check if it has numbers
-    if (grid.value.problem.symbolObjects[key]) {
-      const symbol = grid.value.problem.symbolObjects[key];
-      if (validSymbols.has(symbol.content)) {
-        row[c - 0.5] = symbol.content;
-      }
-      continue;
-    } else {
-      row[c - 0.5] = "#";
-    }
-  }
-
-  const grid2 = emptyMatrix;
-  const exportData = {
-    type: "akari",
-    grid: grid2,
-  };
-  downloadObjectAsJson(exportData, "akari-puzzle");
 };
 
 let firstClickColor: string | null = null;

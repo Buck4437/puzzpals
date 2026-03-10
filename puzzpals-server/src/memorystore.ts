@@ -1,10 +1,19 @@
 import { fetchRoom, upsertRoom } from "./db.js";
-import { type Grid, deserialize, serialize } from "@puzzpals/puzzle-parser";
+import { type Grid } from "@puzzpals/puzzle-models";
+import {
+  type AkariGrid,
+  deserialize,
+  serialize,
+} from "@puzzpals/puzzle-parser";
 
 interface RoomEntry {
   token: string;
-  puzzleData: Grid;
+  puzzleData: Grid | AkariGrid;
   isDirty?: boolean;
+}
+
+function isAkariGrid(grid: Grid | AkariGrid): grid is AkariGrid {
+  return "cells" in grid;
 }
 
 let timeout: NodeJS.Timeout;
@@ -23,10 +32,15 @@ export async function getRoomFromStore(
   const dbEntry = await fetchRoom(token);
   if (dbEntry && typeof dbEntry.puzzle_data === "string") {
     try {
-      const parsedData = deserialize(dbEntry.puzzle_data);
+      let parsedData: Grid | AkariGrid;
+      try {
+        parsedData = deserialize(dbEntry.puzzle_data);
+      } catch {
+        parsedData = JSON.parse(dbEntry.puzzle_data) as Grid;
+      }
       const roomEntry = {
         token: dbEntry.token,
-        puzzleData: parsedData as Grid,
+        puzzleData: parsedData,
         isDirty: false,
       };
       store.set(token, roomEntry);
@@ -38,7 +52,7 @@ export async function getRoomFromStore(
   return null;
 }
 
-export function createRoomInStore(token: string, puzzleData: Grid) {
+export function createRoomInStore(token: string, puzzleData: Grid | AkariGrid) {
   store.set(token, {
     token,
     puzzleData,
@@ -95,7 +109,9 @@ async function autosave(forced = false) {
       // If we put mark as clean after saving, then there's a chance that
       // new changes could be made before we mark as clean, which causes data loss.
       markAsClean(room);
-      const serializedData = serialize(room.puzzleData);
+      const serializedData = isAkariGrid(room.puzzleData)
+        ? serialize(room.puzzleData)
+        : JSON.stringify(room.puzzleData);
       await upsertRoom(token, serializedData);
     }
   }

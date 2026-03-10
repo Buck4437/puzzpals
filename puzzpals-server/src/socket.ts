@@ -2,6 +2,7 @@ import { Socket, type Server } from "socket.io";
 import { markAsDirty, getRoomFromStore } from "./memorystore.js";
 import { isMessageValid, processChatMessage } from "./chat.js";
 import { randomUserID } from "./user.js";
+import { type AkariGrid } from "@puzzpals/puzzle-parser";
 
 interface User {
   roomToken: string;
@@ -9,6 +10,10 @@ interface User {
 }
 
 const socketUserMap = new Map<Socket, User>();
+
+function isAkariGrid(grid: unknown): grid is AkariGrid {
+  return typeof grid === "object" && grid !== null && "cells" in grid;
+}
 
 export function init(io: Server) {
   io.on("connection", (socket) => {
@@ -48,6 +53,10 @@ export function init(io: Server) {
       const grid = room.puzzleData;
 
       if (!grid) {
+        return;
+      }
+
+      if (!isAkariGrid(grid)) {
         return;
       }
 

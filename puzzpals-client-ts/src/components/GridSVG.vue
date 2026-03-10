@@ -97,7 +97,7 @@
 </template>
 
 <script setup lang="ts">
-import { type Grid, type Coordinate } from "../models/Grid";
+import { type Grid, type Coordinate } from "@puzzpals/puzzle-models";
 import { ref, computed } from "vue";
 
 const FULLSIZE = 480;

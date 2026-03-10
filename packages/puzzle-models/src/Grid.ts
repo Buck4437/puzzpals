@@ -9,7 +9,6 @@ export function CoordinateToKey(coordinate: Coordinate): CoordinateKey {
 
 export function PairCoordinateToKey(pair: PairCoordinate): PairCoordinateKey {
   const [coord1, coord2] = pair;
-  // Canonicalize order so A|B and B|A produce the same key
   const a = coord1;
   const b = coord2;
   if (a[0] < b[0] || (a[0] === b[0] && a[1] <= b[1])) {
@@ -20,7 +19,12 @@ export function PairCoordinateToKey(pair: PairCoordinate): PairCoordinateKey {
 
 export function KeyToCoordinate(key: CoordinateKey): Coordinate | null {
   const [x, y] = key.split(",").map(Number);
-  if (x === undefined || y === undefined || isNaN(x) || isNaN(y)) {
+  if (
+    x === undefined ||
+    y === undefined ||
+    Number.isNaN(x) ||
+    Number.isNaN(y)
+  ) {
     return null;
   }
   return [x, y];
@@ -76,7 +80,7 @@ export interface SolutionData {
   lineObjects: LineObjectDict;
   surfaceObjects: SurfaceObjectDict;
   symbolObjects: SymbolObjectDict;
-  typeToCheck: TypeToCheck;
+  typeToCheck: TypeToCheck[];
 }
 
 export interface Grid {
@@ -88,4 +92,9 @@ export interface Grid {
 export interface GameState {
   grid: Grid;
   answer: LayerData;
+}
+
+export interface GameData {
+  puzzle: Grid;
+  playerSolution: LayerData;
 }

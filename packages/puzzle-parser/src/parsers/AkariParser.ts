@@ -4,7 +4,7 @@ import {
   type CellData,
   type Grid,
   type PuzzleType,
-} from "../types/Akari.js";
+} from "../types (dep)/Akari.js";
 
 const validChars = new Set(["0", "1", "2", "3", "4", ".", "#"]);
 
