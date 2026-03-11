@@ -11,7 +11,7 @@
 <script setup lang="ts">
 import { computed } from "vue";
 
-import BaseEditorComponent from "./EditorComponent.vue";
+import BaseEditorComponent from "./BaseEditorComponent.vue";
 import type { EditMessage, Grid, LayerData } from "@puzzpals/puzzle-models";
 
 const props = defineProps<{
