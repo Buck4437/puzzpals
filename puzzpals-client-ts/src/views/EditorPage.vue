@@ -1,13 +1,19 @@
 <template>
   <EditorComponent
     :grid="grid"
-    @edit-message="onEditMessage"
+    @edit-problem-message="onEditProblemMessage"
+    @edit-solution-message="onEditSolutionMessage"
     @resize-grid="onResizeGrid"
   />
 
   <div style="margin-top: 2em">
+    <h2>Editor options</h2>
     <h2>Export puzzle</h2>
     <button @click="exportPuzzle">Export current puzzle</button>
+    <br />
+    Include solution (Enables answer-checking)
+    <input type="checkbox" v-model="includeSolution" />
+
     <h2>Publish Puzzle</h2>
     <button @click="publishPuzzle">Publish current puzzle</button>
     <div v-if="uploadStatus">{{ uploadStatus }}</div>
@@ -15,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import EditorComponent from "../components/EditorComponent.vue";
+import EditorComponent from "../components/EditorComponent2.vue";
 
 import { ref } from "vue";
 import api from "@/services/api";
@@ -25,74 +31,124 @@ import {
   KeyToPairCoordinate,
   type EditMessage,
   type Grid,
+  type LayerData,
+  type SolutionData,
 } from "@puzzpals/puzzle-models";
 
 const uploadStatus = ref("");
-const grid = ref<Grid>({
-  size: [6, 7],
-  problem: {
+
+function createEmptyLayerData(): LayerData {
+  return {
     lineObjects: {},
     surfaceObjects: {},
     symbolObjects: {},
-  },
+  };
+}
+
+function createEmptySolutionData(): SolutionData {
+  return {
+    ...createEmptyLayerData(),
+    typeToCheck: [],
+  };
+}
+
+function clipLayerData(
+  layerData: LayerData,
+  rowCount: number,
+  colCount: number,
+): LayerData {
+  return {
+    lineObjects: Object.fromEntries(
+      Object.entries(layerData.lineObjects).filter(([key]) => {
+        const pair = KeyToPairCoordinate(key);
+        if (pair === null) {
+          return false;
+        }
+
+        const [start, end] = pair;
+        return (
+          start[0] < rowCount &&
+          start[1] < colCount &&
+          end[0] < rowCount &&
+          end[1] < colCount
+        );
+      }),
+    ),
+    surfaceObjects: Object.fromEntries(
+      Object.entries(layerData.surfaceObjects).filter(([key]) => {
+        const coordinate = KeyToCoordinate(key);
+        return (
+          coordinate !== null &&
+          coordinate[0] < rowCount &&
+          coordinate[1] < colCount
+        );
+      }),
+    ),
+    symbolObjects: Object.fromEntries(
+      Object.entries(layerData.symbolObjects).filter(([key]) => {
+        const coordinate = KeyToCoordinate(key);
+        return (
+          coordinate !== null &&
+          coordinate[0] < rowCount &&
+          coordinate[1] < colCount
+        );
+      }),
+    ),
+  };
+}
+
+const grid = ref<Grid>({
+  size: [6, 7],
+  problem: createEmptyLayerData(),
+  solution: createEmptySolutionData(),
 });
 
-function onEditMessage(message: EditMessage) {
+const includeSolution = ref(false);
+
+function onEditProblemMessage(message: EditMessage) {
   grid.value = {
     ...grid.value,
     problem: applyEditMessage(grid.value.problem, message),
   };
 }
 
-function onResizeGrid(size: [number, number]) {
-  const [rowCount, colCount] = size;
-
+function onEditSolutionMessage(message: EditMessage) {
+  const currentSolution = grid.value.solution ?? createEmptySolutionData();
   grid.value = {
     ...grid.value,
-    size,
-    problem: {
-      lineObjects: Object.fromEntries(
-        Object.entries(grid.value.problem.lineObjects).filter(([key]) => {
-          const pair = KeyToPairCoordinate(key);
-          if (pair === null) {
-            return false;
-          }
-
-          const [start, end] = pair;
-          return (
-            start[0] < rowCount &&
-            start[1] < colCount &&
-            end[0] < rowCount &&
-            end[1] < colCount
-          );
-        }),
-      ),
-      surfaceObjects: Object.fromEntries(
-        Object.entries(grid.value.problem.surfaceObjects).filter(([key]) => {
-          const coordinate = KeyToCoordinate(key);
-          return (
-            coordinate !== null &&
-            coordinate[0] < rowCount &&
-            coordinate[1] < colCount
-          );
-        }),
-      ),
-      symbolObjects: Object.fromEntries(
-        Object.entries(grid.value.problem.symbolObjects).filter(([key]) => {
-          const coordinate = KeyToCoordinate(key);
-          return (
-            coordinate !== null &&
-            coordinate[0] < rowCount &&
-            coordinate[1] < colCount
-          );
-        }),
-      ),
+    solution: {
+      ...currentSolution,
+      ...applyEditMessage(currentSolution, message),
+      typeToCheck: currentSolution.typeToCheck,
     },
   };
 }
 
+function onResizeGrid(size: [number, number]) {
+  const [rowCount, colCount] = size;
+
+  const clippedProblem = clipLayerData(grid.value.problem, rowCount, colCount);
+  const clippedSolution = grid.value.solution
+    ? {
+        ...grid.value.solution,
+        ...clipLayerData(grid.value.solution, rowCount, colCount),
+      }
+    : undefined;
+
+  grid.value = {
+    ...grid.value,
+    size,
+    problem: clippedProblem,
+    solution: clippedSolution,
+  };
+}
+
 const exportPuzzle = () => {
-  downloadObjectAsJson(grid.value, "puzzpals-puzzle");
+  const puzzleObj = JSON.parse(JSON.stringify(grid.value));
+  if (!includeSolution.value) {
+    delete puzzleObj.solution;
+  }
+  downloadObjectAsJson(puzzleObj, "puzzpals-puzzle");
 };
 
 const downloadObjectAsJson = (exportObj: object, exportName: string) => {

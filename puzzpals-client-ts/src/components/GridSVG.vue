@@ -25,27 +25,27 @@
 
       <!-- Vertical lines -->
       <line
-        v-for="col in props.grid.size[1] + 1"
+        v-for="col in props.gridSize[1] + 1"
         :key="`grid-v-line-${col}`"
         :x1="toSvgCoordinates([0, col - 1])[0]"
         :y1="toSvgCoordinates([0, col - 1])[1]"
-        :x2="toSvgCoordinates([props.grid.size[0], col - 1])[0]"
-        :y2="toSvgCoordinates([props.grid.size[0], col - 1])[1]"
+        :x2="toSvgCoordinates([props.gridSize[0], col - 1])[0]"
+        :y2="toSvgCoordinates([props.gridSize[0], col - 1])[1]"
         stroke="black"
-        :stroke-width="col === 1 || col === props.grid.size[1] + 1 ? 3 : 1"
+        :stroke-width="col === 1 || col === props.gridSize[1] + 1 ? 3 : 1"
         pointer-events="none"
       />
 
       <!-- Horizontal lines -->
       <line
-        v-for="row in props.grid.size[0] + 1"
+        v-for="row in props.gridSize[0] + 1"
         :key="`grid-h-line-${row}`"
         :x1="toSvgCoordinates([row - 1, 0])[0]"
         :y1="toSvgCoordinates([row - 1, 0])[1]"
-        :x2="toSvgCoordinates([row - 1, props.grid.size[1]])[0]"
-        :y2="toSvgCoordinates([row - 1, props.grid.size[1]])[1]"
+        :x2="toSvgCoordinates([row - 1, props.gridSize[1]])[0]"
+        :y2="toSvgCoordinates([row - 1, props.gridSize[1]])[1]"
         stroke="black"
-        :stroke-width="row === 1 || row === props.grid.size[0] + 1 ? 3 : 1"
+        :stroke-width="row === 1 || row === props.gridSize[0] + 1 ? 3 : 1"
         pointer-events="none"
       />
 
@@ -138,8 +138,8 @@ function toGridCoordinates(coordinate: [number, number]): [number, number] {
 
 const props = defineProps<{
   size: number;
-  grid: Grid;
-  playerSolution?: LayerData | null;
+  layers: LayerData[];
+  gridSize: [number, number];
   cursor?: Coordinate | null;
 }>();
 
@@ -151,19 +151,12 @@ const emit = defineEmits<{
   mouseRelease: [];
 }>();
 
-const layers = computed(() => {
-  if (props.playerSolution === null || props.playerSolution === undefined) {
-    return [props.grid.problem];
-  }
-  return [props.grid.problem, props.playerSolution] as LayerData[];
-});
-
 const cellSize = computed(
-  () => FULLSIZE / Math.max(props.grid.size[0], props.grid.size[1]),
+  () => FULLSIZE / Math.max(props.gridSize[0], props.gridSize[1]),
 );
 
-const gridWidth = computed(() => props.grid.size[1] * cellSize.value); // numCols * cellSize
-const gridHeight = computed(() => props.grid.size[0] * cellSize.value); // numRows * cellSize
+const gridWidth = computed(() => props.gridSize[1] * cellSize.value); // numCols * cellSize
+const gridHeight = computed(() => props.gridSize[0] * cellSize.value); // numRows * cellSize
 
 const offsetX = computed(() => (FULLSIZE - gridWidth.value) / 2);
 const offsetY = computed(() => (FULLSIZE - gridHeight.value) / 2);
@@ -194,8 +187,8 @@ function clamp(value: number, min: number, max: number): number {
 function toCenterCell(coord: [number, number]): [number, number] {
   const [r, c] = coord;
 
-  const r1 = clamp(Math.floor(r) + 0.5, 0.5, props.grid.size[0] - 0.5);
-  const c1 = clamp(Math.floor(c) + 0.5, 0.5, props.grid.size[1] - 0.5);
+  const r1 = clamp(Math.floor(r) + 0.5, 0.5, props.gridSize[0] - 0.5);
+  const c1 = clamp(Math.floor(c) + 0.5, 0.5, props.gridSize[1] - 0.5);
 
   return [r1, c1];
 }
@@ -203,8 +196,8 @@ function toCenterCell(coord: [number, number]): [number, number] {
 function toCornerCell(coord: [number, number]): [number, number] {
   const [r, c] = coord;
 
-  const r1 = clamp(Math.round(r), 0, props.grid.size[0]);
-  const c1 = clamp(Math.round(c), 0, props.grid.size[1]);
+  const r1 = clamp(Math.round(r), 0, props.gridSize[0] - 1);
+  const c1 = clamp(Math.round(c), 0, props.gridSize[1] - 1);
 
   return [r1, c1];
 }

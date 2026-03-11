@@ -1,10 +1,9 @@
 <template>
   <div>
-    <EditorComponent
+    <PlayerEditorComponent
       :grid="props.grid"
       :player-solution="props.playerSolution ?? null"
       @edit-message="onEditMessage"
-      @resize-grid="emit('resize-grid', $event)"
     />
     <div class="undo-redo-button">
       <button
@@ -26,7 +25,7 @@
 </template>
 <script setup lang="ts">
 import { computed, ref } from "vue";
-import EditorComponent from "./EditorComponent.vue";
+import PlayerEditorComponent from "./PlayerEditorComponent.vue";
 import {
   createInverseEditMessage,
   type EditMessage,
@@ -36,7 +35,6 @@ import {
 
 const emit = defineEmits<{
   "edit-message": [message: EditMessage];
-  "resize-grid": [size: [number, number]];
 }>();
 
 const props = defineProps<{

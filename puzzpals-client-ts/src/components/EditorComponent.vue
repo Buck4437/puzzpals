@@ -107,24 +107,22 @@
       </div>
     </div>
   </div>
-  <div>
-    <template v-if="!hasPlayerSolutionLayer">
-      Current dimensions: Row: {{ rowCount }}, Col: {{ colCount }}
+  <div v-if="showResizeControls">
+    Current dimensions: Row: {{ rowCount }}, Col: {{ colCount }}
 
-      <br />
+    <br />
 
-      Set dimensions: Row:
-      <input type="number" v-model.number="inputRowCount" min="1" max="100" />
-      Col:
-      <input type="number" v-model.number="inputColCount" min="1" max="100" />
+    Set dimensions: Row:
+    <input type="number" v-model.number="inputRowCount" min="1" max="100" />
+    Col:
+    <input type="number" v-model.number="inputColCount" min="1" max="100" />
 
-      <button @click="setDimensions">Set</button>
-    </template>
+    <button @click="setDimensions">Set</button>
   </div>
   <GridSVG
     :size="480"
-    :grid="grid"
-    :player-solution="playerSolution"
+    :grid-size="grid.size"
+    :layers="layers"
     :cursor="currentTool.codename === 'text' ? cursor : null"
     @center-cell-enter="onCenterEnter"
     @corner-cell-enter="onCornerEnter"
@@ -151,7 +149,9 @@ import {
 
 const props = defineProps<{
   grid: Grid;
-  playerSolution?: LayerData | null;
+  editableLayer: LayerData;
+  overlayLayer?: LayerData | null;
+  showResizeControls?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -160,31 +160,39 @@ const emit = defineEmits<{
 }>();
 
 const grid = computed(() => props.grid);
-const playerSolution = computed(() => props.playerSolution ?? null);
-const hasPlayerSolutionLayer = computed(() => playerSolution.value !== null);
-const editableLayer = computed<LayerData>(() => {
-  return playerSolution.value ?? grid.value.problem;
+const editableLayer = computed(() => props.editableLayer);
+const overlayLayer = computed(() => props.overlayLayer ?? null);
+const showResizeControls = computed(() => props.showResizeControls === true);
+
+const layers = computed(() => {
+  if (overlayLayer.value === null) {
+    return [editableLayer.value];
+  }
+
+  return [editableLayer.value, overlayLayer.value];
 });
+
 const renderedLayer = computed<LayerData>(() => {
-  if (playerSolution.value === null) {
+  if (overlayLayer.value === null) {
     return grid.value.problem;
   }
 
   return {
     lineObjects: {
       ...grid.value.problem.lineObjects,
-      ...playerSolution.value.lineObjects,
+      ...overlayLayer.value.lineObjects,
     },
     surfaceObjects: {
       ...grid.value.problem.surfaceObjects,
-      ...playerSolution.value.surfaceObjects,
+      ...overlayLayer.value.surfaceObjects,
     },
     symbolObjects: {
       ...grid.value.problem.symbolObjects,
-      ...playerSolution.value.symbolObjects,
+      ...overlayLayer.value.symbolObjects,
     },
   };
 });
+
 const rowCount = computed(() => grid.value.size[0]);
 const colCount = computed(() => grid.value.size[1]);
 const inputRowCount = ref(rowCount.value);
@@ -421,8 +429,7 @@ const moveCursorBy = (dr: number, dc: number) => {
     return;
   }
 
-  const newCoord: Coordinate = [newR, newC];
-  cursor.value = newCoord;
+  cursor.value = [newR, newC];
 };
 
 const handleKeyboardInput = (event: KeyboardEvent) => {
@@ -462,11 +469,7 @@ const handleKeyboardInput = (event: KeyboardEvent) => {
       return;
   }
 
-  if (currentSubtoolId.value !== 0) {
-    return;
-  }
-
-  if (!cursor.value) {
+  if (currentSubtoolId.value !== 0 || !cursor.value) {
     return;
   }
 
@@ -482,11 +485,9 @@ const handleKeyboardInput = (event: KeyboardEvent) => {
     }
   } else if (event.key.length === 1 && currentText.length < maxTextLength) {
     event.preventDefault();
-    const newText = currentText + event.key;
-
     emitSymbolUpdate({
       location: cursor.value,
-      content: newText,
+      content: currentText + event.key,
       color: getTextColor(key),
     });
   }
@@ -537,71 +538,60 @@ const onCenterEnter = (coordinate: Coordinate) => {
   const key = CoordinateToKey(coordinate);
 
   switch (currentTool.value.codename) {
-    case "surface":
-      {
-        if (visitedSurfaces.has(key)) {
-          return;
-        }
+    case "surface": {
+      if (visitedSurfaces.has(key)) {
+        return;
+      }
 
-        visitedSurfaces.add(key);
+      visitedSurfaces.add(key);
 
-        const selectedColor = selectedSurfaceColor.value;
-        if (typeof selectedColor !== "string") {
-          return;
-        }
+      const selectedColor = selectedSurfaceColor.value;
+      if (surfaceStrokeMode === null) {
+        const prev = editableLayer.value.surfaceObjects[key];
+        surfaceStrokeMode = prev?.color === selectedColor ? "erase" : "draw";
+      }
 
-        if (surfaceStrokeMode === null) {
-          const prev = editableLayer.value.surfaceObjects[key];
-          surfaceStrokeMode = prev?.color === selectedColor ? "erase" : "draw";
-        }
-
-        if (surfaceStrokeMode === "erase") {
-          emitRemoveMessage("surfaceObjects", key);
-        } else {
-          emitSurfaceUpdate({
-            location: coordinate,
-            color: selectedColor,
-          });
-        }
+      if (surfaceStrokeMode === "erase") {
+        emitRemoveMessage("surfaceObjects", key);
+      } else {
+        emitSurfaceUpdate({
+          location: coordinate,
+          color: selectedColor,
+        });
       }
       break;
-    case "line":
-      {
-        if (lastLineCenter === null) {
-          lastLineCenter = coordinate;
-          break;
-        }
-
-        if (
-          canDrawSegment(
-            lastLineCenter,
-            coordinate,
-            currentSubtoolId.value === 1,
-          )
-        ) {
-          lineStrokeMode = applyLineSegment(
-            lastLineCenter,
-            coordinate,
-            lineStrokeMode,
-          );
-        }
-
+    }
+    case "line": {
+      if (lastLineCenter === null) {
         lastLineCenter = coordinate;
+        break;
       }
-      break;
-    case "text":
-      {
-        const existing = editableLayer.value.symbolObjects[key];
 
-        // In input box mode, set the input value and focus
-        if (currentSubtoolId.value === 1) {
-          textInputValue.value = existing?.content || "";
-          setTimeout(() => {
-            textInput.value?.focus();
-          }, 0);
-        }
+      if (
+        canDrawSegment(lastLineCenter, coordinate, currentSubtoolId.value === 1)
+      ) {
+        lineStrokeMode = applyLineSegment(
+          lastLineCenter,
+          coordinate,
+          lineStrokeMode,
+        );
+      }
+
+      lastLineCenter = coordinate;
+      break;
+    }
+    case "text": {
+      const existing = editableLayer.value.symbolObjects[key];
+
+      // In input box mode, set the input value and focus
+      if (currentSubtoolId.value === 1) {
+        textInputValue.value = existing?.content || "";
+        setTimeout(() => {
+          textInput.value?.focus();
+        }, 0);
       }
       break;
+    }
   }
 };
 
@@ -629,7 +619,7 @@ const onCornerEnter = (coordinate: Coordinate) => {
 };
 
 watch(
-  () => [grid.value.problem, playerSolution.value],
+  () => [grid.value.problem, overlayLayer.value, editableLayer.value],
   () => {
     syncTextInputFromGrid();
   },
