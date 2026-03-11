@@ -133,7 +133,7 @@
 <script setup lang="ts">
 import { computed, ref, onMounted, onBeforeUnmount, watch } from "vue";
 
-import GridSVG from "@/components/GridSVG.vue";
+import GridSVG from "@/components/editor/GridSVG.vue";
 import {
   type Coordinate,
   type SurfaceObject,
@@ -215,7 +215,6 @@ interface Tool {
 
 const colorTable = [
   "black",
-  "white",
   "lightgray",
   "darkgray",
   "blue",

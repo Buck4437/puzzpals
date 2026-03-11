@@ -86,6 +86,8 @@ function applyIncomingEdit(message: EditMessage) {
     return;
   }
 
+  console.log(message);
+
   gameData.value = {
     ...gameData.value,
     playerSolution: applyEditMessage(gameData.value.playerSolution, message),

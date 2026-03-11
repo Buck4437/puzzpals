@@ -29,7 +29,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import GridSVG from "@/components/GridSVG.vue";
+import GridSVG from "@/components/editor/GridSVG.vue";
 import api from "@/services/api";
 
 interface Puzzle {

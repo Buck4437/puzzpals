@@ -139,11 +139,6 @@ export interface Grid {
   solution?: SolutionData;
 }
 
-export interface GameState {
-  grid: Grid;
-  answer: LayerData;
-}
-
 export interface GameData {
   puzzle: Grid;
   playerSolution: LayerData;
