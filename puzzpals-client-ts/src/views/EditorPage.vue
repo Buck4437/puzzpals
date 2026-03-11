@@ -1,5 +1,5 @@
 <template>
-  <EditorComponent
+  <SetterEditorComponent
     :grid="grid"
     @edit-problem-message="onEditProblemMessage"
     @edit-solution-message="onEditSolutionMessage"
@@ -21,7 +21,7 @@
 </template>
 
 <script setup lang="ts">
-import EditorComponent from "../components/EditorComponent2.vue";
+import SetterEditorComponent from "../components/SetterEditorComponent.vue";
 
 import { ref } from "vue";
 import api from "@/services/api";

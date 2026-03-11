@@ -1,8 +1,8 @@
 <template>
   <BaseEditorComponent
     :grid="grid"
-    :editable-layer="editableLayer"
-    :overlay-layer="playerSolution"
+    :rendered-layer-list="renderedLayerList"
+    :editable-layer-index="1"
     :show-resize-controls="false"
     @edit-message="emit('edit-message', $event)"
   />
@@ -16,7 +16,7 @@ import type { EditMessage, Grid, LayerData } from "@puzzpals/puzzle-models";
 
 const props = defineProps<{
   grid: Grid;
-  playerSolution?: LayerData | null;
+  playerSolution: LayerData;
 }>();
 
 const emit = defineEmits<{
@@ -30,6 +30,9 @@ const emptyLayer: LayerData = {
 };
 
 const grid = computed(() => props.grid);
-const playerSolution = computed(() => props.playerSolution ?? null);
-const editableLayer = computed(() => props.playerSolution ?? emptyLayer);
+const playerSolution = computed(() => props.playerSolution ?? emptyLayer);
+const renderedLayerList = computed(() => [
+  props.grid.problem,
+  playerSolution.value,
+]);
 </script>

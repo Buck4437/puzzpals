@@ -15,8 +15,8 @@
   </div>
   <BaseEditorComponent
     :grid="grid"
-    :editable-layer="editableLayer"
-    :overlay-layer="overlayLayer"
+    :rendered-layer-list="renderedLayerList"
+    :editable-layer-index="editableLayerIndex"
     :show-resize-controls="true"
     @edit-message="onEditMessage"
     @resize-grid="emit('resize-grid', $event)"
@@ -60,14 +60,12 @@ const solutionLayer = computed<SolutionData>(() => {
   return props.grid.solution ?? emptySolutionLayer;
 });
 
-const overlayLayer = computed<LayerData | null>(() => {
-  return props.grid.solution ?? null;
+const renderedLayerList = computed<LayerData[]>(() => {
+  return [props.grid.problem, solutionLayer.value];
 });
 
-const editableLayer = computed<LayerData>(() => {
-  return selectedLayer.value === "problem"
-    ? props.grid.problem
-    : solutionLayer.value;
+const editableLayerIndex = computed(() => {
+  return selectedLayer.value === "problem" ? 0 : 1;
 });
 
 function onEditMessage(message: EditMessage) {

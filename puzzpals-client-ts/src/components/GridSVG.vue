@@ -99,11 +99,7 @@
 </template>
 
 <script setup lang="ts">
-import {
-  type Grid,
-  type Coordinate,
-  type LayerData,
-} from "@puzzpals/puzzle-models";
+import { type Coordinate, type LayerData } from "@puzzpals/puzzle-models";
 import { ref, computed } from "vue";
 
 const FULLSIZE = 480;
@@ -138,7 +134,7 @@ function toGridCoordinates(coordinate: [number, number]): [number, number] {
 
 const props = defineProps<{
   size: number;
-  layers: LayerData[];
+  layers: LayerData[]; // Layers that come later will be rendered on top of layers that come earlier
   gridSize: [number, number];
   cursor?: Coordinate | null;
 }>();

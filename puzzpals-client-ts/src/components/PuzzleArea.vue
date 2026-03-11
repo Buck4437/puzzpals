@@ -2,7 +2,7 @@
   <div>
     <PlayerEditorComponent
       :grid="props.grid"
-      :player-solution="props.playerSolution ?? null"
+      :player-solution="props.playerSolution"
       @edit-message="onEditMessage"
     />
     <div class="undo-redo-button">
@@ -39,7 +39,7 @@ const emit = defineEmits<{
 
 const props = defineProps<{
   grid: Grid;
-  playerSolution?: LayerData | null;
+  playerSolution: LayerData;
 }>();
 
 const MAX_UNDO = 300;

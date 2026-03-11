@@ -149,8 +149,8 @@ import {
 
 const props = defineProps<{
   grid: Grid;
-  editableLayer: LayerData;
-  overlayLayer?: LayerData | null;
+  renderedLayerList: LayerData[];
+  editableLayerIndex?: number;
   showResizeControls?: boolean;
 }>();
 
@@ -160,37 +160,46 @@ const emit = defineEmits<{
 }>();
 
 const grid = computed(() => props.grid);
-const editableLayer = computed(() => props.editableLayer);
-const overlayLayer = computed(() => props.overlayLayer ?? null);
+const renderedLayerList = computed(() => props.renderedLayerList);
+const editableLayerIndex = computed(() => props.editableLayerIndex ?? 0);
 const showResizeControls = computed(() => props.showResizeControls === true);
 
+const emptyLayer: LayerData = {
+  lineObjects: {},
+  surfaceObjects: {},
+  symbolObjects: {},
+};
+
 const layers = computed(() => {
-  if (overlayLayer.value === null) {
-    return [editableLayer.value];
+  if (renderedLayerList.value.length === 0) {
+    return [emptyLayer];
   }
 
-  return [editableLayer.value, overlayLayer.value];
+  return renderedLayerList.value;
+});
+
+const editableLayer = computed<LayerData>(() => {
+  return layers.value[editableLayerIndex.value] ?? emptyLayer;
 });
 
 const renderedLayer = computed<LayerData>(() => {
-  if (overlayLayer.value === null) {
-    return grid.value.problem;
-  }
-
-  return {
-    lineObjects: {
-      ...grid.value.problem.lineObjects,
-      ...overlayLayer.value.lineObjects,
-    },
-    surfaceObjects: {
-      ...grid.value.problem.surfaceObjects,
-      ...overlayLayer.value.surfaceObjects,
-    },
-    symbolObjects: {
-      ...grid.value.problem.symbolObjects,
-      ...overlayLayer.value.symbolObjects,
-    },
-  };
+  return layers.value.reduce<LayerData>(
+    (mergedLayer, layer) => ({
+      lineObjects: {
+        ...mergedLayer.lineObjects,
+        ...layer.lineObjects,
+      },
+      surfaceObjects: {
+        ...mergedLayer.surfaceObjects,
+        ...layer.surfaceObjects,
+      },
+      symbolObjects: {
+        ...mergedLayer.symbolObjects,
+        ...layer.symbolObjects,
+      },
+    }),
+    emptyLayer,
+  );
 });
 
 const rowCount = computed(() => grid.value.size[0]);
@@ -619,7 +628,7 @@ const onCornerEnter = (coordinate: Coordinate) => {
 };
 
 watch(
-  () => [grid.value.problem, overlayLayer.value, editableLayer.value],
+  () => [grid.value.problem, renderedLayerList.value, editableLayerIndex.value],
   () => {
     syncTextInputFromGrid();
   },
