@@ -8,36 +8,41 @@ import pool from "../__mocks__/pool.js";
 
 vi.mock("../pool.js");
 
-describe("Socket", () => {
+const grid = {
+  rows: 1,
+  cols: 1,
+  cells: [
+    {
+      isBlack: false,
+      number: null,
+      input: 2,
+    },
+  ],
+  type: "akari",
+};
+
+const token = "abcdefghij";
+
+const room: Room = {
+  token: token,
+  puzzle_data: JSON.stringify(grid),
+};
+
+async function createSocketInRoom() {
+  const socket = createMockSocket();
+  pool.query.mockResolvedValueOnce({ rows: [room] });
+  await socket.call("room:join", token);
+  return socket;
+}
+
+describe("room:join", () => {
   beforeEach(arrangeBeforeEach);
   afterEach(cleanUpAfterEach);
-
-  const grid = {
-    rows: 1,
-    cols: 1,
-    cells: [
-      {
-        isBlack: false,
-        number: null,
-        input: 2,
-      },
-    ],
-    type: "akari",
-  };
-
-  const token = "abcdefghij";
-
-  const room: Room = {
-    token: token,
-    puzzle_data: JSON.stringify(grid),
-  };
 
   // As a player, I want to synchronise my progress with other players
   // so that we can collaborate on the same puzzle.
   it("joins player to room", async () => {
-    const socket = createMockSocket();
-    pool.query.mockResolvedValueOnce({ rows: [room] });
-    await socket.call("room:join", token);
+    const socket = await createSocketInRoom();
 
     expect(socket.emit).toHaveBeenCalledWith(
       "room:initialize",
@@ -47,21 +52,60 @@ describe("Socket", () => {
     );
   });
 
-  it("synchronizes grid with all players in same room", async () => {
+  it("rejects wrong token type", async () => {
     const socket = createMockSocket();
-    pool.query.mockResolvedValueOnce({ rows: [room] });
+    await socket.call("room:join", 123);
+    expect(socket.emit).not.toHaveBeenCalled();
+  });
+
+  it("rejects joining non-existent room", async () => {
+    const socket = createMockSocket();
+    pool.query.mockResolvedValueOnce({ rows: [] });
     await socket.call("room:join", token);
+    expect(socket.emit).not.toHaveBeenCalled();
+  });
+});
+
+describe("grid:updateCell", () => {
+  beforeEach(arrangeBeforeEach);
+  afterEach(cleanUpAfterEach);
+
+  it("synchronizes grid with all players in same room", async () => {
+    const socket = await createSocketInRoom();
     await socket.call("grid:updateCell", 0, 0);
 
     expect(mockIo.to).toHaveBeenCalledWith(token);
     expect(mockBroadcast).toHaveBeenCalledWith("grid:cellUpdated", 0, 0);
   });
 
-  it("blocks unauthorized calls to grid:updateCell", async () => {
+  it("rejects wrong idx type", async () => {
+    const socket = await createSocketInRoom();
+    await socket.call("grid:updateCell", "0", 0);
+    expect(mockIo.to).not.toHaveBeenCalled();
+  });
+
+  it("rejects out-of-bounds idx", async () => {
+    const socket = await createSocketInRoom();
+    await socket.call("grid:updateCell", 1, 0);
+    expect(mockIo.to).not.toHaveBeenCalled();
+  });
+
+  it("rejects wrong value type", async () => {
+    const socket = await createSocketInRoom();
+    await socket.call("grid:updateCell", 0, "0");
+    expect(mockIo.to).not.toHaveBeenCalled();
+  });
+
+  it("blocks unauthorized calls", async () => {
     const socket = createMockSocket();
     await socket.call("grid:updateCell", 0, 0);
     expect(mockIo.to).not.toHaveBeenCalled();
   });
+});
+
+describe("chat:newMessage", () => {
+  beforeEach(arrangeBeforeEach);
+  afterEach(cleanUpAfterEach);
 
   // As a player, I want to communicate with other players
   // so that we can share insights.
@@ -94,7 +138,32 @@ describe("Socket", () => {
     vi.useRealTimers();
   });
 
-  it("blocks unauthorized calls to chat:newMessage", () => {
+  it("rejects wrong payload type", async () => {
+    const socket = await createSocketInRoom();
+    await socket.call("chat:newMessage", "hello");
+    expect(mockIo.to).not.toHaveBeenCalled();
+  });
+
+  it("rejects payload missing message", async () => {
+    const socket = await createSocketInRoom();
+    await socket.call("chat:newMessage", {});
+    expect(mockIo.to).not.toHaveBeenCalled();
+  });
+
+  it("rejects empty message", async () => {
+    const socket = await createSocketInRoom();
+    await socket.call("chat:newMessage", { msgtext: "   " });
+    expect(mockIo.to).not.toHaveBeenCalled();
+  });
+
+  it("rejects message too long", async () => {
+    const socket = await createSocketInRoom();
+    const longMessage = "x".repeat(1001);
+    await socket.call("chat:newMessage", { msgtext: longMessage });
+    expect(mockIo.to).not.toHaveBeenCalled();
+  });
+
+  it("blocks unauthorized calls", () => {
     const socket = createMockSocket();
     socket.call("chat:newMessage", {
       msgtext: "This message is unauthorized",
