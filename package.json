@@ -12,6 +12,7 @@
   "scripts": {
     "prepare": "husky",
     "build:server": "cd puzzpals-server && npm run build",
+    "test": "npm run -w puzzpals-server test && npm run -w puzzpals-client-ts test",
     "postinstall": "npm run build:server"
   },
   "devDependencies": {
