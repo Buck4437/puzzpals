@@ -1,0 +1,9 @@
+const CROSS_MARK = "×";
+const AKARI_BULB = "💡";
+
+export const SPECIAL_CHARACTERS = {
+  CROSS_MARK,
+  AKARI_BULB,
+};
+
+export const SPECIAL_CHARACTERS_LIST = [CROSS_MARK, AKARI_BULB];

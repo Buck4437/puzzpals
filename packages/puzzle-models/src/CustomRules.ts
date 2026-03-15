@@ -1,4 +1,5 @@
 import { CoordinateToKey, type Grid, type LayerData } from "./Grid.js";
+import { SPECIAL_CHARACTERS } from "./SpecialCharacters.js";
 
 const ADJACENT_DIRECTIONS: [number, number][] = [
   [0, 1], // Right
@@ -31,7 +32,7 @@ function calculateAkariRulesLayer(grid: Grid, playerSolution: LayerData) {
 
   // Fetch all light bulbs, represented by the symbol "O"
   const lightBulbs = Object.values(playerSolution.symbolObjects).filter(
-    (symbol) => symbol.content === "O",
+    (symbol) => symbol.content === SPECIAL_CHARACTERS.AKARI_BULB,
   );
 
   // Light up surfaces that are adjacent to light bulbs, until a wall is hit

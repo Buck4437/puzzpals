@@ -105,6 +105,15 @@
         <p v-if="cursor">Selected: [{{ cursor[0] }}, {{ cursor[1] }}]</p>
         <p v-else>Click a cell to select</p>
       </div>
+      <div v-show="currentSubtoolId === 2">
+        <label>Special character: </label>
+        <select v-model="selectedSpecialCharacter">
+          <option v-for="char in specialCharacters" :key="char" :value="char">
+            {{ char }}
+          </option>
+        </select>
+        <p>Click a cell to place the selected special character</p>
+      </div>
     </div>
   </div>
   <div v-if="showResizeControls">
@@ -145,6 +154,7 @@ import {
   CoordinateToKey,
   PairCoordinateToKey,
   type CoordinateKey,
+  SPECIAL_CHARACTERS_LIST,
 } from "@puzzpals/puzzle-models";
 
 const props = defineProps<{
@@ -229,6 +239,7 @@ const currentSubtoolId = ref(0);
 const selectedSurfaceColor = ref<string>(colorTable[0] ?? "black");
 const selectedLineColor = ref<string>(colorTable[0] ?? "black");
 const selectedTextColor = ref("auto");
+const selectedSpecialCharacter = ref<string>(SPECIAL_CHARACTERS_LIST[0] ?? "");
 const cursor = ref<Coordinate | null>(null);
 const textInput = ref<HTMLInputElement | null>(null);
 const textInputValue = ref("");
@@ -261,7 +272,12 @@ const tools: Tool[] = [
   {
     name: "Text",
     codename: "text",
-    subtools: ["Simple", "Input box"],
+    subtools: ["Simple", "Input box", "Special characters"],
+  },
+  {
+    name: "Symbols",
+    codename: "symbols",
+    subtools: ["Symbol palette"],
   },
 ];
 
@@ -275,6 +291,10 @@ const currentTool = computed(() => {
 
 const subtools = computed(() => {
   return currentTool.value.subtools;
+});
+
+const specialCharacters = computed(() => {
+  return SPECIAL_CHARACTERS_LIST;
 });
 
 function emitRemoveMessage(type: EditMessage["type"], key: string) {
@@ -589,14 +609,26 @@ const onCenterEnter = (coordinate: Coordinate) => {
       break;
     }
     case "text": {
-      const existing = editableLayer.value.symbolObjects[key];
-
-      // In input box mode, set the input value and focus
       if (currentSubtoolId.value === 1) {
+        // In input box mode, set the input value and focus
+        const existing = editableLayer.value.symbolObjects[key];
+
         textInputValue.value = existing?.content || "";
         setTimeout(() => {
           textInput.value?.focus();
         }, 0);
+      } else if (currentSubtoolId.value === 2) {
+        // In special character mode, insert the selected special character
+        const character = selectedSpecialCharacter.value;
+        if (editableLayer.value.symbolObjects[key]?.content === character) {
+          emitRemoveMessage("symbolObjects", key);
+          return;
+        }
+        emitSymbolUpdate({
+          location: coordinate,
+          content: selectedSpecialCharacter.value,
+          color: getTextColor(key),
+        });
       }
       break;
     }
