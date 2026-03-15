@@ -110,7 +110,7 @@ function initiateSocket() {
     userID.value = id;
   });
 
-  socket.on("grid:edit", (payload: unknown) => {
+  socket.on("grid:edited", (payload: unknown) => {
     if (
       typeof payload !== "object" ||
       payload === null ||

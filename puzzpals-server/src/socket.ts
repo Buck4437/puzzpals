@@ -76,7 +76,7 @@ export function init(io: Server) {
       markAsDirty(room);
 
       // Emit the update to all clients in the room (including the sender)
-      io.to(user.roomToken).emit("grid:edit", editMessage);
+      io.to(user.roomToken).emit("grid:edited", editMessage);
     });
 
     socket.on("chat:newMessage", (message: unknown) => {
