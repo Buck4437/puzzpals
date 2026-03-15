@@ -192,8 +192,8 @@ function toCenterCell(coord: [number, number]): [number, number] {
 function toCornerCell(coord: [number, number]): [number, number] {
   const [r, c] = coord;
 
-  const r1 = clamp(Math.round(r), 0, props.gridSize[0] - 1);
-  const c1 = clamp(Math.round(c), 0, props.gridSize[1] - 1);
+  const r1 = clamp(Math.round(r), 0, props.gridSize[0]);
+  const c1 = clamp(Math.round(c), 0, props.gridSize[1]);
 
   return [r1, c1];
 }
