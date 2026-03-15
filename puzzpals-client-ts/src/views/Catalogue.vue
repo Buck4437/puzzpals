@@ -15,7 +15,11 @@
           }}
         </p>
         <div v-if="puzzle.puzzle_json">
-          <GridSVG :grid="puzzle.puzzle_json" :size="240" />
+          <GridSVG
+            :size="240"
+            :grid-size="puzzle.puzzle_json.size"
+            :layers="[puzzle.puzzle_json.problem]"
+          />
         </div>
       </div>
       <div v-if="puzzles.length === 0">No puzzles found.</div>
@@ -25,7 +29,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import GridSVG from "@/components/GridSVG.vue";
+import GridSVG from "@/components/editor/GridSVG.vue";
 import api from "@/services/api";
 
 interface Puzzle {
