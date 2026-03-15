@@ -41,7 +41,8 @@ function createEmptyLayerData(): LayerData {
   return {
     lineObjects: {},
     surfaceObjects: {},
-    symbolObjects: {},
+    textObjects: {},
+    shapeObjects: {},
   };
 }
 
@@ -84,8 +85,18 @@ function clipLayerData(
         );
       }),
     ),
-    symbolObjects: Object.fromEntries(
-      Object.entries(layerData.symbolObjects).filter(([key]) => {
+    textObjects: Object.fromEntries(
+      Object.entries(layerData.textObjects).filter(([key]) => {
+        const coordinate = KeyToCoordinate(key);
+        return (
+          coordinate !== null &&
+          coordinate[0] < rowCount &&
+          coordinate[1] < colCount
+        );
+      }),
+    ),
+    shapeObjects: Object.fromEntries(
+      Object.entries(layerData.shapeObjects).filter(([key]) => {
         const coordinate = KeyToCoordinate(key);
         return (
           coordinate !== null &&
@@ -98,7 +109,7 @@ function clipLayerData(
 }
 
 const grid = ref<Grid>({
-  size: [6, 7],
+  size: [10, 10],
   problem: createEmptyLayerData(),
   solution: createEmptySolutionData(),
 });

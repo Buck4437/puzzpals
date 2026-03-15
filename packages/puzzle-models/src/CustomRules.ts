@@ -12,7 +12,8 @@ function calculateAkariRulesLayer(grid: Grid, playerSolution: LayerData) {
   const rulesLayer: LayerData = {
     lineObjects: {},
     surfaceObjects: {},
-    symbolObjects: {},
+    textObjects: {},
+    shapeObjects: {},
   };
 
   // Fetch all walls from the problem layer
@@ -22,7 +23,7 @@ function calculateAkariRulesLayer(grid: Grid, playerSolution: LayerData) {
 
   // // Fetch all walls with numbers
   // const numberedWalls = walls.filter((wall) => {
-  //     const symbolObject = Object.values(grid.problem.symbolObjects).find(
+  //     const symbolObject = Object.values(grid.problem.textObjects).find(
   //         (symbol) =>
   //             symbol.location[0] === wall.location[0] &&
   //             symbol.location[1] === wall.location[1],
@@ -31,8 +32,8 @@ function calculateAkariRulesLayer(grid: Grid, playerSolution: LayerData) {
   // })
 
   // Fetch all light bulbs, represented by the symbol "O"
-  const lightBulbs = Object.values(playerSolution.symbolObjects).filter(
-    (symbol) => symbol.content === SPECIAL_CHARACTERS.AKARI_BULB,
+  const lightBulbs = Object.values(playerSolution.shapeObjects).filter(
+    (shape) => shape.content === SPECIAL_CHARACTERS.AKARI_BULB.id,
   );
 
   // Light up surfaces that are adjacent to light bulbs, until a wall is hit

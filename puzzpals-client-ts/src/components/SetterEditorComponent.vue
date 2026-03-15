@@ -51,7 +51,8 @@ const selectedLayer = ref<SelectedLayer>("problem");
 const emptySolutionLayer: SolutionData = {
   lineObjects: {},
   surfaceObjects: {},
-  symbolObjects: {},
+  textObjects: {},
+  shapeObjects: {},
   typeToCheck: [],
 };
 

@@ -27,7 +27,8 @@ const emit = defineEmits<{
 const emptyLayer: LayerData = {
   lineObjects: {},
   surfaceObjects: {},
-  symbolObjects: {},
+  textObjects: {},
+  shapeObjects: {},
 };
 
 const grid = computed(() => props.grid);

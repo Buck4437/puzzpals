@@ -24,7 +24,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, onBeforeMount } from "vue";
 import PlayerEditorComponent from "./PlayerEditorComponent.vue";
 import {
   createInverseEditMessage,
@@ -95,6 +95,25 @@ function redo() {
   undoStack.value.push(entry);
   emit("edit-message", entry.redoMessage);
 }
+
+const keyboardListener = (e: KeyboardEvent) => {
+  // Mac convention: Cmd+Z / Shift+Cmd+Z
+  const isUndo = (e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey;
+  const isRedo =
+    (e.ctrlKey && e.key === "y") || (e.metaKey && e.key === "z" && e.shiftKey);
+
+  if (isUndo) {
+    undo();
+    e.preventDefault();
+  } else if (isRedo) {
+    redo();
+    e.preventDefault();
+  }
+};
+
+onBeforeMount(() => {
+  window.addEventListener("keydown", keyboardListener);
+});
 </script>
 
 <style scoped>

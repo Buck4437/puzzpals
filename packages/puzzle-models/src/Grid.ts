@@ -61,17 +61,26 @@ export function KeyToPairCoordinate(
 }
 
 // Puzzle data structures
-export type ObjectTypes = "lineObjects" | "surfaceObjects" | "symbolObjects";
+export type ObjectTypes =
+  | "lineObjects"
+  | "surfaceObjects"
+  | "textObjects"
+  | "shapeObjects";
 
 export function isObjectType(value: unknown): value is ObjectTypes {
   return (
     value === "lineObjects" ||
     value === "surfaceObjects" ||
-    value === "symbolObjects"
+    value === "textObjects" ||
+    value === "shapeObjects"
   );
 }
 
-export type TypeToCheck = "lineObjects" | "surfaceObjects" | "symbolObjects";
+export type TypeToCheck =
+  | "lineObjects"
+  | "surfaceObjects"
+  | "textObjects"
+  | "shapeObjects";
 
 export interface LineObject {
   start: Coordinate;
@@ -101,13 +110,13 @@ export function isSurfaceObject(value: unknown): value is SurfaceObject {
   );
 }
 
-export interface SymbolObject {
+export interface TextObject {
   location: Coordinate;
   content: string;
   color: string;
 }
 
-export function isSymbolObject(value: unknown): value is SymbolObject {
+export function isTextObject(value: unknown): value is TextObject {
   return (
     isPlainObject(value) &&
     isCoordinate(value.location) &&
@@ -116,20 +125,36 @@ export function isSymbolObject(value: unknown): value is SymbolObject {
   );
 }
 
+export interface ShapeObject {
+  location: Coordinate;
+  content: string;
+}
+
+export function isShapeObject(value: unknown): value is ShapeObject {
+  return (
+    isPlainObject(value) &&
+    isCoordinate(value.location) &&
+    typeof value.content === "string"
+  );
+}
+
 export type LineObjectDict = Record<PairCoordinateKey, LineObject>;
 export type SurfaceObjectDict = Record<CoordinateKey, SurfaceObject>;
-export type SymbolObjectDict = Record<CoordinateKey, SymbolObject>;
+export type TextObjectDict = Record<CoordinateKey, TextObject>;
+export type ShapeObjectDict = Record<CoordinateKey, ShapeObject>;
 
 export interface LayerData {
   lineObjects: LineObjectDict;
   surfaceObjects: SurfaceObjectDict;
-  symbolObjects: SymbolObjectDict;
+  textObjects: TextObjectDict;
+  shapeObjects: ShapeObjectDict;
 }
 
 export interface SolutionData {
   lineObjects: LineObjectDict;
   surfaceObjects: SurfaceObjectDict;
-  symbolObjects: SymbolObjectDict;
+  textObjects: TextObjectDict;
+  shapeObjects: ShapeObjectDict;
   typeToCheck: TypeToCheck[];
 }
 
