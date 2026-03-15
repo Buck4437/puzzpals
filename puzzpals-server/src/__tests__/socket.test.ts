@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { GameData, SurfaceUpdateMessage } from "@puzzpals/puzzle-models";
+
 import { Room } from "../models/Room.js";
 import { arrangeBeforeEach, cleanUpAfterEach } from "./utils/arrange.js";
 
@@ -8,24 +10,27 @@ import pool from "../__mocks__/pool.js";
 
 vi.mock("../pool.js");
 
-const grid = {
-  rows: 1,
-  cols: 1,
-  cells: [
-    {
-      isBlack: false,
-      number: null,
-      input: 2,
+const gameData: GameData = {
+  puzzle: {
+    size: [1, 1],
+    problem: {
+      lineObjects: {},
+      surfaceObjects: {},
+      symbolObjects: {},
     },
-  ],
-  type: "akari",
+  },
+  playerSolution: {
+    lineObjects: {},
+    surfaceObjects: {},
+    symbolObjects: {},
+  },
 };
 
 const token = "abcdefghij";
 
 const room: Room = {
   token: token,
-  puzzle_data: JSON.stringify(grid),
+  puzzle_data: JSON.stringify(gameData),
 };
 
 async function createSocketInRoom() {
@@ -46,7 +51,7 @@ describe("room:join", () => {
 
     expect(socket.emit).toHaveBeenCalledWith(
       "room:initialize",
-      grid,
+      gameData,
       // No need to escape the token, we know it's 10-char alphanumeric
       expect.stringMatching(new RegExp(`^user_${token}_[A-Za-z0-9]{8}$`)),
     );
@@ -66,40 +71,25 @@ describe("room:join", () => {
   });
 });
 
-describe("grid:updateCell", () => {
+describe("grid:edit", () => {
   beforeEach(arrangeBeforeEach);
   afterEach(cleanUpAfterEach);
 
   it("synchronizes grid with all players in same room", async () => {
+    const editMessage: SurfaceUpdateMessage = {
+      messageType: "edit",
+      type: "surfaceObjects",
+      data: {
+        location: [0, 0],
+        color: "black",
+      },
+    };
+
     const socket = await createSocketInRoom();
-    await socket.call("grid:updateCell", 0, 0);
+    await socket.call("grid:edit", editMessage);
 
     expect(mockIo.to).toHaveBeenCalledWith(token);
-    expect(mockBroadcast).toHaveBeenCalledWith("grid:cellUpdated", 0, 0);
-  });
-
-  it("rejects wrong idx type", async () => {
-    const socket = await createSocketInRoom();
-    await socket.call("grid:updateCell", "0", 0);
-    expect(mockIo.to).not.toHaveBeenCalled();
-  });
-
-  it("rejects out-of-bounds idx", async () => {
-    const socket = await createSocketInRoom();
-    await socket.call("grid:updateCell", 1, 0);
-    expect(mockIo.to).not.toHaveBeenCalled();
-  });
-
-  it("rejects wrong value type", async () => {
-    const socket = await createSocketInRoom();
-    await socket.call("grid:updateCell", 0, "0");
-    expect(mockIo.to).not.toHaveBeenCalled();
-  });
-
-  it("blocks unauthorized calls", async () => {
-    const socket = createMockSocket();
-    await socket.call("grid:updateCell", 0, 0);
-    expect(mockIo.to).not.toHaveBeenCalled();
+    expect(mockBroadcast).toHaveBeenCalledWith("grid:edited", editMessage);
   });
 });
 

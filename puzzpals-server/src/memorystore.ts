@@ -1,9 +1,9 @@
 import { fetchRoom, upsertRoom } from "./db.js";
-import { type Grid, deserialize, serialize } from "@puzzpals/puzzle-parser";
+import { type GameData } from "@puzzpals/puzzle-models";
 
 interface RoomEntry {
   token: string;
-  puzzleData: Grid;
+  gameData: GameData;
   isDirty?: boolean;
 }
 
@@ -23,10 +23,10 @@ export async function getRoomFromStore(
   const dbEntry = await fetchRoom(token);
   if (dbEntry && typeof dbEntry.puzzle_data === "string") {
     try {
-      const parsedData = deserialize(dbEntry.puzzle_data);
+      const parsedData = JSON.parse(dbEntry.puzzle_data) as GameData;
       const roomEntry = {
         token: dbEntry.token,
-        puzzleData: parsedData as Grid,
+        gameData: parsedData,
         isDirty: false,
       };
       store.set(token, roomEntry);
@@ -38,10 +38,10 @@ export async function getRoomFromStore(
   return null;
 }
 
-export function createRoomInStore(token: string, puzzleData: Grid) {
+export function createRoomInStore(token: string, gameData: GameData) {
   store.set(token, {
     token,
-    puzzleData,
+    gameData,
     isDirty: true,
   });
 }
@@ -95,7 +95,7 @@ async function autosave(forced = false) {
       // If we put mark as clean after saving, then there's a chance that
       // new changes could be made before we mark as clean, which causes data loss.
       markAsClean(room);
-      const serializedData = serialize(room.puzzleData);
+      const serializedData = JSON.stringify(room.gameData);
       await upsertRoom(token, serializedData);
     }
   }

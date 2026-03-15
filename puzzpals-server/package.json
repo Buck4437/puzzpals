@@ -4,14 +4,18 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build:models": "cd ../packages/puzzle-models && npm run build",
     "build:parser": "cd ../packages/puzzle-parser && npm run build",
+    "watch:models": "cd ../packages/puzzle-models && npm run watch",
     "watch:parser": "cd ../packages/puzzle-parser && npm run watch",
-    "build": "npm run build:parser && tsc",
+    "build": "npm run build:models && npm run build:parser && tsc",
     "start": "node dist/bin/www.js",
-    "dev": "npm run build:parser && npm run watch:parser & tsx watch ./src/bin/www.ts",
+    "dev": "npm run build:models && npm run build:parser && npm run watch:models & npm run watch:parser & tsx watch ./src/bin/www.ts",
     "test": "vitest run"
   },
   "dependencies": {
+    "@puzzpals/puzzle-models": "0.0.0",
+    "@puzzpals/puzzle-parser": "0.0.0",
     "cookie-parser": "~1.4.7",
     "debug": "~4.4.3",
     "dotenv": "^17.3.1",

@@ -7,14 +7,21 @@
     "node": "^20.19.0 || >=22.12.0"
   },
   "scripts": {
-    "dev": "vite",
-    "build": "run-p type-check \"build-only {@}\" --",
+    "build:models": "cd ../packages/puzzle-models && npm run build",
+    "build:parser": "cd ../packages/puzzle-parser && npm run build",
+    "watch:models": "cd ../packages/puzzle-models && npm run watch",
+    "watch:parser": "cd ../packages/puzzle-parser && npm run watch",
+    "watch:models:logs": "tail -f ../puzzle-models-watch.log",
+    "watch:parser:logs": "tail -f ../puzzle-parser-watch.log",
+    "dev": "npm run build:models && npm run build:parser && (npm run watch:models > ../puzzle-models-watch.log 2>&1 &) && (npm run watch:parser > ../puzzle-parser-watch.log 2>&1 &) && vite",
+    "build": "npm run build:models && npm run build:parser && run-p type-check \"build-only {@}\" --",
     "preview": "vite preview",
     "test": "vitest run",
     "build-only": "vite build",
     "type-check": "vue-tsc --build"
   },
   "dependencies": {
+    "@puzzpals/puzzle-models": "0.0.0",
     "axios": "^1.13.6",
     "socket.io-client": "^4.8.3",
     "vue": "^3.5.29",

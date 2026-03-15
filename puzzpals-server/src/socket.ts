@@ -2,6 +2,7 @@ import { Socket, type Server } from "socket.io";
 import { markAsDirty, getRoomFromStore } from "./memorystore.js";
 import { isMessageValid, processChatMessage } from "./chat.js";
 import { randomUserID } from "./user.js";
+import { applyEditMessage, toEditMessage } from "@puzzpals/puzzle-models";
 
 interface User {
   roomToken: string;
@@ -28,38 +29,54 @@ export function init(io: Server) {
 
       socket.join(token);
 
-      const grid = room.puzzleData;
-      socket.emit("room:initialize", grid, userID);
+      const game = room.gameData;
+      socket.emit("room:initialize", game, userID);
     });
 
-    socket.on("grid:updateCell", async (idx: unknown, value: unknown) => {
+    socket.on("grid:edit", async (message: unknown) => {
       // Check socket has joined a room
       const user = socketUserMap.get(socket);
       if (user === undefined) return;
 
       // Validate payload
-      if (typeof idx !== "number" || typeof value !== "number") return;
+      if (
+        typeof message !== "object" ||
+        message === null ||
+        !("messageType" in message) ||
+        !("type" in message) ||
+        !("data" in message)
+      ) {
+        return;
+      }
+
+      const editMessage = toEditMessage(
+        message.messageType,
+        message.type,
+        message.data,
+      );
+
+      // Validate editMessage
+      if (editMessage === null) {
+        return;
+      }
 
       const room = await getRoomFromStore(user.roomToken);
       if (!room) {
         return;
       }
 
-      const grid = room.puzzleData;
+      room.gameData = {
+        ...room.gameData,
+        playerSolution: applyEditMessage(
+          room.gameData.playerSolution,
+          editMessage,
+        ),
+      };
 
-      if (!grid) {
-        return;
-      }
-
-      // Ensure idx is not out of bounds
-      const cell = grid.cells[idx];
-      if (cell === undefined) return;
-
-      cell.setInput(value);
       markAsDirty(room);
 
       // Emit the update to all clients in the room (including the sender)
-      io.to(user.roomToken).emit("grid:cellUpdated", idx, value);
+      io.to(user.roomToken).emit("grid:edited", editMessage);
     });
 
     socket.on("chat:newMessage", (message: unknown) => {

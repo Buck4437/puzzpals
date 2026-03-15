@@ -1,12 +1,12 @@
 <template>
-  <div v-if="!initialGridState">Joining room...</div>
+  <div v-if="!gameData">Joining room...</div>
   <div v-else>
     <h2>Room {{ token }}</h2>
     <button @click="leaveRoom">Leave</button>
     <PuzzleArea
-      :initial-grid-state="initialGridState"
-      @update-cell="onCellUpdated"
-      ref="areaComponent"
+      :grid="gameData.puzzle"
+      :player-solution="gameData.playerSolution"
+      @edit-message="onGridEdited"
     ></PuzzleArea>
     <Chat
       :chat-state="chatState"
@@ -18,32 +18,28 @@
 </template>
 
 <script setup lang="ts">
-import {
-  onBeforeMount,
-  onBeforeUnmount,
-  onMounted,
-  ref,
-  type Ref,
-  useTemplateRef,
-} from "vue";
+import { onBeforeMount, onBeforeUnmount, onMounted, ref, type Ref } from "vue";
 import { useRouter } from "vue-router";
 
 import api from "@/services/api";
 import socket from "@/socket";
 import PuzzleArea from "@/components/PuzzleArea.vue";
 
-import type CellState from "@/models/CellState";
-import type GridState from "@/models/GridState";
 import Chat from "@/components/Chat.vue";
 import type ChatState from "@/models/ChatState";
+import {
+  applyEditMessage,
+  toEditMessage,
+  type EditMessage,
+  type GameData,
+} from "@puzzpals/puzzle-models";
 
 const router = useRouter();
 
-const initialGridState: Ref<GridState | null> = ref(null);
-const areaComponent = useTemplateRef("areaComponent");
+const gameData: Ref<GameData | null> = ref(null);
 
 const chatState: Ref<ChatState> = ref({ messages: [] });
-const chatComponent = useTemplateRef("chatComponent");
+const chatComponent = ref<InstanceType<typeof Chat> | null>(null);
 
 const userID = ref<string | null>(null);
 const props = defineProps({
@@ -85,8 +81,22 @@ async function leaveRoom() {
   router.push("/");
 }
 
-function onCellUpdated(idx: number, value: CellState) {
-  socket.emit("grid:updateCell", idx, value.input);
+function applyIncomingEdit(message: EditMessage) {
+  if (gameData.value === null) {
+    return;
+  }
+
+  console.log(message);
+
+  gameData.value = {
+    ...gameData.value,
+    playerSolution: applyEditMessage(gameData.value.playerSolution, message),
+  };
+}
+
+function onGridEdited(message: EditMessage) {
+  applyIncomingEdit(message);
+  socket.emit("grid:edit", message);
 }
 
 function onChatSubmit(text: string) {
@@ -95,31 +105,31 @@ function onChatSubmit(text: string) {
 }
 
 function initiateSocket() {
-  socket.on("room:initialize", (data: GridState, id: string) => {
-    initialGridState.value = data;
+  socket.on("room:initialize", (data: GameData, id: string) => {
+    gameData.value = data;
     userID.value = id;
   });
 
-  socket.on("grid:cellUpdated", (idx: number, value: number) => {
-    if (areaComponent.value === null) {
-      throw new Error("areaComponent is missing");
+  socket.on("grid:edited", (payload: unknown) => {
+    if (
+      typeof payload !== "object" ||
+      payload === null ||
+      !("messageType" in payload) ||
+      !("type" in payload) ||
+      !("data" in payload)
+    ) {
+      return;
     }
 
-    // For now, grid:cellUpdated accepts only the input instead of the whole cell state
-    // because the input is the only thing the player can modify.
-    // We reconstruct the cell state from the input and pass it to the grid.
+    const message = toEditMessage(
+      payload.messageType,
+      payload.type,
+      payload.data,
+    );
 
-    // If later the player can modify more things (e.g., text and background color)
-    // and grid:cellUpdated needs to accept the whole cell state,
-    // then we can remove the reconstruction step.
-
-    const newState: CellState = {
-      isBlack: false,
-      number: null,
-      input: value,
-    };
-
-    areaComponent.value.onCellUpdated(idx, newState);
+    if (message !== null) {
+      applyIncomingEdit(message);
+    }
   });
 
   // socket.on('chat:records', (history) => {
