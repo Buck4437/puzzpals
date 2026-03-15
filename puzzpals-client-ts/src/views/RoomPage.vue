@@ -32,11 +32,13 @@ import {
   toEditMessage,
   type EditMessage,
   type GameData,
+  hasWon as checkWin,
 } from "@puzzpals/puzzle-models";
 
 const router = useRouter();
 
 const gameData: Ref<GameData | null> = ref(null);
+let hasWon = false;
 
 const chatState: Ref<ChatState> = ref({ messages: [] });
 const chatComponent = ref<InstanceType<typeof Chat> | null>(null);
@@ -92,6 +94,25 @@ function applyIncomingEdit(message: EditMessage) {
     ...gameData.value,
     playerSolution: applyEditMessage(gameData.value.playerSolution, message),
   };
+
+  checkWinCondition();
+}
+
+function checkWinCondition() {
+  if (gameData.value === null) {
+    return;
+  }
+
+  if (!hasWon && gameData.value.puzzle.solution !== undefined) {
+    const currentSolution = gameData.value.playerSolution;
+    const solutionToCheck = gameData.value.puzzle.solution;
+
+    const win = checkWin(currentSolution, solutionToCheck);
+    if (win) {
+      hasWon = true;
+      alert("Win");
+    }
+  }
 }
 
 function onGridEdited(message: EditMessage) {
@@ -108,6 +129,8 @@ function initiateSocket() {
   socket.on("room:initialize", (data: GameData, id: string) => {
     gameData.value = data;
     userID.value = id;
+
+    checkWinCondition();
   });
 
   socket.on("grid:edited", (payload: unknown) => {
