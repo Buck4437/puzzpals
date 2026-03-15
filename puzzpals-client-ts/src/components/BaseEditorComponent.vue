@@ -106,6 +106,15 @@
         <p v-else>Click a cell to select</p>
       </div>
     </div>
+    <div v-show="currentTool.codename === 'shapes'">
+      <label>Shape: </label>
+      <select v-model="selectedShapeId">
+        <option v-for="shape in shapes" :key="shape.id" :value="shape.id">
+          {{ shape.label }}
+        </option>
+      </select>
+      <p>Click a cell to place or remove the selected shape</p>
+    </div>
   </div>
   <div v-if="showResizeControls">
     Current dimensions: Row: {{ rowCount }}, Col: {{ colCount }}
@@ -136,15 +145,17 @@ import { computed, ref, onMounted, onBeforeUnmount, watch } from "vue";
 import GridSVG from "@/components/editor/GridSVG.vue";
 import {
   type Coordinate,
+  type ShapeObject,
   type SurfaceObject,
   type LineObject,
-  type SymbolObject,
+  type TextObject,
   type EditMessage,
   type Grid,
   type LayerData,
   CoordinateToKey,
   PairCoordinateToKey,
   type CoordinateKey,
+  SPECIAL_CHARACTERS_LIST,
 } from "@puzzpals/puzzle-models";
 
 const props = defineProps<{
@@ -167,7 +178,8 @@ const showResizeControls = computed(() => props.showResizeControls === true);
 const emptyLayer: LayerData = {
   lineObjects: {},
   surfaceObjects: {},
-  symbolObjects: {},
+  textObjects: {},
+  shapeObjects: {},
 };
 
 const layers = computed(() => {
@@ -193,9 +205,13 @@ const renderedLayer = computed<LayerData>(() => {
         ...mergedLayer.surfaceObjects,
         ...layer.surfaceObjects,
       },
-      symbolObjects: {
-        ...mergedLayer.symbolObjects,
-        ...layer.symbolObjects,
+      textObjects: {
+        ...mergedLayer.textObjects,
+        ...layer.textObjects,
+      },
+      shapeObjects: {
+        ...mergedLayer.shapeObjects,
+        ...layer.shapeObjects,
       },
     }),
     emptyLayer,
@@ -229,6 +245,7 @@ const currentSubtoolId = ref(0);
 const selectedSurfaceColor = ref<string>(colorTable[0] ?? "black");
 const selectedLineColor = ref<string>(colorTable[0] ?? "black");
 const selectedTextColor = ref("auto");
+const selectedShapeId = ref<string>(SPECIAL_CHARACTERS_LIST[0]?.id ?? "");
 const cursor = ref<Coordinate | null>(null);
 const textInput = ref<HTMLInputElement | null>(null);
 const textInputValue = ref("");
@@ -263,6 +280,11 @@ const tools: Tool[] = [
     codename: "text",
     subtools: ["Simple", "Input box"],
   },
+  {
+    name: "Shapes",
+    codename: "shapes",
+    subtools: [],
+  },
 ];
 
 const currentTool = computed(() => {
@@ -275,6 +297,10 @@ const currentTool = computed(() => {
 
 const subtools = computed(() => {
   return currentTool.value.subtools;
+});
+
+const shapes = computed(() => {
+  return SPECIAL_CHARACTERS_LIST;
 });
 
 function emitRemoveMessage(type: EditMessage["type"], key: string) {
@@ -301,10 +327,18 @@ function emitSurfaceUpdate(value: SurfaceObject) {
   });
 }
 
-function emitSymbolUpdate(value: SymbolObject) {
+function emitTextUpdate(value: TextObject) {
   emit("edit-message", {
     messageType: "edit",
-    type: "symbolObjects",
+    type: "textObjects",
+    data: value,
+  });
+}
+
+function emitShapeUpdate(value: ShapeObject) {
+  emit("edit-message", {
+    messageType: "edit",
+    type: "shapeObjects",
     data: value,
   });
 }
@@ -326,7 +360,7 @@ function syncTextInputFromGrid() {
   }
 
   const key = CoordinateToKey(cursor.value);
-  textInputValue.value = editableLayer.value.symbolObjects[key]?.content ?? "";
+  textInputValue.value = editableLayer.value.textObjects[key]?.content ?? "";
 }
 
 const setDimensions = () => {
@@ -368,8 +402,8 @@ const setDimensions = () => {
   }
 };
 
-let surfaceStrokeMode: "draw" | "erase" | null = null;
-let visitedSurfaces: Set<CoordinateKey> = new Set();
+let cellStrokeMode: "draw" | "erase" | null = null;
+let visitedCells: Set<CoordinateKey> = new Set();
 let lastLineCenter: Coordinate | null = null;
 let lastEdgeCorner: Coordinate | null = null;
 let lineStrokeMode: "draw" | "erase" | null = null;
@@ -482,18 +516,18 @@ const handleKeyboardInput = (event: KeyboardEvent) => {
   }
 
   const key = CoordinateToKey(cursor.value);
-  const prev = editableLayer.value.symbolObjects[key];
+  const prev = editableLayer.value.textObjects[key];
   const currentText = prev?.content || "";
   const maxTextLength = 2;
 
   if (event.key === "Backspace") {
     event.preventDefault();
     if (prev) {
-      emitRemoveMessage("symbolObjects", key);
+      emitRemoveMessage("textObjects", key);
     }
   } else if (event.key.length === 1 && currentText.length < maxTextLength) {
     event.preventDefault();
-    emitSymbolUpdate({
+    emitTextUpdate({
       location: cursor.value,
       content: currentText + event.key,
       color: getTextColor(key),
@@ -515,15 +549,15 @@ const updateSelectedCell = () => {
   }
 
   const key = CoordinateToKey(cursor.value);
-  const prev = editableLayer.value.symbolObjects[key];
+  const prev = editableLayer.value.textObjects[key];
 
   if (textInputValue.value === "") {
-    // Delete the symbol if text is empty
+    // Delete the text if text is empty
     if (prev) {
-      emitRemoveMessage("symbolObjects", key);
+      emitRemoveMessage("textObjects", key);
     }
   } else {
-    emitSymbolUpdate({
+    emitTextUpdate({
       location: cursor.value,
       content: textInputValue.value,
       color: getTextColor(key),
@@ -532,8 +566,8 @@ const updateSelectedCell = () => {
 };
 
 const onMouseRelease = () => {
-  visitedSurfaces = new Set();
-  surfaceStrokeMode = null;
+  visitedCells = new Set();
+  cellStrokeMode = null;
   lastLineCenter = null;
   lastEdgeCorner = null;
   lineStrokeMode = null;
@@ -547,19 +581,19 @@ const onCenterEnter = (coordinate: Coordinate) => {
 
   switch (currentTool.value.codename) {
     case "surface": {
-      if (visitedSurfaces.has(key)) {
+      if (visitedCells.has(key)) {
         return;
       }
 
-      visitedSurfaces.add(key);
+      visitedCells.add(key);
 
       const selectedColor = selectedSurfaceColor.value;
-      if (surfaceStrokeMode === null) {
+      if (cellStrokeMode === null) {
         const prev = editableLayer.value.surfaceObjects[key];
-        surfaceStrokeMode = prev?.color === selectedColor ? "erase" : "draw";
+        cellStrokeMode = prev?.color === selectedColor ? "erase" : "draw";
       }
 
-      if (surfaceStrokeMode === "erase") {
+      if (cellStrokeMode === "erase") {
         emitRemoveMessage("surfaceObjects", key);
       } else {
         emitSurfaceUpdate({
@@ -589,15 +623,46 @@ const onCenterEnter = (coordinate: Coordinate) => {
       break;
     }
     case "text": {
-      const existing = editableLayer.value.symbolObjects[key];
-
-      // In input box mode, set the input value and focus
       if (currentSubtoolId.value === 1) {
+        // In input box mode, set the input value and focus
+        const existing = editableLayer.value.textObjects[key];
+
         textInputValue.value = existing?.content || "";
         setTimeout(() => {
           textInput.value?.focus();
         }, 0);
       }
+      break;
+    }
+    case "shapes": {
+      if (visitedCells.has(key)) {
+        return;
+      }
+
+      visitedCells.add(key);
+
+      const shapeId = selectedShapeId.value;
+      if (shapeId === "") {
+        return;
+      }
+
+      const prev = editableLayer.value.shapeObjects[key];
+
+      if (cellStrokeMode === null) {
+        cellStrokeMode = prev?.content === shapeId ? "erase" : "draw";
+      }
+
+      if (cellStrokeMode === "erase") {
+        if (prev?.content === shapeId) {
+          emitRemoveMessage("shapeObjects", key);
+        }
+      } else {
+        emitShapeUpdate({
+          location: coordinate,
+          content: shapeId,
+        });
+      }
+
       break;
     }
   }

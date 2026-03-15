@@ -9,14 +9,16 @@ type PlainObject = Record<string, unknown>;
 const validTypeToCheckValues = new Set([
   "lineObjects",
   "surfaceObjects",
-  "symbolObjects",
+  "textObjects",
+  "shapeObjects",
 ]);
 
 function createEmptyLayerData(): LayerData {
   return {
     lineObjects: {},
     surfaceObjects: {},
-    symbolObjects: {},
+    textObjects: {},
+    shapeObjects: {},
   };
 }
 
@@ -128,7 +130,7 @@ function parsePuzzle(input: unknown): Grid {
     }
     if (!isValidTypeToCheckArray(input.solution.typeToCheck)) {
       throw new Error(
-        "Puzzle solution typeToCheck must be an array containing only lineObjects, surfaceObjects, or symbolObjects",
+        "Puzzle solution typeToCheck must be an array containing only lineObjects, surfaceObjects, textObjects, or shapeObjects",
       );
     }
     puzzle.solution = buildValidObject(

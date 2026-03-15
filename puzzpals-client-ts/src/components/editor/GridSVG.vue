@@ -62,11 +62,11 @@
         pointer-events="none"
       />
 
-      <!-- symbol objects -->
+      <!-- text objects -->
       <g
-        v-for="symbol in layer.symbolObjects"
-        :key="`symbol-${symbol.location}`"
-        :transform="`translate(${toSvgCoordinates(symbol.location)[0]}, ${toSvgCoordinates(symbol.location)[1]})`"
+        v-for="textObject in layer.textObjects"
+        :key="`text-${textObject.location}`"
+        :transform="`translate(${toSvgCoordinates(textObject.location)[0]}, ${toSvgCoordinates(textObject.location)[1]})`"
         pointer-events="none"
       >
         <text
@@ -75,9 +75,38 @@
           text-anchor="middle"
           dominant-baseline="central"
           :font-size="cellSize / 2"
-          :fill="symbol.color"
+          :fill="textObject.color"
         >
-          {{ symbol.content }}
+          {{ textObject.content }}
+        </text>
+      </g>
+
+      <!-- shape objects -->
+      <g
+        v-for="shapeObject in layer.shapeObjects"
+        :key="`shape-${shapeObject.location}`"
+        :transform="`translate(${toSvgCoordinates(shapeObject.location)[0]}, ${toSvgCoordinates(shapeObject.location)[1]})`"
+        pointer-events="none"
+      >
+        <image
+          v-if="getShapeRenderMode(shapeObject.content) === 'image'"
+          :href="getShapeImageAsset(shapeObject.content) ?? undefined"
+          :x="-cellSize / 3"
+          :y="-cellSize / 3"
+          :width="(2 * cellSize) / 3"
+          :height="(2 * cellSize) / 3"
+          preserveAspectRatio="xMidYMid meet"
+        />
+        <text
+          v-else
+          x="0"
+          y="0"
+          text-anchor="middle"
+          dominant-baseline="central"
+          :font-size="cellSize / 2"
+          fill="black"
+        >
+          {{ getShapeGlyph(shapeObject.content) }}
         </text>
       </g>
 
@@ -99,7 +128,11 @@
 </template>
 
 <script setup lang="ts">
-import { type Coordinate, type LayerData } from "@puzzpals/puzzle-models";
+import {
+  type Coordinate,
+  type LayerData,
+  getSpecialCharacterById,
+} from "@puzzpals/puzzle-models";
 import { ref, computed } from "vue";
 
 const FULLSIZE = 480;
@@ -275,6 +308,19 @@ function handlePointerMove(event: MouseEvent) {
 
 function topLeft(coordinate: [number, number]): [number, number] {
   return [coordinate[0] - 0.5, coordinate[1] - 0.5];
+}
+
+function getShapeGlyph(shapeId: string): string {
+  return getSpecialCharacterById(shapeId)?.textGlyph ?? "?";
+}
+
+function getShapeRenderMode(shapeId: string): "text" | "image" {
+  const shape = getSpecialCharacterById(shapeId);
+  return shape?.imageAsset ? "image" : "text";
+}
+
+function getShapeImageAsset(shapeId: string): string | null {
+  return getSpecialCharacterById(shapeId)?.imageAsset ?? null;
 }
 </script>
 

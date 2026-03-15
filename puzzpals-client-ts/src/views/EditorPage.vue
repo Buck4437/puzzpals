@@ -14,6 +14,19 @@
     Include solution (Enables answer-checking)
     <input type="checkbox" v-model="includeSolution" />
 
+    <br />
+
+    Types to check
+    <ul>
+      <li v-for="type in typesToCheckOptions" :key="type.name">
+        <input
+          type="checkbox"
+          :value="type"
+          v-model="typesToCheckInput[type.value]"
+        />
+        {{ type.name }}
+      </li>
+    </ul>
     <h2>Publish Puzzle</h2>
     <button @click="publishPuzzle">Publish current puzzle</button>
     <div v-if="uploadStatus">{{ uploadStatus }}</div>
@@ -33,15 +46,42 @@ import {
   type Grid,
   type LayerData,
   type SolutionData,
+  type TypeToCheck,
 } from "@puzzpals/puzzle-models";
 
 const uploadStatus = ref("");
+const typesToCheckOptions: { name: string; value: TypeToCheck }[] = [
+  {
+    name: "Surface",
+    value: "surfaceObjects",
+  },
+  {
+    name: "Line",
+    value: "lineObjects",
+  },
+  {
+    name: "Text",
+    value: "textObjects",
+  },
+  {
+    name: "Shape",
+    value: "shapeObjects",
+  },
+];
+
+const typesToCheckInput = ref<Record<TypeToCheck, boolean>>({
+  lineObjects: false,
+  surfaceObjects: false,
+  textObjects: false,
+  shapeObjects: false,
+});
 
 function createEmptyLayerData(): LayerData {
   return {
     lineObjects: {},
     surfaceObjects: {},
-    symbolObjects: {},
+    textObjects: {},
+    shapeObjects: {},
   };
 }
 
@@ -84,8 +124,18 @@ function clipLayerData(
         );
       }),
     ),
-    symbolObjects: Object.fromEntries(
-      Object.entries(layerData.symbolObjects).filter(([key]) => {
+    textObjects: Object.fromEntries(
+      Object.entries(layerData.textObjects).filter(([key]) => {
+        const coordinate = KeyToCoordinate(key);
+        return (
+          coordinate !== null &&
+          coordinate[0] < rowCount &&
+          coordinate[1] < colCount
+        );
+      }),
+    ),
+    shapeObjects: Object.fromEntries(
+      Object.entries(layerData.shapeObjects).filter(([key]) => {
         const coordinate = KeyToCoordinate(key);
         return (
           coordinate !== null &&
@@ -98,7 +148,7 @@ function clipLayerData(
 }
 
 const grid = ref<Grid>({
-  size: [6, 7],
+  size: [10, 10],
   problem: createEmptyLayerData(),
   solution: createEmptySolutionData(),
 });
@@ -147,6 +197,12 @@ const exportPuzzle = () => {
   const puzzleObj = JSON.parse(JSON.stringify(grid.value));
   if (!includeSolution.value) {
     delete puzzleObj.solution;
+  } else if (puzzleObj.solution) {
+    puzzleObj.solution.typeToCheck = [
+      ...typesToCheckOptions
+        .filter((type) => typesToCheckInput.value[type.value])
+        .map((type) => type.value as TypeToCheck),
+    ];
   }
   downloadObjectAsJson(puzzleObj, "puzzpals-puzzle");
 };
