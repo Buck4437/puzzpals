@@ -10,7 +10,7 @@
     @mousemove="handlePointerMove"
     @mouseleave="handleMouseLeave"
   >
-    <g v-for="layer in layers">
+    <g v-for="(layer, index) in layers" :key="index">
       <!-- Surface objects -->
       <rect
         v-for="surface in layer.surfaceObjects"
