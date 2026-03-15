@@ -34,7 +34,7 @@ function calculateAkariRulesLayer(grid: Grid, playerSolution: LayerData) {
     (symbol) => symbol.content === "O",
   );
 
-  // Light up surfaces that are adjacaent to light bulbs, until a wall is hit
+  // Light up surfaces that are adjacent to light bulbs, until a wall is hit
   for (const lightBulb of lightBulbs) {
     const originKey = CoordinateToKey(lightBulb.location);
     rulesLayer.surfaceObjects[originKey] = {
