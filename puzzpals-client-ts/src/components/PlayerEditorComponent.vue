@@ -3,7 +3,6 @@
     :grid="grid"
     :rendered-layer-list="renderedLayerList"
     :editable-layer-index="renderedLayerList.length - 1"
-    :show-resize-controls="false"
     @edit-message="emit('edit-message', $event)"
   />
 </template>
