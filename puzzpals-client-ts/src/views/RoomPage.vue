@@ -4,7 +4,7 @@
     <h2>Room {{ token }}</h2>
     <button @click="leaveRoom">Leave</button>
     <div v-if="enabledRulesInfo.length > 0">
-      <h3>Enabled custom rules</h3>
+      <h3>Pre-defined rules</h3>
       <ul>
         <li v-for="rule in enabledRulesInfo" :key="rule.id">
           <strong>{{ rule.name }}</strong

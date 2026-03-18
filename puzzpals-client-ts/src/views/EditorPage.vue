@@ -18,7 +18,7 @@
 
     <br />
 
-    Enabled custom rules
+    Pre-defined rules
     <ul>
       <li v-for="rule in customRulesInfoList" :key="rule.id">
         <input
