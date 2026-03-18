@@ -89,6 +89,7 @@ export interface LineObject {
   start: Coordinate;
   end: Coordinate;
   color: string;
+  thickness?: number;
 }
 
 export function isLineObject(value: unknown): value is LineObject {
@@ -96,7 +97,11 @@ export function isLineObject(value: unknown): value is LineObject {
     isPlainObject(value) &&
     isCoordinate(value.start) &&
     isCoordinate(value.end) &&
-    typeof value.color === "string"
+    typeof value.color === "string" &&
+    (value.thickness === undefined ||
+      (typeof value.thickness === "number" &&
+        Number.isFinite(value.thickness) &&
+        value.thickness > 0))
   );
 }
 

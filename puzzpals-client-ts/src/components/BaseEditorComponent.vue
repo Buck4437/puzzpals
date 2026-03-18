@@ -35,27 +35,14 @@
         </select>
       </div>
       <div>
-        <button
-          :class="{ active: currentSubtoolId === 0 }"
-          @click="currentSubtoolId = 0"
-        >
-          Normal
-        </button>
-        <button
-          :class="{ active: currentSubtoolId === 1 }"
-          @click="currentSubtoolId = 1"
-        >
-          Diagonal
-        </button>
-      </div>
-    </div>
-    <div v-show="currentTool.codename === 'edge'">
-      <p>Edge tool: connect cell corners</p>
-      <div v-if="currentSubtoolId !== 2">
-        Line color:
-        <select v-model="selectedLineColor">
-          <option v-for="color in lineColorTable" :key="color" :value="color">
-            {{ color }}
+        Line thickness:
+        <select v-model="selectedLineThickness">
+          <option
+            v-for="thickness in lineThicknessOptions"
+            :key="thickness.name"
+            :value="thickness.value"
+          >
+            {{ thickness.name }}
           </option>
         </select>
       </div>
@@ -72,14 +59,44 @@
         >
           Diagonal
         </button>
+      </div>
+    </div>
+    <div v-show="currentTool.codename === 'edge'">
+      <p>Edge tool: connect cell corners</p>
+      <div>
+        Line color:
+        <select v-model="selectedLineColor">
+          <option v-for="color in lineColorTable" :key="color" :value="color">
+            {{ color }}
+          </option>
+        </select>
+      </div>
+      <div>
+        Line thickness:
+        <select v-model="selectedLineThickness">
+          <option
+            v-for="thickness in lineThicknessOptions"
+            :key="thickness.name"
+            :value="thickness.value"
+          >
+            {{ thickness.name }}
+          </option>
+        </select>
+      </div>
+      <div>
         <button
-          :class="{ active: currentSubtoolId === 2 }"
-          @click="currentSubtoolId = 2"
+          :class="{ active: currentSubtoolId === 0 }"
+          @click="currentSubtoolId = 0"
         >
-          Erase
+          Normal
+        </button>
+        <button
+          :class="{ active: currentSubtoolId === 1 }"
+          @click="currentSubtoolId = 1"
+        >
+          Diagonal
         </button>
       </div>
-      <p>Erase mode allows existing black edges to be removed.</p>
     </div>
     <div v-show="currentTool.codename === 'text'">
       <div>
@@ -298,10 +315,28 @@ const textColorTable = [
   "purple",
 ];
 
+const lineThicknessOptions = [
+  {
+    name: "Default",
+    value: 3,
+  },
+  {
+    name: "Thick",
+    value: 5,
+  },
+  {
+    name: "Thin",
+    value: 1,
+  },
+];
+
 const currentToolId = ref(0);
 const currentSubtoolId = ref(0);
 const selectedSurfaceColor = ref<string>(surfaceColorTable[0] ?? "black");
 const selectedLineColor = ref<string>(lineColorTable[0] ?? "black");
+const selectedLineThickness = ref<number>(
+  (lineThicknessOptions[0] ?? { value: 3 }).value,
+);
 const selectedTextColor = ref("auto");
 const selectedShapeId = ref<string>(SPECIAL_CHARACTERS_LIST[0]?.id ?? "");
 const cursor = ref<Coordinate | null>(null);
@@ -540,6 +575,13 @@ const applyLineSegment = (
 
   if (nextMode === "erase") {
     emitRemoveMessage("lineObjects", lineKey);
+  } else if (selectedLineThickness.value !== 3) {
+    emitLineUpdate({
+      start,
+      end,
+      color: selectedLineColor.value,
+      thickness: selectedLineThickness.value,
+    });
   } else {
     emitLineUpdate({
       start,
@@ -564,12 +606,12 @@ const applyEdgeSegment = (
 
   if (nextMode === "erase") {
     emitRemoveMessage("lineObjects", lineKey);
-  } else if (currentSubtoolId.value === 2) {
-    // Erase mode
+  } else if (selectedLineThickness.value !== 3) {
     emitLineUpdate({
       start,
       end,
-      color: "white",
+      color: selectedLineColor.value,
+      thickness: selectedLineThickness.value,
     });
   } else {
     emitLineUpdate({
@@ -829,8 +871,7 @@ const onCornerEnter = (coordinate: Coordinate) => {
     return;
   }
 
-  // Allow diagonal only in normal mode
-  const allowDiagonal = currentSubtoolId.value === 0;
+  const allowDiagonal = currentSubtoolId.value === 1;
   if (canDrawSegment(lastEdgeCorner, coordinate, allowDiagonal)) {
     edgeStrokeMode = applyEdgeSegment(
       lastEdgeCorner,

@@ -60,7 +60,7 @@
         :x2="toSvgCoordinates(line.end)[0]"
         :y2="toSvgCoordinates(line.end)[1]"
         :stroke="line.color"
-        :stroke-width="3"
+        :stroke-width="line.thickness || 3"
         pointer-events="none"
       />
 
