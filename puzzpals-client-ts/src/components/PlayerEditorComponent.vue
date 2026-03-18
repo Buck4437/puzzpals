@@ -13,7 +13,10 @@ import { computed } from "vue";
 
 import BaseEditorComponent from "./BaseEditorComponent.vue";
 import type { EditMessage, Grid, LayerData } from "@puzzpals/puzzle-models";
-import { calculateAkariRulesLayer } from "@puzzpals/puzzle-models";
+import {
+  getEnabledCustomRulesLayers,
+  getEnabledRulesList,
+} from "@puzzpals/puzzle-models";
 
 const props = defineProps<{
   grid: Grid;
@@ -34,13 +37,24 @@ const emptyLayer: LayerData = {
 const grid = computed(() => props.grid);
 const playerSolution = computed(() => props.playerSolution ?? emptyLayer);
 
-const akariLayer = computed(() => {
-  return calculateAkariRulesLayer(props.grid, playerSolution.value);
+const enabledRulesInfo = computed(() => {
+  return getEnabledRulesList(props.grid);
 });
 
-const renderedLayerList = computed(() => [
-  props.grid.problem,
-  akariLayer.value,
-  playerSolution.value,
-]);
+const rulesLayers = computed(() => {
+  return getEnabledCustomRulesLayers(props.grid, playerSolution.value);
+});
+
+const renderedLayerList = computed(() => {
+  const renderedLayers: LayerData[] = [props.grid.problem];
+
+  if (enabledRulesInfo.value.length > 0) {
+    for (const rulesLayer of rulesLayers.value) {
+      renderedLayers.push(rulesLayer);
+    }
+  }
+
+  renderedLayers.push(playerSolution.value);
+  return renderedLayers;
+});
 </script>

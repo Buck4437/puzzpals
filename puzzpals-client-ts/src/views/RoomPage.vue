@@ -3,6 +3,24 @@
   <div v-else>
     <h2>Room {{ token }}</h2>
     <button @click="leaveRoom">Leave</button>
+    <div v-if="enabledRulesInfo.length > 0">
+      <h3>Enabled custom rules</h3>
+      <ul>
+        <li v-for="rule in enabledRulesInfo" :key="rule.id">
+          <strong>{{ rule.name }}</strong
+          >: {{ rule.description }}
+        </li>
+      </ul>
+    </div>
+    <div v-if="answerCheckInfo.length > 0">
+      <h3>Answer checks</h3>
+      <ul>
+        <li v-for="check in answerCheckInfo" :key="check.type">
+          <strong>{{ check.name }}</strong
+          >: {{ check.description }}
+        </li>
+      </ul>
+    </div>
     <PuzzleArea
       :grid="gameData.puzzle"
       :player-solution="gameData.playerSolution"
@@ -18,7 +36,15 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeMount, onBeforeUnmount, onMounted, ref, type Ref } from "vue";
+import {
+  computed,
+  nextTick,
+  onBeforeMount,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  type Ref,
+} from "vue";
 import { useRouter } from "vue-router";
 
 import api from "@/services/api";
@@ -29,6 +55,8 @@ import Chat from "@/components/Chat.vue";
 import type ChatState from "@/models/ChatState";
 import {
   applyEditMessage,
+  getAnswerCheckListFromTypes,
+  getEnabledRulesList,
   toEditMessage,
   type EditMessage,
   type GameData,
@@ -46,6 +74,24 @@ const chatComponent = ref<InstanceType<typeof Chat> | null>(null);
 const userID = ref<string | null>(null);
 const props = defineProps({
   token: { type: String, required: true },
+});
+
+const enabledRulesInfo = computed(() => {
+  if (gameData.value === null) {
+    return [];
+  }
+
+  return getEnabledRulesList(gameData.value.puzzle);
+});
+
+const answerCheckInfo = computed(() => {
+  if (gameData.value?.puzzle.solution === undefined) {
+    return [];
+  }
+
+  return getAnswerCheckListFromTypes(
+    gameData.value.puzzle.solution.typeToCheck,
+  );
 });
 
 function is404(err: unknown) {
@@ -110,7 +156,11 @@ function checkWinCondition() {
     const win = checkWin(currentSolution, solutionToCheck);
     if (win) {
       hasWon = true;
-      alert("Win");
+      nextTick(() => {
+        setTimeout(() => {
+          alert("Win");
+        }, 0);
+      });
     }
   }
 }

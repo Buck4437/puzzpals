@@ -22,33 +22,35 @@
         :fill="surface.color"
         pointer-events="none"
       />
+    </g>
 
-      <!-- Vertical lines -->
-      <line
-        v-for="col in props.gridSize[1] + 1"
-        :key="`grid-v-line-${col}`"
-        :x1="toSvgCoordinates([0, col - 1])[0]"
-        :y1="toSvgCoordinates([0, col - 1])[1]"
-        :x2="toSvgCoordinates([props.gridSize[0], col - 1])[0]"
-        :y2="toSvgCoordinates([props.gridSize[0], col - 1])[1]"
-        stroke="black"
-        :stroke-width="col === 1 || col === props.gridSize[1] + 1 ? 3 : 1"
-        pointer-events="none"
-      />
+    <!-- Vertical lines -->
+    <line
+      v-for="col in props.gridSize[1] + 1"
+      :key="`grid-v-line-${col}`"
+      :x1="toSvgCoordinates([0, col - 1])[0]"
+      :y1="toSvgCoordinates([0, col - 1])[1]"
+      :x2="toSvgCoordinates([props.gridSize[0], col - 1])[0]"
+      :y2="toSvgCoordinates([props.gridSize[0], col - 1])[1]"
+      stroke="black"
+      :stroke-width="col === 1 || col === props.gridSize[1] + 1 ? 3 : 1"
+      pointer-events="none"
+    />
 
-      <!-- Horizontal lines -->
-      <line
-        v-for="row in props.gridSize[0] + 1"
-        :key="`grid-h-line-${row}`"
-        :x1="toSvgCoordinates([row - 1, 0])[0]"
-        :y1="toSvgCoordinates([row - 1, 0])[1]"
-        :x2="toSvgCoordinates([row - 1, props.gridSize[1]])[0]"
-        :y2="toSvgCoordinates([row - 1, props.gridSize[1]])[1]"
-        stroke="black"
-        :stroke-width="row === 1 || row === props.gridSize[0] + 1 ? 3 : 1"
-        pointer-events="none"
-      />
+    <!-- Horizontal lines -->
+    <line
+      v-for="row in props.gridSize[0] + 1"
+      :key="`grid-h-line-${row}`"
+      :x1="toSvgCoordinates([row - 1, 0])[0]"
+      :y1="toSvgCoordinates([row - 1, 0])[1]"
+      :x2="toSvgCoordinates([row - 1, props.gridSize[1]])[0]"
+      :y2="toSvgCoordinates([row - 1, props.gridSize[1]])[1]"
+      stroke="black"
+      :stroke-width="row === 1 || row === props.gridSize[0] + 1 ? 3 : 1"
+      pointer-events="none"
+    />
 
+    <g v-for="(layer, index) in layers" :key="index">
       <!-- Line objects -->
       <line
         v-for="line in layer.lineObjects"

@@ -77,10 +77,13 @@ export function isObjectType(value: unknown): value is ObjectTypes {
 }
 
 export type TypeToCheck =
-  | "lineObjects"
-  | "surfaceObjects"
-  | "textObjects"
-  | "shapeObjects";
+  | "lineObjectsExact"
+  | "lineObjectsGreenOnly"
+  | "surfaceObjectsExact"
+  | "surfaceObjectsDarkOnly"
+  | "textObjectsExact"
+  | "textObjectsContentOnly"
+  | "shapeObjectsExcludeCrossMarks";
 
 export interface LineObject {
   start: Coordinate;
@@ -158,10 +161,17 @@ export interface SolutionData {
   typeToCheck: TypeToCheck[];
 }
 
+export type RulesType = "akari";
+
+export interface OptionsObject {
+  rules: RulesType[];
+}
+
 export interface Grid {
   size: [number, number];
   problem: LayerData;
   solution?: SolutionData;
+  options: OptionsObject;
 }
 
 export interface GameData {

@@ -3,31 +3,13 @@
     <PlayerEditorComponent
       :grid="props.grid"
       :player-solution="props.playerSolution"
-      @edit-message="onEditMessage"
+      @edit-message="emit('edit-message', $event)"
     />
-    <div class="undo-redo-button">
-      <button
-        @click="undo"
-        :disabled="undoStack.length === 0"
-        aria-label="Undo last edit"
-      >
-        Undo
-      </button>
-      <button
-        @click="redo"
-        :disabled="redoStack.length === 0"
-        aria-label="Redo last undone edit"
-      >
-        Redo
-      </button>
-    </div>
   </div>
 </template>
 <script setup lang="ts">
-import { computed, ref, onBeforeMount } from "vue";
 import PlayerEditorComponent from "./PlayerEditorComponent.vue";
 import {
-  createInverseEditMessage,
   type EditMessage,
   type Grid,
   type LayerData,
@@ -41,85 +23,4 @@ const props = defineProps<{
   grid: Grid;
   playerSolution: LayerData;
 }>();
-
-const MAX_UNDO = 300;
-
-type UndoRedoStackEntry = {
-  undoMessage: EditMessage;
-  redoMessage: EditMessage;
-};
-
-const editableLayer = computed(
-  () => props.playerSolution ?? props.grid.problem,
-);
-const undoStack = ref<UndoRedoStackEntry[]>([]);
-const redoStack = ref<UndoRedoStackEntry[]>([]);
-
-function pushUndoEntry(entry: UndoRedoStackEntry) {
-  undoStack.value.push(entry);
-  if (undoStack.value.length > MAX_UNDO) {
-    undoStack.value.shift();
-  }
-  redoStack.value = [];
-}
-
-function onEditMessage(message: EditMessage) {
-  const inverseMessage = createInverseEditMessage(editableLayer.value, message);
-  if (inverseMessage === null) {
-    return;
-  }
-
-  pushUndoEntry({
-    undoMessage: inverseMessage,
-    redoMessage: message,
-  });
-  emit("edit-message", message);
-}
-
-function undo() {
-  const entry = undoStack.value.pop();
-  if (entry === undefined) {
-    return;
-  }
-
-  redoStack.value.push(entry);
-  emit("edit-message", entry.undoMessage);
-}
-
-function redo() {
-  const entry = redoStack.value.pop();
-  if (entry === undefined) {
-    return;
-  }
-
-  undoStack.value.push(entry);
-  emit("edit-message", entry.redoMessage);
-}
-
-const keyboardListener = (e: KeyboardEvent) => {
-  // Mac convention: Cmd+Z / Shift+Cmd+Z
-  const isUndo = (e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey;
-  const isRedo =
-    (e.ctrlKey && e.key === "y") || (e.metaKey && e.key === "z" && e.shiftKey);
-
-  if (isUndo) {
-    undo();
-    e.preventDefault();
-  } else if (isRedo) {
-    redo();
-    e.preventDefault();
-  }
-};
-
-onBeforeMount(() => {
-  window.addEventListener("keydown", keyboardListener);
-});
 </script>
-
-<style scoped>
-.undo-redo-button {
-  display: flex;
-  gap: 8px;
-  margin-top: 12px;
-}
-</style>

@@ -14,7 +14,11 @@
       <div>
         Surface color:
         <select v-model="selectedSurfaceColor">
-          <option v-for="color in colorTable" :key="color" :value="color">
+          <option
+            v-for="color in surfaceColorTable"
+            :key="color"
+            :value="color"
+          >
             {{ color }}
           </option>
         </select>
@@ -25,7 +29,7 @@
       <div>
         Line color:
         <select v-model="selectedLineColor">
-          <option v-for="color in colorTable" :key="color" :value="color">
+          <option v-for="color in lineColorTable" :key="color" :value="color">
             {{ color }}
           </option>
         </select>
@@ -47,10 +51,10 @@
     </div>
     <div v-show="currentTool.codename === 'edge'">
       <p>Edge tool: connect cell corners</p>
-      <div>
+      <div v-if="currentSubtoolId !== 2">
         Line color:
         <select v-model="selectedLineColor">
-          <option v-for="color in colorTable" :key="color" :value="color">
+          <option v-for="color in lineColorTable" :key="color" :value="color">
             {{ color }}
           </option>
         </select>
@@ -68,14 +72,21 @@
         >
           Diagonal
         </button>
+        <button
+          :class="{ active: currentSubtoolId === 2 }"
+          @click="currentSubtoolId = 2"
+        >
+          Erase
+        </button>
       </div>
+      <p>Erase mode allows existing black edges to be removed.</p>
     </div>
     <div v-show="currentTool.codename === 'text'">
       <div>
         Text color:
         <select v-model="selectedTextColor">
           <option value="auto">Auto</option>
-          <option v-for="color in colorTable" :key="color" :value="color">
+          <option v-for="color in textColorTable" :key="color" :value="color">
             {{ color }}
           </option>
         </select>
@@ -137,6 +148,22 @@
     @corner-cell-enter="onCornerEnter"
     @mouse-release="onMouseRelease"
   />
+  <div class="undo-redo-button">
+    <button
+      @click="undo"
+      :disabled="undoStack.length === 0"
+      aria-label="Undo last edit"
+    >
+      Undo
+    </button>
+    <button
+      @click="redo"
+      :disabled="redoStack.length === 0"
+      aria-label="Redo last undone edit"
+    >
+      Redo
+    </button>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -144,6 +171,7 @@ import { computed, ref, onMounted, onBeforeUnmount, watch } from "vue";
 
 import GridSVG from "@/components/editor/GridSVG.vue";
 import {
+  createInverseEditMessage,
   type Coordinate,
   type ShapeObject,
   type SurfaceObject,
@@ -174,6 +202,13 @@ const grid = computed(() => props.grid);
 const renderedLayerList = computed(() => props.renderedLayerList);
 const editableLayerIndex = computed(() => props.editableLayerIndex ?? 0);
 const showResizeControls = computed(() => props.showResizeControls === true);
+
+const MAX_UNDO = 300;
+
+type UndoRedoStackEntry = {
+  undoMessage: EditMessage;
+  redoMessage: EditMessage;
+};
 
 const emptyLayer: LayerData = {
   lineObjects: {},
@@ -229,7 +264,30 @@ interface Tool {
   subtools: string[];
 }
 
-const colorTable = [
+const surfaceColorTable = [
+  "black",
+  "lightgray",
+  "darkgray",
+  "blue",
+  "green",
+  "red",
+  "yellow",
+  "purple",
+];
+
+const lineColorTable = [
+  "black",
+  "lightgray",
+  "darkgray",
+  "blue",
+  "green",
+  "red",
+  "yellow",
+  "purple",
+];
+
+const textColorTable = [
+  "white",
   "black",
   "lightgray",
   "darkgray",
@@ -242,13 +300,15 @@ const colorTable = [
 
 const currentToolId = ref(0);
 const currentSubtoolId = ref(0);
-const selectedSurfaceColor = ref<string>(colorTable[0] ?? "black");
-const selectedLineColor = ref<string>(colorTable[0] ?? "black");
+const selectedSurfaceColor = ref<string>(surfaceColorTable[0] ?? "black");
+const selectedLineColor = ref<string>(lineColorTable[0] ?? "black");
 const selectedTextColor = ref("auto");
 const selectedShapeId = ref<string>(SPECIAL_CHARACTERS_LIST[0]?.id ?? "");
 const cursor = ref<Coordinate | null>(null);
 const textInput = ref<HTMLInputElement | null>(null);
 const textInputValue = ref("");
+const undoStack = ref<UndoRedoStackEntry[]>([]);
+const redoStack = ref<UndoRedoStackEntry[]>([]);
 
 watch(
   () => grid.value.size,
@@ -273,7 +333,7 @@ const tools: Tool[] = [
   {
     name: "Edge",
     codename: "edge",
-    subtools: ["Normal", "Diagonal"],
+    subtools: ["Normal", "Erase"],
   },
   {
     name: "Text",
@@ -304,7 +364,7 @@ const shapes = computed(() => {
 });
 
 function emitRemoveMessage(type: EditMessage["type"], key: string) {
-  emit("edit-message", {
+  emitEditMessage({
     messageType: "remove",
     type,
     data: key,
@@ -312,7 +372,7 @@ function emitRemoveMessage(type: EditMessage["type"], key: string) {
 }
 
 function emitLineUpdate(value: LineObject) {
-  emit("edit-message", {
+  emitEditMessage({
     messageType: "edit",
     type: "lineObjects",
     data: value,
@@ -320,7 +380,7 @@ function emitLineUpdate(value: LineObject) {
 }
 
 function emitSurfaceUpdate(value: SurfaceObject) {
-  emit("edit-message", {
+  emitEditMessage({
     messageType: "edit",
     type: "surfaceObjects",
     data: value,
@@ -328,7 +388,7 @@ function emitSurfaceUpdate(value: SurfaceObject) {
 }
 
 function emitTextUpdate(value: TextObject) {
-  emit("edit-message", {
+  emitEditMessage({
     messageType: "edit",
     type: "textObjects",
     data: value,
@@ -336,11 +396,52 @@ function emitTextUpdate(value: TextObject) {
 }
 
 function emitShapeUpdate(value: ShapeObject) {
-  emit("edit-message", {
+  emitEditMessage({
     messageType: "edit",
     type: "shapeObjects",
     data: value,
   });
+}
+
+function pushUndoEntry(entry: UndoRedoStackEntry) {
+  undoStack.value.push(entry);
+  if (undoStack.value.length > MAX_UNDO) {
+    undoStack.value.shift();
+  }
+  redoStack.value = [];
+}
+
+function emitEditMessage(message: EditMessage) {
+  const inverseMessage = createInverseEditMessage(editableLayer.value, message);
+  if (inverseMessage === null) {
+    return;
+  }
+
+  pushUndoEntry({
+    undoMessage: inverseMessage,
+    redoMessage: message,
+  });
+  emit("edit-message", message);
+}
+
+function undo() {
+  const entry = undoStack.value.pop();
+  if (entry === undefined) {
+    return;
+  }
+
+  redoStack.value.push(entry);
+  emit("edit-message", entry.undoMessage);
+}
+
+function redo() {
+  const entry = redoStack.value.pop();
+  if (entry === undefined) {
+    return;
+  }
+
+  undoStack.value.push(entry);
+  emit("edit-message", entry.redoMessage);
 }
 
 function getTextColor(key: string): string {
@@ -450,6 +551,36 @@ const applyLineSegment = (
   return nextMode;
 };
 
+const applyEdgeSegment = (
+  start: Coordinate,
+  end: Coordinate,
+  edgeStrokeMode: "draw" | "erase" | null,
+) => {
+  const lineKey = PairCoordinateToKey([start, end]);
+  let nextMode = edgeStrokeMode;
+  if (edgeStrokeMode === null) {
+    nextMode = editableLayer.value.lineObjects[lineKey] ? "erase" : "draw";
+  }
+
+  if (nextMode === "erase") {
+    emitRemoveMessage("lineObjects", lineKey);
+  } else if (currentSubtoolId.value === 2) {
+    // Erase mode
+    emitLineUpdate({
+      start,
+      end,
+      color: "white",
+    });
+  } else {
+    emitLineUpdate({
+      start,
+      end,
+      color: selectedLineColor.value,
+    });
+  }
+  return nextMode;
+};
+
 // Arrow-key cursor movement
 const moveCursorBy = (dr: number, dc: number) => {
   const numRows = grid.value.size[0];
@@ -475,6 +606,25 @@ const moveCursorBy = (dr: number, dc: number) => {
 };
 
 const handleKeyboardInput = (event: KeyboardEvent) => {
+  // Mac convention: Cmd+Z / Shift+Cmd+Z
+  const isUndo =
+    (event.ctrlKey || event.metaKey) && event.key === "z" && !event.shiftKey;
+  const isRedo =
+    (event.ctrlKey && event.key === "y") ||
+    (event.metaKey && event.key === "z" && event.shiftKey);
+
+  if (isUndo) {
+    undo();
+    event.preventDefault();
+    return;
+  }
+
+  if (isRedo) {
+    redo();
+    event.preventDefault();
+    return;
+  }
+
   // Ignore key events when typing in form fields
   const target = event.target as HTMLElement | null;
   if (
@@ -642,6 +792,7 @@ const onCenterEnter = (coordinate: Coordinate) => {
       visitedCells.add(key);
 
       const shapeId = selectedShapeId.value;
+      console.log(shapeId);
       if (shapeId === "") {
         return;
       }
@@ -678,10 +829,10 @@ const onCornerEnter = (coordinate: Coordinate) => {
     return;
   }
 
-  if (
-    canDrawSegment(lastEdgeCorner, coordinate, currentSubtoolId.value === 1)
-  ) {
-    edgeStrokeMode = applyLineSegment(
+  // Allow diagonal only in normal mode
+  const allowDiagonal = currentSubtoolId.value === 0;
+  if (canDrawSegment(lastEdgeCorner, coordinate, allowDiagonal)) {
+    edgeStrokeMode = applyEdgeSegment(
       lastEdgeCorner,
       coordinate,
       edgeStrokeMode,
@@ -734,5 +885,11 @@ watch(
 button.active {
   background-color: aqua;
   color: black;
+}
+
+.undo-redo-button {
+  display: flex;
+  gap: 8px;
+  margin-top: 12px;
 }
 </style>
