@@ -1,4 +1,16 @@
 <template>
+  <div>
+    Current dimensions: Row: {{ rowCount }}, Col: {{ colCount }}
+
+    <br />
+
+    Set dimensions: Row:
+    <input type="number" v-model.number="inputRowCount" min="1" max="100" />
+    Col:
+    <input type="number" v-model.number="inputColCount" min="1" max="100" />
+
+    <button @click="setDimensions">Set</button>
+  </div>
   <div class="layer-selector">
     <button
       :class="{ active: selectedLayer === 'problem' }"
@@ -17,14 +29,12 @@
     :grid="grid"
     :rendered-layer-list="renderedLayerList"
     :editable-layer-index="editableLayerIndex"
-    :show-resize-controls="true"
     @edit-message="onEditMessage"
-    @resize-grid="emit('resize-grid', $event)"
   />
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 
 import BaseEditorComponent from "./BaseEditorComponent.vue";
 import type {
@@ -94,6 +104,41 @@ const editableLayerIndex = computed(() => {
     ? 0
     : renderedLayerList.value.length - 1;
 });
+
+const rowCount = computed(() => grid.value.size[0]);
+const colCount = computed(() => grid.value.size[1]);
+const inputRowCount = ref(rowCount.value);
+const inputColCount = ref(colCount.value);
+
+const setDimensions = () => {
+  // Validate input
+  const [x, y] = [inputRowCount.value, inputColCount.value];
+
+  if (
+    typeof x !== "number" ||
+    typeof y !== "number" ||
+    x <= 0 ||
+    y <= 0 ||
+    x > 100 ||
+    y > 100
+  ) {
+    alert("Please enter valid positive integers for dimensions (1-100).");
+    return;
+  }
+
+  const newRowCount = x;
+  const newColCount = y;
+  emit("resize-grid", [newRowCount, newColCount]);
+};
+
+watch(
+  () => grid.value.size,
+  ([rows, cols]: [number, number]) => {
+    inputRowCount.value = rows;
+    inputColCount.value = cols;
+  },
+  { immediate: true },
+);
 
 function onEditMessage(message: EditMessage) {
   if (selectedLayer.value === "problem") {

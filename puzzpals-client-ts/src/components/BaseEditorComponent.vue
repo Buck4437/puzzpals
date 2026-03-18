@@ -144,18 +144,6 @@
       <p>Click a cell to place or remove the selected shape</p>
     </div>
   </div>
-  <div v-if="showResizeControls">
-    Current dimensions: Row: {{ rowCount }}, Col: {{ colCount }}
-
-    <br />
-
-    Set dimensions: Row:
-    <input type="number" v-model.number="inputRowCount" min="1" max="100" />
-    Col:
-    <input type="number" v-model.number="inputColCount" min="1" max="100" />
-
-    <button @click="setDimensions">Set</button>
-  </div>
   <GridSVG
     :size="480"
     :grid-size="grid.size"
@@ -207,7 +195,6 @@ const props = defineProps<{
   grid: Grid;
   renderedLayerList: LayerData[];
   editableLayerIndex?: number;
-  showResizeControls?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -218,7 +205,6 @@ const emit = defineEmits<{
 const grid = computed(() => props.grid);
 const renderedLayerList = computed(() => props.renderedLayerList);
 const editableLayerIndex = computed(() => props.editableLayerIndex ?? 0);
-const showResizeControls = computed(() => props.showResizeControls === true);
 
 const MAX_UNDO = 300;
 
@@ -269,11 +255,6 @@ const renderedLayer = computed<LayerData>(() => {
     emptyLayer,
   );
 });
-
-const rowCount = computed(() => grid.value.size[0]);
-const colCount = computed(() => grid.value.size[1]);
-const inputRowCount = ref(rowCount.value);
-const inputColCount = ref(colCount.value);
 
 interface Tool {
   name: string;
@@ -348,8 +329,23 @@ const redoStack = ref<UndoRedoStackEntry[]>([]);
 watch(
   () => grid.value.size,
   ([rows, cols]) => {
-    inputRowCount.value = rows;
-    inputColCount.value = cols;
+    // Move cursor if out of bounds
+    if (cursor.value) {
+      const [r, c] = cursor.value;
+
+      if (r > rows || c > cols) {
+        const rOffset = r - Math.floor(r);
+        const cOffset = c - Math.floor(c);
+        const newR = Math.min(r, rows + rOffset - 1);
+        const newC = Math.min(c, cols + cOffset - 1);
+        cursor.value = [newR, newC];
+
+        // Update selected cell if in text mode
+        if (currentTool.value.codename === "text") {
+          syncTextInputFromGrid();
+        }
+      }
+    }
   },
   { immediate: true },
 );
@@ -498,45 +494,6 @@ function syncTextInputFromGrid() {
   const key = CoordinateToKey(cursor.value);
   textInputValue.value = editableLayer.value.textObjects[key]?.content ?? "";
 }
-
-const setDimensions = () => {
-  // Validate input
-  const [x, y] = [inputRowCount.value, inputColCount.value];
-
-  if (
-    typeof x !== "number" ||
-    typeof y !== "number" ||
-    x <= 0 ||
-    y <= 0 ||
-    x > 100 ||
-    y > 100
-  ) {
-    alert("Please enter valid positive integers for dimensions (1-100).");
-    return;
-  }
-
-  const newRowCount = x;
-  const newColCount = y;
-  emit("resize-grid", [newRowCount, newColCount]);
-
-  // Move cursor if out of bounds
-  if (cursor.value) {
-    const [r, c] = cursor.value;
-
-    if (r > newRowCount || c > newColCount) {
-      const rOffset = r - Math.floor(r);
-      const cOffset = c - Math.floor(c);
-      const newR = Math.min(r, newRowCount + rOffset - 1);
-      const newC = Math.min(c, newColCount + cOffset - 1);
-      cursor.value = [newR, newC];
-
-      // Update selected cell if in text mode
-      if (currentTool.value.codename === "text") {
-        syncTextInputFromGrid();
-      }
-    }
-  }
-};
 
 let cellStrokeMode: "draw" | "erase" | null = null;
 let visitedCells: Set<CoordinateKey> = new Set();
