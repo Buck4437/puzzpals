@@ -82,18 +82,26 @@ function requireAuth(req: Request, res: Response, next: NextFunction) {
 }
 
 router.get("/me", requireAuth, async (req: Request, res: Response) => {
+  // Prevent browser caching for this endpoint
+  res.setHeader(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, proxy-revalidate",
+  );
   // Return session user info directly
   if (!req.session.user) {
-    console.log(3);
-    return res.status(401).json({ error: "Missing or invalid session user" });
+    return res.status(200).json({ user: null });
   }
-  console.log(4);
-  res.json(req.session.user);
+  res.status(200).json({ user: req.session.user });
 });
 
 router.post("/logout", (req, res) => {
   req.session.destroy(() => {
     res.clearCookie("connect.sid");
+    // Prevent browser caching after logout
+    res.setHeader(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, proxy-revalidate",
+    );
     res.json({ success: true });
   });
 });

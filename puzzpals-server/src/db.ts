@@ -56,6 +56,7 @@ async function createTable() {
     CREATE TABLE IF NOT EXISTS Puzzle (
       id SERIAL PRIMARY KEY,
       author TEXT NOT NULL,
+      author_id INTEGER NOT NULL REFERENCES "User"(id),
       description TEXT,
       puzzle_json JSONB NOT NULL,
       publish_date TIMESTAMP NOT NULL DEFAULT NOW()
@@ -112,13 +113,15 @@ export async function getAllUsersDebug(): Promise<User[]> {
 // Puzzle DB functions
 export async function addPuzzle(
   author: string,
+  author_id: number,
   description: string,
   puzzleJson: object,
   publishDate?: Date,
 ) {
-  const sql = `INSERT INTO Puzzle (author, description, puzzle_json, publish_date) VALUES ($1, $2, $3, $4) RETURNING *`;
+  const sql = `INSERT INTO Puzzle (author, author_id, description, puzzle_json, publish_date) VALUES ($1, $2, $3, $4, $5) RETURNING *`;
   const result = await pool.query(sql, [
     author,
+    author_id,
     description,
     puzzleJson,
     publishDate || new Date(),

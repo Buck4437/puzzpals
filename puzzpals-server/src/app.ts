@@ -36,11 +36,6 @@ app.use(helmet());
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 app.use(serveStatic(join(__dirname, "../public")));
-
-app.use("/api/rooms", roomsRouter);
-app.use("/api/puzzles", puzzlesRouter);
-
-// Add session middleware
 app.use(
   session({
     secret: process.env.SESSION_SECRET || "your-session-secret",
@@ -49,6 +44,9 @@ app.use(
     cookie: { secure: false }, // set to true if using HTTPS
   }),
 );
+
+app.use("/api/rooms", roomsRouter);
+app.use("/api/puzzles", puzzlesRouter);
 
 // const CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
 // const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;

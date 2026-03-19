@@ -21,12 +21,20 @@ router.get("/", async (req, res) => {
 
 // Add a new puzzle
 router.post("/", async (req, res) => {
-  const { author, description, puzzle_json, publish_date } = req.body;
-  if (!author || !puzzle_json) {
-    return res.status(400).json({ error: "Missing author or puzzle_json" });
+  // Restrict to signed-in users only
+  if (!req.session.user || req.session.user.is_guest) {
+    return res
+      .status(403)
+      .json({ error: "Only signed-in users can publish puzzles." });
+  }
+  // Populate author and author_id from session
+  const author = req.session.user.name || req.session.user.email || "Unknown";
+  const author_id = req.session.user.id;
+  const { description, puzzle_json, publish_date } = req.body;
+  if (!puzzle_json) {
+    return res.status(400).json({ error: "Missing puzzle_json" });
   }
   try {
-    // Ensure publish_date is a Date object
     let dateObj;
     if (publish_date) {
       dateObj = new Date(publish_date);
@@ -34,8 +42,10 @@ router.post("/", async (req, res) => {
     } else {
       dateObj = new Date();
     }
+    // Pass author and author_id to addPuzzle
     const puzzle = await addPuzzle(
       author,
+      author_id,
       description || "",
       puzzle_json,
       dateObj,

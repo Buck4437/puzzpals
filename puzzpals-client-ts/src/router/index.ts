@@ -19,6 +19,12 @@ const router = createRouter({
   ],
 });
 
-// ...existing code...
+import { useUserStore } from "../stores/user";
+
+router.beforeEach(async (to, from, next) => {
+  const userStore = useUserStore();
+  await userStore.fetchUser();
+  next();
+});
 
 export default router;

@@ -1,14 +1,26 @@
 <template>
   <header class="main-header">
     <h1>Puzzpals</h1>
-    <button class="login-btn">Login</button>
+    <NavBar />
   </header>
   <main>
     <RouterView />
   </main>
 </template>
 
-<!-- All user storage and account info display removed. Only login button remains. -->
+<!-- NavBar integrated for user info display -->
+<script setup>
+import NavBar from "./components/NavBar.vue";
+import { useUserStore } from "./stores/user";
+import { useRouter } from "vue-router";
+
+const userStore = useUserStore();
+const router = useRouter();
+
+function goLogin() {
+  router.push("/Login");
+}
+</script>
 
 <style scoped>
 .main-header {
