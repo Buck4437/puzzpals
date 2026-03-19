@@ -68,6 +68,14 @@ A collection of lines, surfaces, and symbols that define a layer of a puzzle. An
 - `surfaceObjects`: `SurfaceObjectDict`. Surfaces in the layer.
 - `symbolObjects`: `SymbolObjectDict`. Symbols in the layer.
 
+### `ObjectTypes`
+
+A type of objects on a grid. A string with one of the following values:
+
+- "lineObjects": Lines.
+- "surfaceObjects": Surfaces.
+- "symbolObjects": Symbols.
+
 ### `SolutionData`
 
 The correct solution of a puzzle. An object with the following properties:
@@ -75,10 +83,7 @@ The correct solution of a puzzle. An object with the following properties:
 - `lineObjects`: `LineObjectDict`. Lines in the solution.
 - `surfaceObjects`: `SurfaceObjectDict`. Surfaces in the solution.
 - `symbolObjects`: `SymbolObjectDict`. Symbols in the solution.
-- `typeToCheck`: Which layer elements to check in the player's solution. An array that may include these values:
-  - `"lineObjects"`: Check lines in the player's answer.
-  - `"surfaceObjects"`: Check surfaces in the player's answer.
-  - `"symbolObjects"`: Check symbols in the player's answer.
+- `typeToCheck`: An array of `ObjectTypes`. Types of objects to check in the player's solution.
 
 Examples:
 
@@ -92,3 +97,27 @@ The grid of a puzzle. An object with the following properties:
 - `size`: An array of two integers, specifying the number of rows and columns in this order.
 - `problem`: `LayerData`. The clues: What the player initially sees on the grid.
 - `solution`: `SolutionData`. Optional. The correct solution to the puzzle.
+
+### `GameData`
+
+The state of the grid in a room. An object with the following properties:
+
+- `puzzle`: `Grid`. The puzzle used in this game.
+- `playerSolution`: `LayerData`. The player's current solution.
+
+### `EditMessage`
+
+An edit to the player's solution. An object with the following properties:
+
+- `messageType`: Either `"remove"` or `"edit"`.
+- `type`: `ObjectTypes`. The type of objects to modify.
+- `data`: Data needed to specify the edit.
+
+Specifically, there are two types of edits:
+
+- When `messageType = "remove"`, the edit removes an object.
+  - `data` is a `string` that specifies the key of the object to delete.
+  - The key is specified in `LineObjectDict`, `SurfaceObjectDict`, or `SymbolObjectDict`.
+- When `messageType = "edit"`, the edit adds or modifies an object.
+  - `data` is a `LineObject`, `SurfaceObject`, or `SymbolObject`.
+  - If `data` has the same location and type as an existing object, it will be overridden by `data`. Otherwise, `data` will be added.
