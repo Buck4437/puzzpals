@@ -60,7 +60,53 @@ async function createTable() {
       puzzle_json JSONB NOT NULL,
       publish_date TIMESTAMP NOT NULL DEFAULT NOW()
     );
+    CREATE TABLE IF NOT EXISTS "User" (
+      id SERIAL PRIMARY KEY,
+      google_id TEXT UNIQUE,
+      email TEXT,
+      name TEXT,
+      picture TEXT,
+      is_guest BOOLEAN NOT NULL DEFAULT FALSE,
+      guest_name TEXT,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      last_login TIMESTAMP NOT NULL DEFAULT NOW()
+    );
   `);
+}
+
+// User DB functions
+import type { User } from "./models/User.js";
+
+export async function upsertGoogleUser(
+  google_id: string,
+  email: string,
+  name: string,
+  picture: string,
+): Promise<User> {
+  const sql = `INSERT INTO "User" (google_id, email, name, picture, is_guest, last_login)
+    VALUES ($1, $2, $3, $4, FALSE, NOW())
+    ON CONFLICT (google_id) DO UPDATE SET email = EXCLUDED.email, name = EXCLUDED.name, picture = EXCLUDED.picture, last_login = NOW()
+    RETURNING *`;
+  const result = await pool.query(sql, [google_id, email, name, picture]);
+  return result.rows[0];
+}
+
+export async function createGuestUser(guest_name: string): Promise<User> {
+  const sql = `INSERT INTO "User" (is_guest, guest_name, last_login) VALUES (TRUE, $1, NOW()) RETURNING *`;
+  const result = await pool.query(sql, [guest_name]);
+  return result.rows[0];
+}
+
+export async function getUserById(id: number): Promise<User | null> {
+  const sql = `SELECT * FROM "User" WHERE id = $1`;
+  const result = await pool.query(sql, [id]);
+  return result.rows[0] || null;
+}
+
+export async function getAllUsersDebug(): Promise<User[]> {
+  const sql = `SELECT * FROM "User" ORDER BY created_at DESC`;
+  const result = await pool.query(sql);
+  return result.rows;
 }
 
 // Puzzle DB functions

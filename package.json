@@ -32,5 +32,8 @@
       "eslint",
       "prettier --write --ignore-unknown"
     ]
+  },
+  "dependencies": {
+    "pinia": "^3.0.4"
   }
 }

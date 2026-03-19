@@ -8,9 +8,9 @@
 import FilePicker from "@/components/FilePicker.vue";
 import api from "@/services/api";
 import { useRouter } from "vue-router";
+import { ref } from "vue";
 
 const router = useRouter();
-
 let pickedFile: File | null = null;
 
 function readFile(file: File) {
@@ -71,3 +71,12 @@ function onFilePicked(file: File | null) {
 
 defineExpose({ onFilePicked });
 </script>
+<style scoped>
+.user-debug {
+  margin-top: 32px;
+  padding: 16px;
+  background: #f9f9f9;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+</style>

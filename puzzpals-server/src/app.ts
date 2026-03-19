@@ -1,3 +1,12 @@
+// Extend express-session types to support userId
+declare module "express-session" {
+  interface SessionData {
+    userId?: number;
+  }
+}
+import authRouter from "./auth.js";
+import session from "express-session";
+
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { json, static as serveStatic, urlencoded } from "express";
@@ -14,6 +23,7 @@ const app = express();
 
 const corsOptions = {
   origin: env.CLIENT_BASE_URL,
+  credentials: true,
 };
 app.use(cors(corsOptions));
 
@@ -29,5 +39,22 @@ app.use(serveStatic(join(__dirname, "../public")));
 
 app.use("/api/rooms", roomsRouter);
 app.use("/api/puzzles", puzzlesRouter);
+
+// Add session middleware
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "your-session-secret",
+    resave: false,
+    saveUninitialized: false,
+    cookie: { secure: false }, // set to true if using HTTPS
+  }),
+);
+
+// const CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
+// const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
+// const REDIRECT_URI = "http://localhost:3000/auth/google/callback";
+
+// Use authentication router
+app.use("/api/auth", authRouter);
 
 export default app;
