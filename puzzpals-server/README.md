@@ -1,5 +1,18 @@
 # Server
 
+## Types
+
+### `Puzzle`
+
+A puzzle stored in the catalogue. An object with the following properties:
+
+- `id`: `number`. Puzzle ID.
+- `title`: `string`. Puzzle title.
+- `author`: `string`. Name of the puzzle author.
+- `description`: `string`. Puzzle description.
+- `puzzle_json`: `Grid`. Puzzle data.
+- `publish_date`: `string`. Publishing time in ISO 8601 format, YYYY-MM-DDTHH:mm:ss.sssZ.
+
 ## Socket.IO interface
 
 ### `room:join`
@@ -36,3 +49,59 @@ If successful, the server broadcasts `chat:messageNew` to all clients in the roo
   - `user`: `string`. Username of the message sender.
   - `timestamp`: `number`. Time when the server received the message.
   - `msgtext`: Same as above.
+
+## API
+
+### POST `/api/rooms/create`
+
+Create a room by uploading a puzzle.
+
+The body of the request should be a [`Grid`](../packages/puzzle-models/README.md#grid), the puzzle to use in the room.
+
+If successful, the server responds with a `string`, token of the created room.
+
+If the request body is invalid, the server responds with `400 Bad Request`.
+
+### GET `/api/rooms/:token`
+
+Fetch a room by its token. Parameters:
+
+- `token`: The token of the room to fetch.
+
+If successful, the server responds with [`GameData`](../packages/puzzle-models/README.md#gamedata) of the room.
+
+If the room does not exist, the server responds with `404 Not Found`.
+
+### GET `/api/puzzles/`
+
+Fetch the most recent puzzles. Query parameters:
+
+- `limit`: The maximum number of puzzles to fetch. Maximum 100. Default 5.
+
+If successful, the server responds with an array of `Puzzle`s.
+
+If `limit` is invalid, the server responds with `400 Bad Request`.
+
+### POST `/api/puzzles/`
+
+Add a puzzle to the catalogue. The request body should contain the following properties:
+
+- `title`: `string`. Puzzle title.
+- `author`: `string`. Name of the puzzle author.
+- `description`: `string`. Puzzle description.
+- `puzzle_json`: [`Grid`](../packages/puzzle-models/README.md#grid). Puzzle data.
+
+If successful, the server responds with `201 Created` with the newly created `Puzzle`.
+
+If the request body is invalid, the server responds with `400 Bad Request`.
+
+### GET `/api/puzzles/:id`
+
+Fetch a puzzle by its ID. Parameters:
+
+- `id`: ID of the puzzle to fetch.
+
+If successful, the server responds with the `Puzzle`.
+
+- If `id` is invalid, the server responds with `400 Bad Request`.
+- If the puzzle does not exist, the server responds with `404 Not Found`.
