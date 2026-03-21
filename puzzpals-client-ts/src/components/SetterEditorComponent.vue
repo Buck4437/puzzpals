@@ -4,10 +4,23 @@
 
     <br />
 
-    Set dimensions: Row:
-    <input type="number" v-model.number="inputRowCount" min="1" max="100" />
-    Col:
-    <input type="number" v-model.number="inputColCount" min="1" max="100" />
+    Set dimensions:
+    <label for="row-count">Row:</label>
+    <input
+      type="number"
+      id="row-count"
+      v-model.number="inputRowCount"
+      min="1"
+      max="100"
+    />
+    <label for="col-count">Col:</label>
+    <input
+      type="number"
+      id="col-count"
+      v-model.number="inputColCount"
+      min="1"
+      max="100"
+    />
 
     <button @click="setDimensions">Set</button>
   </div>
