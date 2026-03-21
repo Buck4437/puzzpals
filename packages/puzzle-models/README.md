@@ -83,7 +83,7 @@ The correct solution of a puzzle. An object with the following properties:
 - `lineObjects`: `LineObjectDict`. Lines in the solution.
 - `surfaceObjects`: `SurfaceObjectDict`. Surfaces in the solution.
 - `symbolObjects`: `SymbolObjectDict`. Symbols in the solution.
-- `typeToCheck`: An array of `ObjectTypes`. Types of objects to check in the player's solution.
+- `typeToCheck`: An array of `ObjectTypes`. Types of objects to check in the player's solution. Must have at least 1 element.
 
 Examples:
 
