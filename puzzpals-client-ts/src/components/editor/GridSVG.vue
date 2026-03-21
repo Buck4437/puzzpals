@@ -10,7 +10,14 @@
     @mousemove="handlePointerMove"
     @mouseleave="handleMouseLeave"
   >
-    <g v-for="(layer, index) in layers" :key="index">
+    <!--
+    Why use `background-${index}` and `foreground-${index}`:
+    https://vuejs.org/api/built-in-special-attributes.html#key
+    "Children of the same common parent must have unique keys."
+    "Duplicate keys will cause render errors."
+    -->
+
+    <g v-for="(layer, index) in layers" :key="`background-${index}`">
       <!-- Surface objects -->
       <rect
         v-for="surface in layer.surfaceObjects"
@@ -50,7 +57,7 @@
       pointer-events="none"
     />
 
-    <g v-for="(layer, index) in layers" :key="index">
+    <g v-for="(layer, index) in layers" :key="`foreground-${index}`">
       <!-- Line objects -->
       <line
         v-for="line in layer.lineObjects"
