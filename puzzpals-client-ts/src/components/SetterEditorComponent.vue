@@ -34,7 +34,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, ref, watch, type Ref } from "vue";
 
 import BaseEditorComponent from "./BaseEditorComponent.vue";
 import type {
@@ -80,18 +80,21 @@ const editableLayerIndex = computed(() => {
 
 const rowCount = computed(() => grid.value.size[0]);
 const colCount = computed(() => grid.value.size[1]);
-const inputRowCount = ref(rowCount.value);
-const inputColCount = ref(colCount.value);
+const inputRowCount: Ref<string | number> = ref(rowCount.value);
+const inputColCount: Ref<string | number> = ref(colCount.value);
 
 const setDimensions = () => {
   // Validate input
-  const [x, y] = [inputRowCount.value, inputColCount.value];
+  const x = Number(inputRowCount.value);
+  const y = Number(inputColCount.value);
 
   if (
-    typeof x !== "number" ||
-    typeof y !== "number" ||
-    x <= 0 ||
-    y <= 0 ||
+    !Number.isFinite(x) ||
+    !Number.isFinite(y) ||
+    !Number.isInteger(x) ||
+    !Number.isInteger(y) ||
+    x < 1 ||
+    y < 1 ||
     x > 100 ||
     y > 100
   ) {
