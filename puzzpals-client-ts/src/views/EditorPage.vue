@@ -25,7 +25,7 @@
           type="checkbox"
           :value="rule.id"
           v-model="customRulesInput[rule.id]"
-          @change="copyGridRules"
+          @change="updateGridRules"
         />
         <strong>{{ rule.name }}</strong
         >: {{ rule.description }}
@@ -182,7 +182,7 @@ const includeSolution = computed(() => {
   return selectedTypesToCheck.value.length > 0;
 });
 
-function copyGridRules() {
+function updateGridRules() {
   grid.value = {
     ...grid.value,
     options: {
@@ -232,7 +232,7 @@ function onResizeGrid(size: [number, number]) {
   };
 }
 
-const exportPuzzle = () => {
+const getPuzzleJSON = () => {
   const puzzleObj = JSON.parse(JSON.stringify(grid.value));
   if (!includeSolution.value) {
     delete puzzleObj.solution;
@@ -245,6 +245,12 @@ const exportPuzzle = () => {
     rules: [...grid.value.options.rules],
   };
 
+  return puzzleObj;
+};
+
+const exportPuzzle = () => {
+  updateGridRules();
+  const puzzleObj = getPuzzleJSON();
   downloadObjectAsJson(puzzleObj, "puzzpals-puzzle");
 };
 
@@ -263,15 +269,7 @@ const downloadObjectAsJson = (exportObj: object, exportName: string) => {
 async function publishPuzzle() {
   uploadStatus.value = "Publishing...";
   try {
-    copyGridRules();
-
-    const puzzleObj = JSON.parse(JSON.stringify(grid.value));
-
-    if (puzzleObj.solution) {
-      puzzleObj.solution.typeToCheck = [...selectedTypesToCheck.value];
-    }
-
-    console.log(puzzleObj);
+    const puzzleObj = getPuzzleJSON();
 
     await api.post("/puzzles", {
       author: "synthetic",

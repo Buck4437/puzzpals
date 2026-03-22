@@ -23,13 +23,20 @@ export function CoordinateToKey(coordinate: Coordinate): CoordinateKey {
 }
 
 export function PairCoordinateToKey(pair: PairCoordinate): PairCoordinateKey {
-  const [coord1, coord2] = pair;
-  const a = coord1;
-  const b = coord2;
+  const [coord1, coord2] = NormalizeStartEndCoordinates(...pair);
+  return `${CoordinateToKey(coord1)}|${CoordinateToKey(coord2)}`;
+}
+
+export function NormalizeStartEndCoordinates(
+  start: Coordinate,
+  end: Coordinate,
+): PairCoordinate {
+  const a = start;
+  const b = end;
   if (a[0] < b[0] || (a[0] === b[0] && a[1] <= b[1])) {
-    return `${CoordinateToKey(a)}|${CoordinateToKey(b)}`;
+    return [a, b];
   }
-  return `${CoordinateToKey(b)}|${CoordinateToKey(a)}`;
+  return [b, a];
 }
 
 export function KeyToCoordinate(key: CoordinateKey): Coordinate | null {
@@ -89,7 +96,7 @@ export interface LineObject {
   start: Coordinate;
   end: Coordinate;
   color: string;
-  thickness?: number;
+  thickness: number;
 }
 
 export function isLineObject(value: unknown): value is LineObject {

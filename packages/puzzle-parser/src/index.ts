@@ -79,12 +79,13 @@ function updateTypeToCheck(value: unknown): SolutionData["typeToCheck"] {
     return [];
   }
 
-  const normalized = value
+  const updated = value
     .map((entry) => {
       if (typeof entry !== "string") {
         return null;
       }
 
+      // Migrate old type names to new names
       if (entry in oldTypeToCheckMap) {
         return oldTypeToCheckMap[entry];
       }
@@ -93,7 +94,7 @@ function updateTypeToCheck(value: unknown): SolutionData["typeToCheck"] {
     })
     .filter((entry): entry is TypeToCheck => entry !== null);
 
-  return Array.from(new Set(normalized));
+  return Array.from(new Set(updated));
 }
 
 function sanitizeRulesTypeArray(value: unknown): Grid["options"]["rules"] {

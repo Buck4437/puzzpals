@@ -14,6 +14,7 @@ import {
   isTextObject,
   PairCoordinateToKey,
   CoordinateToKey,
+  NormalizeStartEndCoordinates,
 } from "./Grid.js";
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -181,7 +182,15 @@ function applyUpdateMessage(
   switch (message.type) {
     case "lineObjects": {
       const key = PairCoordinateToKey([message.data.start, message.data.end]);
-      nextLayerData.lineObjects[key] = message.data;
+      const [start, end] = NormalizeStartEndCoordinates(
+        message.data.start,
+        message.data.end,
+      );
+      nextLayerData.lineObjects[key] = {
+        ...message.data,
+        start,
+        end,
+      };
       break;
     }
     case "surfaceObjects": {
@@ -219,6 +228,7 @@ function cloneLineObject(value: LineObject): LineObject {
     start: [...value.start] as typeof value.start,
     end: [...value.end] as typeof value.end,
     color: value.color,
+    thickness: value.thickness,
   };
 }
 

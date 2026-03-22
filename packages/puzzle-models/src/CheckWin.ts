@@ -17,7 +17,7 @@ export const ANSWER_CHECK_INFO: Record<TypeToCheck, AnswerCheckObject> = {
   lineObjectsExact: {
     type: "lineObjectsExact",
     name: "Lines (Exact)",
-    description: "Line must match exactly",
+    description: "Line position and color must match exactly",
   },
   lineObjectsGreenOnly: {
     type: "lineObjectsGreenOnly",

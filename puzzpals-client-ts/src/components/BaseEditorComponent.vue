@@ -270,27 +270,25 @@ const surfaceColorTable = [
   "green",
   "red",
   "yellow",
+  "orange",
   "purple",
 ];
 
 const lineColorTable = [
   "black",
-  "lightgray",
-  "darkgray",
-  "blue",
   "green",
+  "blue",
   "red",
   "yellow",
+  "orange",
   "purple",
 ];
 
 const textColorTable = [
-  "white",
   "black",
-  "lightgray",
-  "darkgray",
   "blue",
   "green",
+  "white",
   "red",
   "yellow",
   "purple",
@@ -364,7 +362,7 @@ const tools: Tool[] = [
   {
     name: "Edge",
     codename: "edge",
-    subtools: ["Normal", "Erase"],
+    subtools: ["Normal", "Diagonal"],
   },
   {
     name: "Text",
@@ -527,23 +525,24 @@ const applyLineSegment = (
   const lineKey = PairCoordinateToKey([start, end]);
   let nextMode = strokeMode;
   if (strokeMode === null) {
-    nextMode = editableLayer.value.lineObjects[lineKey] ? "erase" : "draw";
+    nextMode =
+      editableLayer.value.lineObjects[lineKey] &&
+      editableLayer.value.lineObjects[lineKey].color ===
+        selectedLineColor.value &&
+      editableLayer.value.lineObjects[lineKey].thickness ===
+        selectedLineThickness.value
+        ? "erase"
+        : "draw";
   }
 
   if (nextMode === "erase") {
     emitRemoveMessage("lineObjects", lineKey);
-  } else if (selectedLineThickness.value !== 3) {
-    emitLineUpdate({
-      start,
-      end,
-      color: selectedLineColor.value,
-      thickness: selectedLineThickness.value,
-    });
   } else {
     emitLineUpdate({
       start,
       end,
       color: selectedLineColor.value,
+      thickness: selectedLineThickness.value,
     });
   }
 
@@ -558,23 +557,24 @@ const applyEdgeSegment = (
   const lineKey = PairCoordinateToKey([start, end]);
   let nextMode = edgeStrokeMode;
   if (edgeStrokeMode === null) {
-    nextMode = editableLayer.value.lineObjects[lineKey] ? "erase" : "draw";
+    nextMode =
+      editableLayer.value.lineObjects[lineKey] &&
+      editableLayer.value.lineObjects[lineKey].color ===
+        selectedLineColor.value &&
+      editableLayer.value.lineObjects[lineKey].thickness ===
+        selectedLineThickness.value
+        ? "erase"
+        : "draw";
   }
 
   if (nextMode === "erase") {
     emitRemoveMessage("lineObjects", lineKey);
-  } else if (selectedLineThickness.value !== 3) {
-    emitLineUpdate({
-      start,
-      end,
-      color: selectedLineColor.value,
-      thickness: selectedLineThickness.value,
-    });
   } else {
     emitLineUpdate({
       start,
       end,
       color: selectedLineColor.value,
+      thickness: selectedLineThickness.value,
     });
   }
   return nextMode;
@@ -791,7 +791,6 @@ const onCenterEnter = (coordinate: Coordinate) => {
       visitedCells.add(key);
 
       const shapeId = selectedShapeId.value;
-      console.log(shapeId);
       if (shapeId === "") {
         return;
       }
