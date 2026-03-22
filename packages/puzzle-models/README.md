@@ -50,7 +50,9 @@ Text in a cell. An object with the following properties:
 
 ### `LineObjectDict`
 
-An object containing `LineObject`s. The key of each `LineObject` must be in the format `"i,j|k,l"`, where $(i, j)$ and $(k, l)$ are the coordinates of the two endpoints. Keys use a canonical ordering of endpoints: the endpoint with the lexicographically smaller coordinate pair $(i, j)$ (compare $i$ first, then $j$) must appear first in the key. All additions, lookups, and removals must use this canonical key form.
+An object containing `LineObject`s. The key of each `LineObject` must be in the format `"i,j|k,l"`, where $(i, j)$ and $(k, l)$ are the coordinates of the two endpoints.
+
+Keys use a canonical ordering of endpoints: the endpoint with the lexicographically smaller coordinate pair $(i, j)$ (compare $i$ first, then $j$) must appear first in the key. All additions, lookups, and removals must use this canonical key form.
 
 ### `SurfaceObjectDict`
 
