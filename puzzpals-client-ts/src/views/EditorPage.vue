@@ -1,26 +1,31 @@
 <template>
-  <SetterEditorComponent
-    :grid="grid"
-    @edit-problem-message="onEditProblemMessage"
-    @edit-solution-message="onEditSolutionMessage"
-    @resize-grid="onResizeGrid"
-  />
+  <PageWithNavigationSidebar>
+    <template #default>
+      <SetterEditorComponent
+        :grid="grid"
+        @edit-problem-message="onEditProblemMessage"
+        @edit-solution-message="onEditSolutionMessage"
+        @resize-grid="onResizeGrid"
+      />
 
-  <div style="margin-top: 2em">
-    <h2>Editor options</h2>
-    <h2>Export puzzle</h2>
-    <button @click="exportPuzzle">Export current puzzle</button>
-    <br />
-    Include solution (Enables answer-checking)
-    <input type="checkbox" v-model="includeSolution" />
+      <div style="margin-top: 2em">
+        <h2>Editor options</h2>
+        <h2>Export puzzle</h2>
+        <button @click="exportPuzzle">Export current puzzle</button>
+        <br />
+        Include solution (Enables answer-checking)
+        <input type="checkbox" v-model="includeSolution" />
 
-    <h2>Publish Puzzle</h2>
-    <button @click="publishPuzzle">Publish current puzzle</button>
-    <div v-if="uploadStatus">{{ uploadStatus }}</div>
-  </div>
+        <h2>Publish Puzzle</h2>
+        <button @click="publishPuzzle">Publish current puzzle</button>
+        <div v-if="uploadStatus">{{ uploadStatus }}</div>
+      </div>
+    </template>
+  </PageWithNavigationSidebar>
 </template>
 
 <script setup lang="ts">
+import PageWithNavigationSidebar from "@/components/PageWithNavigationSidebar.vue";
 import SetterEditorComponent from "../components/SetterEditorComponent.vue";
 
 import { ref } from "vue";

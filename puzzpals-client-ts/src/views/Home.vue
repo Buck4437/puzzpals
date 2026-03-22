@@ -1,41 +1,45 @@
 <template>
-  <div class="main">
-    <div class="center-box">
-      <div class="title">Welcome to Puzzpals!</div>
-      <button @click="openEditor">Open Editor</button>
-      <div class="options">
-        <div class="join-room">
-          <div>Enter 10-Digit Room Code:</div>
-          <div class="input-con">
-            <input placeholder="Room Code" v-model="roomCode" />
-            <button @click="redirect">Join Room</button>
-          </div>
-        </div>
-        <div class="create-room">
-          <div>Create a room:</div>
-          <div class="input-con">
-            <label class="fake-file-input button" for="file-upload">
-              Choose Puzzle File (JSON)
-            </label>
-            <input
-              id="file-upload"
-              class="file-input-box"
-              ref="fileInput"
-              type="file"
-              name="avatar"
-              accept=".json"
-              @change="uploadFile"
-            />
+  <PageWithNavigationSidebar>
+    <template #default>
+      <div class="main">
+        <div class="center-box">
+          <div class="title">Welcome to Puzzpals!</div>
+          <div class="options">
+            <div class="join-room">
+              <div>Enter 10-Digit Room Code:</div>
+              <div class="input-con">
+                <input placeholder="Room Code" v-model="roomCode" />
+                <button @click="redirect">Join Room</button>
+              </div>
+            </div>
+            <div class="create-room">
+              <div>Create a room:</div>
+              <div class="input-con">
+                <label class="fake-file-input button" for="file-upload">
+                  Choose Puzzle File (JSON)
+                </label>
+                <input
+                  id="file-upload"
+                  class="file-input-box"
+                  ref="fileInput"
+                  type="file"
+                  name="avatar"
+                  accept=".json"
+                  @change="uploadFile"
+                />
+              </div>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  </div>
+    </template>
+  </PageWithNavigationSidebar>
 </template>
 
 <script setup lang="ts">
+import PageWithNavigationSidebar from "@/components/PageWithNavigationSidebar.vue";
 import api from "@/services/api";
-import { ref, useTemplateRef, watch } from "vue";
+import { ref } from "vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
@@ -112,7 +116,6 @@ defineExpose({ onFilePicked });
   width: calc(100% - 4rem);
   padding: 2rem;
   display: flex;
-  justify-content: center;
   align-items: center;
   flex-direction: column;
 }

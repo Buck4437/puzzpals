@@ -14,17 +14,6 @@
 import "./assets/main.css";
 import { useRouter } from "vue-router";
 
-const routes = [
-  {
-    name: "Home",
-  },
-  {
-    name: "Editor",
-  },
-  {
-    name: "Catalog",
-  },
-];
 const router = useRouter();
 
 function goToLogin() {

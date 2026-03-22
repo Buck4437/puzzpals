@@ -2,7 +2,7 @@ html {
   margin: 0;
   padding: 0;
   font-weight: normal;
-  background-color: rgb(198, 255, 255);
+  background-color: rgb(211, 247, 247);
   height: 100%;
   font-family: Arial, sans-serif;
 }
@@ -21,7 +21,8 @@ body {
   flex-direction: column;
 }
 
-button, .button {
+button,
+.button {
   min-width: 150px;
   min-height: 50px;
   font-size: 1rem;
