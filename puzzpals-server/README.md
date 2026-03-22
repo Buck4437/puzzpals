@@ -1,5 +1,6 @@
 # Server
 
+> Note: Parts of this document describe planned or in-progress refactors of the server. Some details (such as API response shapes and puzzle schemas) may not exactly match the current implementation.
 ## Types
 
 ### `Room`
@@ -156,4 +157,4 @@ Load a room from the database. Arguments:
 
 - `token`: `string`. Room token.
 
-Returns the `Room` if found, `undefined` otherwise.
+Returns the `Room` if found, `null` otherwise.

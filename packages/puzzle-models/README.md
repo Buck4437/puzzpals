@@ -50,7 +50,7 @@ Text in a cell. An object with the following properties:
 
 ### `LineObjectDict`
 
-An object containing `LineObject`s. The key of each `LineObject` must be in the format `"i,j|k,l"`, where $(i, j)$ and $(k, l)$ are the coordinates of the two endpoints.
+An object containing `LineObject`s. The key of each `LineObject` must be in the format `"i,j|k,l"`, where $(i, j)$ and $(k, l)$ are the coordinates of the two endpoints. Keys use a canonical ordering of endpoints: the endpoint with the lexicographically smaller coordinate pair $(i, j)$ (compare $i$ first, then $j$) must appear first in the key. All additions, lookups, and removals must use this canonical key form.
 
 ### `SurfaceObjectDict`
 
@@ -88,7 +88,7 @@ The correct solution of a puzzle. An object with the following properties:
 Examples:
 
 - A Slitherlink puzzle is solved by drawing lines. You would set `typeToCheck = ["lineObjects"]` and specify the solution in `lineObjects`. You may assign an empty object to `surfaceObjects` and `symbolObjects`.
-- A Nurikabe puzzle is solved by shading some cells black. You would set `typeToCheck = ["symbolObjects"]` and specify the solution in `symbolObjects`. You may assign an empty object to `lineObjects` and `surfaceObjects`.
+- A Nurikabe puzzle is solved by shading some cells black. You would set `typeToCheck = ["surfaceObjects"]` and specify the solution in `surfaceObjects`. You may assign an empty object to `lineObjects` and `symbolObjects`.
 
 ### `Grid`
 
