@@ -177,6 +177,7 @@ function onChatSubmit(text: string) {
 
 function initiateSocket() {
   socket.on("room:initialize", (data: GameData, id: string) => {
+    hasWon = false;
     gameData.value = data;
     userID.value = id;
 

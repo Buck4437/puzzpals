@@ -105,10 +105,9 @@ export function isLineObject(value: unknown): value is LineObject {
     isCoordinate(value.start) &&
     isCoordinate(value.end) &&
     typeof value.color === "string" &&
-    (value.thickness === undefined ||
-      (typeof value.thickness === "number" &&
-        Number.isFinite(value.thickness) &&
-        value.thickness > 0))
+    typeof value.thickness === "number" &&
+    Number.isFinite(value.thickness) &&
+    value.thickness > 0
   );
 }
 
