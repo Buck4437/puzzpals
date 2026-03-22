@@ -14,7 +14,7 @@ import {
   isTextObject,
   PairCoordinateToKey,
   CoordinateToKey,
-  NormalizeStartEndCoordinates,
+  NormalizePairCoordinates,
 } from "./Grid.js";
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -181,15 +181,11 @@ function applyUpdateMessage(
 
   switch (message.type) {
     case "lineObjects": {
-      const key = PairCoordinateToKey([message.data.start, message.data.end]);
-      const [start, end] = NormalizeStartEndCoordinates(
-        message.data.start,
-        message.data.end,
-      );
+      const key = PairCoordinateToKey(message.data.endpoints);
+      const endpoints = NormalizePairCoordinates(message.data.endpoints);
       nextLayerData.lineObjects[key] = {
         ...message.data,
-        start,
-        end,
+        endpoints,
       };
       break;
     }
@@ -225,8 +221,9 @@ export function applyEditMessage(
 
 function cloneLineObject(value: LineObject): LineObject {
   return {
-    start: [...value.start] as typeof value.start,
-    end: [...value.end] as typeof value.end,
+    endpoints: value.endpoints.map(
+      (coord) => [...coord] as typeof coord,
+    ) as typeof value.endpoints,
     color: value.color,
     thickness: value.thickness,
   };
@@ -274,7 +271,7 @@ function getExistingObject(
 function cloneExistingObject(
   value: LineObject | SurfaceObject | TextObject | ShapeObject,
 ): LineObject | SurfaceObject | TextObject | ShapeObject {
-  if ("start" in value) {
+  if ("endpoints" in value) {
     return cloneLineObject(value);
   }
 
@@ -292,7 +289,7 @@ function cloneExistingObject(
 function getUpdateKey(message: UpdateMessage): string {
   switch (message.type) {
     case "lineObjects":
-      return PairCoordinateToKey([message.data.start, message.data.end]);
+      return PairCoordinateToKey(message.data.endpoints);
     case "surfaceObjects":
       return CoordinateToKey(message.data.location);
     case "textObjects":

@@ -173,6 +173,7 @@
 
 <script setup lang="ts">
 import { computed, ref, onMounted, onBeforeUnmount, watch } from "vue";
+import { NormalizePairCoordinates } from "@puzzpals/puzzle-models";
 
 import GridSVG from "@/components/editor/GridSVG.vue";
 import {
@@ -275,8 +276,8 @@ const surfaceColorTable = [
 ];
 
 const lineColorTable = [
-  "black",
   "green",
+  "black",
   "blue",
   "red",
   "yellow",
@@ -285,12 +286,13 @@ const lineColorTable = [
 ];
 
 const textColorTable = [
-  "black",
-  "blue",
   "green",
+  "blue",
+  "black",
   "white",
   "red",
   "yellow",
+  "orange",
   "purple",
 ];
 
@@ -539,8 +541,7 @@ const applyLineSegment = (
     emitRemoveMessage("lineObjects", lineKey);
   } else {
     emitLineUpdate({
-      start,
-      end,
+      endpoints: NormalizePairCoordinates([start, end]),
       color: selectedLineColor.value,
       thickness: selectedLineThickness.value,
     });
@@ -571,8 +572,7 @@ const applyEdgeSegment = (
     emitRemoveMessage("lineObjects", lineKey);
   } else {
     emitLineUpdate({
-      start,
-      end,
+      endpoints: NormalizePairCoordinates([start, end]),
       color: selectedLineColor.value,
       thickness: selectedLineThickness.value,
     });

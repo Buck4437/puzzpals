@@ -4,6 +4,8 @@ import {
   type ShapeObjectDict,
   type TypeToCheck,
   type LineObjectDict,
+  arePairCoordinatesEqual,
+  areCoordinatesEqual,
 } from "./Grid.js";
 import { SPECIAL_CHARACTERS } from "./SpecialCharacters.js";
 
@@ -74,11 +76,10 @@ export function hasWon(
             playerSolution.lineObjects,
             solution.lineObjects,
             (playerObject, solutionObject) =>
-              playerObject.start[0] === solutionObject.start[0] &&
-              playerObject.start[1] === solutionObject.start[1] &&
-              playerObject.end[0] === solutionObject.end[0] &&
-              playerObject.end[1] === solutionObject.end[1] &&
-              playerObject.color === solutionObject.color,
+              arePairCoordinatesEqual(
+                playerObject.endpoints,
+                solutionObject.endpoints,
+              ) && playerObject.color === solutionObject.color,
           )
         ) {
           return false;
@@ -90,10 +91,10 @@ export function hasWon(
             filterOutNonGreen(playerSolution.lineObjects),
             filterOutNonGreen(solution.lineObjects),
             (playerObject, solutionObject) =>
-              playerObject.start[0] === solutionObject.start[0] &&
-              playerObject.start[1] === solutionObject.start[1] &&
-              playerObject.end[0] === solutionObject.end[0] &&
-              playerObject.end[1] === solutionObject.end[1],
+              arePairCoordinatesEqual(
+                playerObject.endpoints,
+                solutionObject.endpoints,
+              ),
           )
         ) {
           return false;
@@ -105,9 +106,10 @@ export function hasWon(
             playerSolution.surfaceObjects,
             solution.surfaceObjects,
             (playerObject, solutionObject) =>
-              playerObject.location[0] === solutionObject.location[0] &&
-              playerObject.location[1] === solutionObject.location[1] &&
-              playerObject.color === solutionObject.color,
+              areCoordinatesEqual(
+                playerObject.location,
+                solutionObject.location,
+              ) && playerObject.color === solutionObject.color,
           )
         ) {
           return false;
@@ -119,8 +121,10 @@ export function hasWon(
             playerSolution.surfaceObjects,
             solution.surfaceObjects,
             (playerObject, solutionObject) =>
-              playerObject.location[0] === solutionObject.location[0] &&
-              playerObject.location[1] === solutionObject.location[1] &&
+              areCoordinatesEqual(
+                playerObject.location,
+                solutionObject.location,
+              ) &&
               normalizeSurfaceColor(playerObject.color) ===
                 normalizeSurfaceColor(solutionObject.color),
           )
@@ -134,8 +138,10 @@ export function hasWon(
             playerSolution.textObjects,
             solution.textObjects,
             (playerObject, solutionObject) =>
-              playerObject.location[0] === solutionObject.location[0] &&
-              playerObject.location[1] === solutionObject.location[1] &&
+              areCoordinatesEqual(
+                playerObject.location,
+                solutionObject.location,
+              ) &&
               playerObject.content === solutionObject.content &&
               playerObject.color === solutionObject.color,
           )
@@ -149,9 +155,10 @@ export function hasWon(
             playerSolution.textObjects,
             solution.textObjects,
             (playerObject, solutionObject) =>
-              playerObject.location[0] === solutionObject.location[0] &&
-              playerObject.location[1] === solutionObject.location[1] &&
-              playerObject.content === solutionObject.content,
+              areCoordinatesEqual(
+                playerObject.location,
+                solutionObject.location,
+              ) && playerObject.content === solutionObject.content,
           )
         ) {
           return false;
@@ -163,9 +170,10 @@ export function hasWon(
             filterOutCrossMarks(playerSolution.shapeObjects),
             filterOutCrossMarks(solution.shapeObjects),
             (playerObject, solutionObject) =>
-              playerObject.location[0] === solutionObject.location[0] &&
-              playerObject.location[1] === solutionObject.location[1] &&
-              playerObject.content === solutionObject.content,
+              areCoordinatesEqual(
+                playerObject.location,
+                solutionObject.location,
+              ) && playerObject.content === solutionObject.content,
           )
         ) {
           return false;

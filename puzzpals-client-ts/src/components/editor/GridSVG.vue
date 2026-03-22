@@ -61,11 +61,11 @@
       <!-- Line objects -->
       <line
         v-for="line in layer.lineObjects"
-        :key="`line-${line.start}-${line.end}`"
-        :x1="toSvgCoordinates(line.start)[0]"
-        :y1="toSvgCoordinates(line.start)[1]"
-        :x2="toSvgCoordinates(line.end)[0]"
-        :y2="toSvgCoordinates(line.end)[1]"
+        :key="`line-${line.endpoints[0]}-${line.endpoints[1]}`"
+        :x1="toSvgCoordinates(line.endpoints[0])[0]"
+        :y1="toSvgCoordinates(line.endpoints[0])[1]"
+        :x2="toSvgCoordinates(line.endpoints[1])[0]"
+        :y2="toSvgCoordinates(line.endpoints[1])[1]"
         :stroke="line.color"
         :stroke-width="line.thickness || 3"
         pointer-events="none"
