@@ -2,6 +2,13 @@
 
 ## Types
 
+### `Room`
+
+A room. An object with the following properties:
+
+- `token`: `string`. Room token, used to uniquely identify a room. Anyone who has the room token can join the room.
+- `puzzle_data`: `string`, stringified [`GameData`](../packages/puzzle-models/README.md#gamedata). Optional. State of the grid in the room.
+
 ### `Puzzle`
 
 A puzzle stored in the catalogue. An object with the following properties:
@@ -105,3 +112,48 @@ If successful, the server responds with the `Puzzle`.
 
 - If `id` is invalid, the server responds with `400 Bad Request`.
 - If the puzzle does not exist, the server responds with `404 Not Found`.
+
+## Database interface
+
+### `addPuzzle`
+
+Add a puzzle to the `Puzzle` table. Arguments:
+
+- `title`: `string`. Puzzle title.
+- `author`: `string`. Name of the puzzle author.
+- `description`: `string`. Puzzle description.
+- `puzzleJson`: `Grid`. Puzzle data.
+- `publishDate`: `Date`. Optional, defaults to the current time. Publishing time.
+
+Returns the newly created `Puzzle`.
+
+### `getPuzzles`
+
+Fetch the most recent puzzles from the `Puzzle` table. Arguments:
+
+- `limit`: `number`. Optional, defaults to 5. The maximum number of puzzles to fetch.
+
+Returns an array of `Puzzle`s.
+
+### `getPuzzleById`
+
+Fetch a single puzzle by its numeric ID. Arguments:
+
+- `id`: `number`. Puzzle ID.
+
+Returns the `Puzzle` if found, otherwise `undefined`.
+
+### `upsertRoom`
+
+Save a room to the database. Arguments:
+
+- `token`: `string`. Room token.
+- `puzzleJson`: `string`, stringified [`GameData`](../packages/puzzle-models/README.md#gamedata). State of the grid in the room.
+
+### `fetchRoom`
+
+Load a room from the database. Arguments:
+
+- `token`: `string`. Room token.
+
+Returns the `Room` if found, `undefined` otherwise.
