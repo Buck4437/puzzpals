@@ -1,26 +1,29 @@
-import { Router } from 'express';
-import { getRoomFromStore, createRoomInStore } from '../memorystore.js';
-import { parsePuzzle } from '@puzzpals/puzzle-parser';
+import { Router } from "express";
+import { getRoomFromStore, createRoomInStore } from "../memorystore.js";
+import { parsePuzzle, createEmptyLayerData } from "@puzzpals/puzzle-parser";
+import type { GameData } from "@puzzpals/puzzle-models";
 
 const router = Router();
 
-function makeToken(length = 6) {
-  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+function makeToken() {
+  const length = 10;
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   const bytes = crypto.getRandomValues(new Uint8Array(length));
-  let result = '';
-  for (let i = 0; i < length; i++) {
-    result += chars[bytes[i]! % chars.length];
+  let result = "";
+  for (const byte of bytes) {
+    result += chars[byte % chars.length];
   }
   return result;
 }
 
 // TODO: Fix concurrency issue where token has a very small chance of clashing
-function generateToken() {
+async function generateToken() {
   let token;
   // Collision check
   for (let i = 0; i < 5; i++) {
-    token = makeToken(6);
-    const exists = getRoomFromStore(token);
+    token = makeToken();
+    const exists = await getRoomFromStore(token);
     if (!exists) {
       return token;
     }
@@ -29,52 +32,53 @@ function generateToken() {
 }
 
 // Create room by uploading a file
-router.post('/create', async (req, res) => {
-
-  // Test parse file 
-  const puzzleData = req.body;
+router.post("/create", async (req, res) => {
+  // Test parse file
+  const puzzleData: unknown = req.body;
   let token;
   try {
     const puzzle = parsePuzzle(puzzleData);
 
-    token = generateToken();
+    const gameData = {
+      puzzle,
+      playerSolution: createEmptyLayerData(),
+    } as GameData;
+
+    token = await generateToken();
     if (token === null) {
-      return res.status(500).json({ error: 'Could not create room, please try again' });
+      return res
+        .status(500)
+        .json({ error: "Could not create room, please try again" });
     }
 
-    createRoomInStore(token, puzzle);
-
-  } catch (e) {
-    return res.status(400).json({ error: 'Invalid puzzle data' });
+    createRoomInStore(token, gameData);
+  } catch (err) {
+    console.log("Error creating room:", (err as Error).message);
+    return res.status(400).json({ error: "Invalid puzzle data" });
   }
 
   res.json({
-    token: token
-  })
+    token: token,
+  });
 });
 
 // Get room by token
-router.get('/:token', (req, res) => {
+router.get("/:token", async (req, res) => {
   const { token } = req.params;
-  const room = getRoomFromStore(token);
-  if (!room) return res.status(404).json({ error: 'Room not found' });
-  res.json({ room });
-});
 
-// Join room
-router.post('/:token/join', (req, res) => {
-  const { token } = req.params;
-  const room = getRoomFromStore(token);
-  if (!room) return res.status(404).json({ error: 'Room not found' });
-  res.json({ room });
-});
+  // Return if token length is incorrect, saving a memory lookup
+  if (token.length !== 10) {
+    return res.status(404).json({ error: "Room not found" });
+  }
 
-// Leave room
-router.post('/:token/leave', (req, res) => {
-  const { token } = req.params;
-  const room = getRoomFromStore(token);
-  if (!room) return res.status(404).json({ error: 'Room not found' });
-  res.json({ room });
-})
+  try {
+    const room = await getRoomFromStore(token);
+    if (!room) return res.status(404).json({ error: "Room not found" });
+    res.json({ room });
+  } catch (err) {
+    console.log("Error fetching room:", (err as Error).message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+});
 
 export default router;

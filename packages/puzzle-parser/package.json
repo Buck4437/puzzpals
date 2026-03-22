@@ -3,9 +3,6 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
-  "devDependencies": {
-    "typescript": "^5.9.3"
-  },
   "scripts": {
     "build": "tsc",
     "watch": "tsc --watch"
@@ -19,6 +16,7 @@
     }
   },
   "dependencies": {
+    "@puzzpals/puzzle-models": "0.0.0",
     "tslib": "^2.8.1"
   }
 }

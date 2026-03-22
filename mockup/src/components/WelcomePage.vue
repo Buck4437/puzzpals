@@ -1,24 +1,16 @@
-<script setup>
-
-</script>
+<script setup></script>
 
 <template>
-<div class="main">
-  <div class="center-box">
-    <div class="title">
-      Welcome to Puzzpals!
-    </div>
+  <div class="main">
+    <div class="center-box">
+      <div class="title">Welcome to Puzzpals!</div>
 
-    <div class="action-buttons">
-      <button>
-        Create Room
-      </button>
-      <button>
-        Join Room
-      </button>
+      <div class="action-buttons">
+        <button>Create Room</button>
+        <button>Join Room</button>
+      </div>
     </div>
   </div>
-</div>
 </template>
 
 <style scoped>

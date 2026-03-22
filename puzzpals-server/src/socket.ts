@@ -1,108 +1,102 @@
-import type { Server } from 'socket.io';
-import { createEmptyGrid } from './grid.js';
-import { isDirty, markAsClean, markAsDirty, getRoomFromStore, getListOfRooms } from './memorystore.js';
-import { initDb, closeDb, upsertRoom } from './db.js';
-import { serialize } from '@puzzpals/puzzle-parser';
-import { processChatMessage } from './chat.js';
-import { randomUserID } from './user.js';
+import { Socket, type Server } from "socket.io";
+import { markAsDirty, getRoomFromStore } from "./memorystore.js";
+import { isMessageValid, processChatMessage } from "./chat.js";
+import { randomUserID } from "./user.js";
+import { applyEditMessage, toEditMessage } from "@puzzpals/puzzle-models";
 
-let interval: NodeJS.Timeout | null = null;
+interface User {
+  roomToken: string;
+  name: string;
+}
 
-function init(io: Server) {
-  initDb();
+const socketUserMap = new Map<Socket, User>();
 
-  io.on('connection', socket => {
-    socket.on('room:join', async data => {
-      const token = data.token;
+export function init(io: Server) {
+  io.on("connection", (socket) => {
+    socket.on("room:join", async (token: unknown) => {
+      // Validate payload
+      if (typeof token !== "string" || token.length !== 10) return;
+
+      // Verify that the room exists
+      const room = await getRoomFromStore(token);
+      if (!room) return;
+
       const userID = randomUserID(token);
       console.log("joined", userID);
+
+      // Map socket to user
+      socketUserMap.set(socket, { roomToken: token, name: userID });
+
       socket.join(token);
 
-      const room = getRoomFromStore(token);
-
-      if (!room) {
-        return;
-      }
-
-      socket.emit('user:id', userID);
-
-      const grid = room.puzzleData || null;
-      if (!grid) {
-        socket.emit('grid:state', createEmptyGrid());
-      } else {
-        socket.emit('grid:state', grid);
-      }
+      const game = room.gameData;
+      socket.emit("room:initialize", game, userID);
     });
 
-    socket.on('grid:updateCell', data => {
-      const { token, idx, value } = data;
+    socket.on("grid:edit", async (message: unknown) => {
+      // Check socket has joined a room
+      const user = socketUserMap.get(socket);
+      if (user === undefined) return;
 
-      const room = getRoomFromStore(token);
+      // Validate payload
+      if (
+        typeof message !== "object" ||
+        message === null ||
+        !("messageType" in message) ||
+        !("type" in message) ||
+        !("data" in message)
+      ) {
+        return;
+      }
+
+      const editMessage = toEditMessage(
+        message.messageType,
+        message.type,
+        message.data,
+      );
+
+      // Validate editMessage
+      if (editMessage === null) {
+        return;
+      }
+
+      const room = await getRoomFromStore(user.roomToken);
       if (!room) {
         return;
       }
 
-      const grid = room.puzzleData;
+      room.gameData = {
+        ...room.gameData,
+        playerSolution: applyEditMessage(
+          room.gameData.playerSolution,
+          editMessage,
+        ),
+      };
 
-      if (!grid) {
-        return;
-      }
-
-      // TODO: Data validation
-      grid.cells[idx]?.setData(value);
       markAsDirty(room);
 
       // Emit the update to all clients in the room (including the sender)
-      io.to(token).emit('grid:cellUpdated', { idx, value });
+      io.to(user.roomToken).emit("grid:edited", editMessage);
     });
 
-    socket.on('chat:newMessage', data => {
-      const { token, message } = data;
-      const processed = processChatMessage(message);
-      if (!processed) {
-        console.log("Invalid chat message received:", message);
-        return;
-      }
-      io.to(token).emit('chat:messageNew', processed);
+    socket.on("chat:newMessage", (message: unknown) => {
+      // Check socket has joined a room
+      const user = socketUserMap.get(socket);
+      if (user === undefined) return;
+
+      // Validate payload
+      if (!isMessageValid(message)) return;
+
+      const processed = processChatMessage(message, user.name);
+      io.to(user.roomToken).emit("chat:messageNew", processed);
     });
 
-    const handleDisconnect = (data: any) => {
-      const token = data.token;
-      socket.leave(token);
-    };
-
-    socket.on('room:leave', data => handleDisconnect(data));
-    socket.on('disconnect', data => handleDisconnect(data));
+    socket.on("disconnect", () => {
+      socketUserMap.delete(socket);
+    });
   });
-
-  interval = setInterval(autosave, 60 * 1000); // every 60 seconds
 }
 
-function autosave() {
-  for (const token of getListOfRooms()) {
-    const room = getRoomFromStore(token);
-    if (room && isDirty(room)) {
-      console.log("Autosaving room:", token);
-      // If we put mark as clean after saving, then there's a chance that
-      // new changes could be made before we mark as clean, which causes data loss.
-      markAsClean(room);
-      const serializedData = serialize(room.puzzleData);
-      upsertRoom(token, serializedData);
-    }
-  }
+export function __clearSocketsForTests() {
+  socketUserMap.clear();
 }
-
-// Save to DB on shutdown to prevent data loss
-async function stop(io: Server) {
-  if (interval) {
-    clearInterval(interval);
-    interval = null;
-  }
-  io.close();
-
-  // Save to the database one last time
-  autosave();
-  closeDb();
-}
-
-export { init, stop };

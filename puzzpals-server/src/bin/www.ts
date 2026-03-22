@@ -1,29 +1,24 @@
 #!/usr/bin/env node
 
-// Load environment variables
-import 'dotenv/config';
+import debug from "debug";
+import { createServer } from "http";
+import { Server } from "socket.io";
 
-function assertEnvExists(variable: string | undefined, name: string): asserts variable is string {
-  if (variable === undefined) {
-    throw new Error(`The .env variable ${name} is missing`);
-  }
-}
+import app from "../app.js";
+import env from "../config.js";
+import { closeDb, initDb } from "../db.js";
+import { startAutosave, stopAutosave } from "../memorystore.js";
+import { init } from "../socket.js";
 
-assertEnvExists(process.env.PORT, "PORT");
-assertEnvExists(process.env.MONGO_URI, "MONGO_URI");
-assertEnvExists(process.env.CLIENT_BASE_URL, "CLIENT_BASE_URL");
-
-import debug from 'debug';
-import { createServer } from 'http';
-import { Server } from 'socket.io';
-import app from '../app.js';
-import { init, stop } from '../socket.js';
-
-const serverDebugger = debug('puzzpals-server:server');
+const serverDebugger = debug("puzzpals-server:server");
 
 // Get port from environment and store in Express
-const port = normalizePort(process.env.PORT);
-app.set('port', port);
+const port = normalizePort(env.PORT);
+app.set("port", port);
+
+// Initialize database and memory store
+initDb();
+startAutosave();
 
 // Create HTTP server
 const server = createServer(app);
@@ -31,17 +26,17 @@ const server = createServer(app);
 // Create Socket.IO server
 const io = new Server(server, {
   cors: {
-    origin: [process.env.CLIENT_BASE_URL]
-  }
+    origin: [env.CLIENT_BASE_URL],
+  },
 });
 
-app.set('io', io);
+app.set("io", io);
 init(io);
 
 // Listen on provided port, on all network interfaces
 server.listen(port);
-server.on('error', onError);
-server.on('listening', onListening);
+server.on("error", onError);
+server.on("listening", onListening);
 
 /**
  * Normalize a port into a number, string, or false.
@@ -68,22 +63,18 @@ function normalizePort(val: string) {
  */
 
 function onError(error: NodeJS.ErrnoException) {
-  if (error.syscall !== 'listen') {
+  if (error.syscall !== "listen") {
     throw error;
   }
 
-  const bind = typeof port === 'string'
-    ? 'Pipe ' + port
-    : 'Port ' + port;
+  const bind = typeof port === "string" ? "Pipe " + port : "Port " + port;
 
   // handle specific listen errors with friendly messages
   switch (error.code) {
-    case 'EACCES':
-      console.error(bind + ' requires elevated privileges');
-      process.exit(1);
-    case 'EADDRINUSE':
-      console.error(bind + ' is already in use');
-      process.exit(1);
+    case "EACCES":
+      throw new Error(`${bind} requires elevated privileges`);
+    case "EADDRINUSE":
+      throw new Error(`${bind} is already in use`);
     default:
       throw error;
   }
@@ -95,26 +86,42 @@ function onError(error: NodeJS.ErrnoException) {
 
 function onListening() {
   const addr = server.address();
-  const bind = typeof addr === 'string'
-    ? 'pipe ' + addr
-    : 'port ' + addr!.port;
-  serverDebugger('Listening on ' + bind);
+  if (addr === null) {
+    throw new Error(
+      "addr is null (Did you call onListening() at the right time?)",
+    );
+  }
+
+  const bind = typeof addr === "string" ? "pipe " + addr : "port " + addr.port;
+  serverDebugger("Listening on " + bind);
 }
 
 /**
  * Shut down the server gracefully
  */
 
-function shutdown() {
+process.on("exit", function () {
   console.log("Shutting down...");
-  server.close(() => { process.exit(0); });
-  // stop io and save data to DB to prevent data loss
-  stop(io);
-}
+  server.close(() => {
+    process.exit(0);
+  });
 
-process.on('exit', () => shutdown());
-process.on('SIGHUP', () => process.exit(128 + 1));
-process.on('SIGINT', () => process.exit(128 + 2));
-process.on('SIGTERM', () => process.exit(128 + 15));
+  // stop io
+  io.close();
+  closeDb();
+});
 
-console.log('Server loaded');
+process.on("SIGHUP", () => {
+  console.log("Received SIGHUP, shutting down...");
+  stopAutosave().finally(() => process.exit(128 + 1));
+});
+process.on("SIGINT", () => {
+  console.log("Received SIGHUP, shutting down...");
+  stopAutosave().finally(() => process.exit(128 + 2));
+});
+process.on("SIGTERM", () => {
+  console.log("Received SIGHUP, shutting down...");
+  stopAutosave().finally(() => process.exit(128 + 15));
+});
+
+console.log("Server loaded");

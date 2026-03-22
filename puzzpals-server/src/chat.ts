@@ -1,9 +1,3 @@
-// type ChatMessage = {
-//   user: string;
-//   msgtext: string;
-//   timestamp: number;
-// };
-
 // const chatRecords = new Map<string, ChatMessage[]>();
 
 // function fetchChatRecords(token: string) {
@@ -17,19 +11,36 @@
 //   chatRecords.get(token)!.push(message);
 // }
 
-function processChatMessage(raw: any): { user: string, msgtext: string, timestamp: number } | null {
-  if (
-      !raw || typeof raw !== 'object' || typeof raw.user !== 'string' ||
-      typeof raw.msgtext !== 'string' || raw.msgtext.trim() === ''
-  ) {
-    return null;
-  }
+interface RawChatMessage {
+  msgtext: string;
+}
+
+interface ChatMessage {
+  user: string;
+  msgtext: string;
+  timestamp: number;
+}
+
+function isMessageValid(raw: unknown): raw is RawChatMessage {
+  return (
+    typeof raw === "object" &&
+    raw !== null &&
+    "msgtext" in raw &&
+    typeof raw.msgtext === "string" &&
+    raw.msgtext.length <= 1000 &&
+    raw.msgtext.trim() !== ""
+  );
+}
+
+function processChatMessage(
+  raw: RawChatMessage,
+  username: string,
+): ChatMessage {
   return {
-    user: raw.user,
+    user: username,
     msgtext: raw.msgtext.trim(),
-    timestamp: Date.now()
+    timestamp: Date.now(),
   };
 }
 
-
-export { processChatMessage };
+export { isMessageValid, processChatMessage };

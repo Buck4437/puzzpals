@@ -1,0 +1,1 @@
+web: cd puzzpals-server && node ./dist/bin/www.js

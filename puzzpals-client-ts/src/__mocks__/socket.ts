@@ -1,19 +1,19 @@
 import { vi } from "vitest";
 
 type SocketEvent = string | symbol;
+type Callback = (...args: unknown[]) => void;
 
 interface MockSocket {
-  on: (ev: SocketEvent, cb: Function) => void;
-  off: (ev?: SocketEvent, cb?: Function) => void;
-  emit: (ev: SocketEvent, payload: any) => void;
+  on: (ev: SocketEvent, cb: Callback) => void;
+  off: (ev?: SocketEvent, cb?: Callback) => void;
+  emit: (ev: SocketEvent, ...args: unknown[]) => void;
+  disconnect: () => void;
 
   reset: () => void;
-  emitServerEvent: (ev: SocketEvent, payload: any) => void;
+  call: (ev: SocketEvent, ...args: unknown[]) => void;
 }
 
-let handlers: {
-  [ev: SocketEvent]: Function[];
-} = {};
+let handlers: Record<SocketEvent, Callback[]> = {};
 
 const socket: MockSocket = {
   on(ev, cb) {
@@ -24,25 +24,26 @@ const socket: MockSocket = {
   off(ev, cb) {
     if (ev === undefined) {
       handlers = {};
-      console.log('Removed all listeners');
+      console.log("Removed all listeners");
     } else if (cb === undefined) {
       handlers[ev] = [];
       console.log(`Removed all listeners for ${ev.toString()}`);
     } else {
-      handlers[ev] = (handlers[ev] ?? []).filter(f => f !== cb);
+      handlers[ev] = (handlers[ev] ?? []).filter((f) => f !== cb);
       console.log(`Removed listener for ${ev.toString()}`);
     }
   },
 
   emit: vi.fn(),
+  disconnect: vi.fn(),
 
   // Called by tests
   reset() {
     handlers = {};
   },
 
-  emitServerEvent(ev, payload) {
-    handlers[ev]?.forEach(fn => fn(payload));
+  call(ev, ...args) {
+    handlers[ev]?.forEach((fn) => fn(...args));
     console.log(`Emitted server event ${ev.toString()}`);
   },
 };

@@ -1,12 +1,32 @@
 {
-    "type": "akari",
-    "grid": [
-        [".", ".", ".", ".", ".", ".", "."],
-        [".", ".", "#", ".", "#", ".", "."],
-        [".", "2", ".", ".", ".", "2", "."],
-        [".", ".", ".", ".", ".", ".", "."],
-        [".", "#", ".", ".", ".", "3", "."],
-        [".", ".", "4", ".", "#", ".", "."],
-        [".", ".", ".", ".", ".", ".", "."]
-    ]
+  "size": [7, 7],
+  "problem": {
+    "lineObjects": {},
+    "surfaceObjects": {
+      "0.5,2.5": { "location": [0.5, 2.5], "color": "white" },
+      "1.5,3.5": { "location": [1.5, 3.5], "color": "white" },
+      "2.5,3.5": { "location": [2.5, 3.5], "color": "white" },
+      "3.5,3.5": { "location": [3.5, 3.5], "color": "white" },
+      "4.5,2.5": { "location": [4.5, 2.5], "color": "white" },
+      "4.5,1.5": { "location": [4.5, 1.5], "color": "black" },
+      "3.5,1.5": { "location": [3.5, 1.5], "color": "white" },
+      "3.5,2.5": { "location": [3.5, 2.5], "color": "white" },
+      "1.5,1.5": { "location": [1.5, 1.5], "color": "white" },
+      "1.5,2.5": { "location": [1.5, 2.5], "color": "black" },
+      "2.5,1.5": { "location": [2.5, 1.5], "color": "black" },
+      "5.5,2.5": { "location": [5.5, 2.5], "color": "black" },
+      "5.5,4.5": { "location": [5.5, 4.5], "color": "black" },
+      "1.5,4.5": { "location": [1.5, 4.5], "color": "black" },
+      "1.5,5.5": { "location": [1.5, 5.5], "color": "white" },
+      "0.5,5.5": { "location": [0.5, 5.5], "color": "white" },
+      "4.5,5.5": { "location": [4.5, 5.5], "color": "black" },
+      "2.5,5.5": { "location": [2.5, 5.5], "color": "black" }
+    },
+    "symbolObjects": {
+      "5.5,2.5": { "location": [5.5, 2.5], "content": "4", "color": "white" },
+      "4.5,5.5": { "location": [4.5, 5.5], "content": "3", "color": "white" },
+      "2.5,5.5": { "location": [2.5, 5.5], "content": "2", "color": "white" },
+      "2.5,1.5": { "location": [2.5, 1.5], "content": "2", "color": "white" }
+    }
+  }
 }

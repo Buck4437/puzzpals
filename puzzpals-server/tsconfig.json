@@ -4,7 +4,6 @@
     // File Layout
     "rootDir": "./src",
     "outDir": "./dist",
-    "baseUrl": ".",
 
     // Environment Settings
     // See also https://aka.ms/tsconfig/module
@@ -39,5 +38,7 @@
     "noUncheckedSideEffectImports": true,
     "moduleDetection": "force",
     "skipLibCheck": true
-  }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["**/__mocks__", "**/__tests__", "node_modules", "dist"]
 }

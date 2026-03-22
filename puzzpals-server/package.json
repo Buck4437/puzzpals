@@ -4,29 +4,38 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "build:models": "cd ../packages/puzzle-models && npm run build",
     "build:parser": "cd ../packages/puzzle-parser && npm run build",
+    "watch:models": "cd ../packages/puzzle-models && npm run watch",
     "watch:parser": "cd ../packages/puzzle-parser && npm run watch",
-    "build": "npm run build:parser && tsc",
-    "start": "npm run build:parser && node ./dist/bin/www.js",
-    "dev": "npm run build:parser && npm run watch:parser & tsx watch ./src/bin/www.ts"
+    "build": "npm run build:models && npm run build:parser && tsc",
+    "start": "node dist/bin/www.js",
+    "dev": "npm run build:models && npm run build:parser && npm run watch:models & npm run watch:parser & tsx watch ./src/bin/www.ts",
+    "test": "vitest run --coverage"
   },
   "dependencies": {
-    "better-sqlite3": "^12.5.0",
+    "@puzzpals/puzzle-models": "0.0.0",
+    "@puzzpals/puzzle-parser": "0.0.0",
     "cookie-parser": "~1.4.7",
     "debug": "~4.4.3",
-    "dotenv": "^17.2.3",
+    "dotenv": "^17.3.1",
     "express": "~5.1.0",
+    "helmet": "^8.1.0",
     "morgan": "~1.10.1",
-    "socket.io": "^4.8.1"
+    "pg": "^8.20.0",
+    "socket.io": "^4.8.3"
   },
   "devDependencies": {
-    "@types/better-sqlite3": "^7.6.13",
     "@types/cookie-parser": "^1.4.10",
     "@types/debug": "^4.1.12",
     "@types/express": "^5.0.6",
     "@types/morgan": "^1.9.10",
-    "@types/node": "^25.0.3",
+    "@types/node": "^25.3.5",
+    "@types/pg": "^8.18.0",
+    "@types/supertest": "^6.0.3",
+    "@vitest/coverage-v8": "^4.0.18",
+    "supertest": "^7.2.2",
     "tsx": "^4.21.0",
-    "typescript": "^5.9.3"
+    "vitest": "^4.0.18"
   }
 }
