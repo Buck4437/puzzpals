@@ -1,6 +1,7 @@
 # Server
 
 > Note: Parts of this document describe planned or in-progress refactors of the server. Some details (such as API response shapes and puzzle schemas) may not exactly match the current implementation.
+
 ## Types
 
 ### `Room`
@@ -142,7 +143,7 @@ Fetch a single puzzle by its numeric ID. Arguments:
 
 - `id`: `number`. Puzzle ID.
 
-Returns the `Puzzle` if found, otherwise `undefined`.
+Returns the `Puzzle` if found, `null` otherwise.
 
 ### `upsertRoom`
 
