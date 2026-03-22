@@ -26,7 +26,7 @@ function calculateAkariRulesLayer(grid: Grid, playerSolution: LayerData) {
     (surfaceObject) => surfaceObject.color === "black",
   );
 
-  // Fetch all light bulbs, represented by the symbol "O"
+  // Fetch all light bulbs
   const lightBulbs = Object.values(playerSolution.shapeObjects).filter(
     (shape) => shape.content === SPECIAL_CHARACTERS.AKARI_BULB.id,
   );
