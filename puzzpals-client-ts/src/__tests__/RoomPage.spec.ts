@@ -50,6 +50,7 @@ describe("RoomPage", () => {
     await flushPromises();
 
     // Server receives request to join room
+    expect(socket.connect).toHaveBeenCalledOnce();
     expect(socket.emit).toHaveBeenCalledWith("room:join", token);
   });
 
