@@ -121,6 +121,7 @@ async function checkRoomExists() {
 }
 
 async function joinRoom() {
+  socket.connect();
   socket.emit("room:join", props.token);
 }
 
