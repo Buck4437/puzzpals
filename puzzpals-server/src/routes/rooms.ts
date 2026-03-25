@@ -57,9 +57,7 @@ router.post("/create", async (req, res) => {
     return res.status(400).json({ error: "Invalid puzzle data" });
   }
 
-  res.json({
-    token: token,
-  });
+  res.json(token);
 });
 
 // Get room by token
