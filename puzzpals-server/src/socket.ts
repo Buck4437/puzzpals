@@ -29,7 +29,7 @@ export function init(io: Server) {
 
       socket.join(token);
 
-      const game = room.gameData;
+      const game = room.puzzle_data;
       socket.emit("room:initialize", game, userID);
     });
 
@@ -65,15 +65,15 @@ export function init(io: Server) {
         return;
       }
 
-      room.gameData = {
-        ...room.gameData,
+      room.puzzle_data = {
+        ...room.puzzle_data,
         playerSolution: applyEditMessage(
-          room.gameData.playerSolution,
+          room.puzzle_data.playerSolution,
           editMessage,
         ),
       };
 
-      markAsDirty(room);
+      markAsDirty(user.roomToken);
 
       // Emit the update to all clients in the room (including the sender)
       io.to(user.roomToken).emit("grid:edited", editMessage);

@@ -1,9 +1,8 @@
 import { fetchRoom, upsertRoom } from "./db.js";
-import { type GameData } from "@puzzpals/puzzle-models";
+import type { Room } from "./models/Room.js";
 
 interface RoomEntry {
-  token: string;
-  gameData: GameData;
+  room: Room;
   isDirty?: boolean;
 }
 
@@ -11,25 +10,23 @@ let timeout: NodeJS.Timeout;
 let stopAutosaveFlag = false;
 const store = new Map<string, RoomEntry>();
 
-export async function getRoomFromStore(
-  token: string,
-): Promise<RoomEntry | null> {
+export async function getRoomFromStore(token: string): Promise<Room | null> {
   const roomEntry = store.get(token);
 
   if (roomEntry !== null && roomEntry !== undefined) {
-    return roomEntry;
+    return roomEntry.room;
   }
+
   // Fetch from db
   const dbEntry = await fetchRoom(token);
   if (dbEntry !== null) {
     try {
       const roomEntry = {
-        token: dbEntry.token,
-        gameData: dbEntry.puzzle_data,
+        room: dbEntry,
         isDirty: false,
       };
       store.set(token, roomEntry);
-      return roomEntry;
+      return roomEntry.room;
     } catch (e) {
       console.error("Failed to parse puzzle data from DB for token:", token, e);
     }
@@ -37,28 +34,18 @@ export async function getRoomFromStore(
   return null;
 }
 
-export function createRoomInStore(token: string, gameData: GameData) {
-  store.set(token, {
-    token,
-    gameData,
+export function createRoomInStore(room: Room) {
+  store.set(room.token, {
+    room: room,
     isDirty: true,
   });
 }
 
-function getListOfRooms(): string[] {
-  return Array.from(store.keys());
-}
-
-export function markAsDirty(room: RoomEntry) {
-  room.isDirty = true;
-}
-
-function markAsClean(room: RoomEntry) {
-  room.isDirty = false;
-}
-
-function isDirty(room: RoomEntry): boolean {
-  return room.isDirty === true;
+export function markAsDirty(token: string) {
+  const roomEntry = store.get(token);
+  if (roomEntry !== undefined) {
+    roomEntry.isDirty = true;
+  }
 }
 
 function setAutosaveTimeout(delay: number) {
@@ -84,18 +71,21 @@ export async function stopAutosave() {
 }
 
 async function autosave(forced = false) {
-  for (const token of getListOfRooms()) {
-    if (stopAutosaveFlag && !forced) {
-      break;
+  if (stopAutosaveFlag && !forced) return;
+
+  // Copy all rooms to upsert
+  const roomsToUpsert: Room[] = [];
+  for (const roomEntry of store.values()) {
+    if (roomEntry.isDirty === true) {
+      roomEntry.isDirty = false;
+      roomsToUpsert.push(structuredClone(roomEntry.room));
     }
-    const room = await getRoomFromStore(token);
-    if (room && isDirty(room)) {
-      console.log("Autosaving room:", token);
-      // If we put mark as clean after saving, then there's a chance that
-      // new changes could be made before we mark as clean, which causes data loss.
-      markAsClean(room);
-      await upsertRoom(token, room.gameData);
-    }
+  }
+
+  // Upsert rooms
+  for (const room of roomsToUpsert) {
+    console.log("Autosaving room:", room.token);
+    await upsertRoom(room);
   }
 
   // Don't schedule another autosave if it's been stopped

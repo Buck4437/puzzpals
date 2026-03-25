@@ -1,4 +1,3 @@
-import type { GameData } from "@puzzpals/puzzle-models";
 import type { Room } from "./models/Room.js";
 import { Pool } from "pg";
 
@@ -97,10 +96,10 @@ export async function getPuzzleById(id: number) {
   const result = await pool.query(sql, [id]);
   return result.rows[0];
 }
-async function upsertRoom(token: string, puzzleJson: GameData) {
+async function upsertRoom(room: Room) {
   const sql = `INSERT INTO Room (token, puzzle_data) VALUES ($1, $2)
                ON CONFLICT (token) DO UPDATE SET puzzle_data = EXCLUDED.puzzle_data`;
-  await pool.query(sql, [token, puzzleJson]);
+  await pool.query(sql, [room.token, room.puzzle_data]);
 }
 
 async function fetchRoom(token: string) {

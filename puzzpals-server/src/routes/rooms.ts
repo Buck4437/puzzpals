@@ -51,7 +51,7 @@ router.post("/create", async (req, res) => {
         .json({ error: "Could not create room, please try again" });
     }
 
-    createRoomInStore(token, gameData);
+    createRoomInStore({ token: token, puzzle_data: gameData });
   } catch (err) {
     console.log("Error creating room:", (err as Error).message);
     return res.status(400).json({ error: "Invalid puzzle data" });
