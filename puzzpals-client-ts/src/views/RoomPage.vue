@@ -5,7 +5,10 @@
       <header class="top-bar">
         <h1>Puzzpals</h1>
         <span class="room-id">Room ID: {{ token }}</span>
-        <button @click="leaveRoom">Leave</button>
+        <div class="top-actions">
+          <button @click="showRoomDetails = true">Details</button>
+          <button @click="leaveRoom">Leave</button>
+        </div>
       </header>
 
       <div class="content">
@@ -20,23 +23,30 @@
         </div>
 
         <div class="info-pane">
-          <div v-if="enabledRulesInfo.length > 0">
-            <h3>Pre-defined rules</h3>
-            <ul>
-              <li v-for="rule in enabledRulesInfo" :key="rule.id">
-                <strong>{{ rule.name }}</strong
-                >: {{ rule.description }}
-              </li>
-            </ul>
-          </div>
-          <div v-if="answerCheckInfo.length > 0">
-            <h3>Answer checks</h3>
-            <ul>
-              <li v-for="check in answerCheckInfo" :key="check.type">
-                <strong>{{ check.name }}</strong
-                >: {{ check.description }}
-              </li>
-            </ul>
+          <div class="info-collapsibles">
+            <details class="panel" v-if="enabledRulesInfo.length > 0">
+              <summary>
+                Pre-defined rules <span>({{ enabledRulesInfo.length }})</span>
+              </summary>
+              <ul>
+                <li v-for="rule in enabledRulesInfo" :key="rule.id">
+                  <strong>{{ rule.name }}</strong
+                  >: {{ rule.description }}
+                </li>
+              </ul>
+            </details>
+
+            <details class="panel" v-if="answerCheckInfo.length > 0">
+              <summary>
+                Answer checks <span>({{ answerCheckInfo.length }})</span>
+              </summary>
+              <ul>
+                <li v-for="check in answerCheckInfo" :key="check.type">
+                  <strong>{{ check.name }}</strong
+                  >: {{ check.description }}
+                </li>
+              </ul>
+            </details>
           </div>
 
           <div class="chat-con">
@@ -50,6 +60,29 @@
         </div>
       </div>
     </div>
+
+    <BaseModal v-if="showRoomDetails" @close="showRoomDetails = false">
+      <div class="details-modal">
+        <h3>Room details</h3>
+        <p><strong>Room ID:</strong> {{ token }}</p>
+
+        <h4 v-if="enabledRulesInfo.length > 0">Pre-defined rules</h4>
+        <ul v-if="enabledRulesInfo.length > 0">
+          <li v-for="rule in enabledRulesInfo" :key="rule.id">
+            <strong>{{ rule.name }}</strong
+            >: {{ rule.description }}
+          </li>
+        </ul>
+
+        <h4 v-if="answerCheckInfo.length > 0">Answer checks</h4>
+        <ul v-if="answerCheckInfo.length > 0">
+          <li v-for="check in answerCheckInfo" :key="check.type">
+            <strong>{{ check.name }}</strong
+            >: {{ check.description }}
+          </li>
+        </ul>
+      </div>
+    </BaseModal>
   </div>
 </template>
 
@@ -68,6 +101,7 @@ import { useRouter } from "vue-router";
 import api from "@/services/api";
 import socket from "@/socket";
 import PuzzleArea from "@/components/PuzzleArea.vue";
+import BaseModal from "@/components/BaseModal.vue";
 
 import Chat from "@/components/Chat.vue";
 import type ChatState from "@/models/ChatState";
@@ -88,6 +122,7 @@ let hasWon = false;
 
 const chatState: Ref<ChatState> = ref({ messages: [] });
 const chatComponent = ref<InstanceType<typeof Chat> | null>(null);
+const showRoomDetails = ref(false);
 
 const userID = ref<string | null>(null);
 const props = defineProps({
@@ -273,9 +308,10 @@ input {
 
 .solving-page {
   width: 100%;
-  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .top-bar {
@@ -290,6 +326,12 @@ input {
   position: relative;
 }
 
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .room-id {
   position: absolute;
   left: 50%;
@@ -302,16 +344,18 @@ input {
 
 .content {
   flex: 1;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1.55fr) minmax(280px, 1fr);
   gap: 12px;
   padding: 12px;
   box-sizing: border-box;
   background: #f7f8fb;
+  overflow: hidden;
 }
 
 .puzzle-pane {
-  flex: 1 1 60%;
   min-width: 0;
+  min-height: 0;
   background: #fff;
   border: 1px solid #ececec;
   border-radius: 6px;
@@ -321,12 +365,37 @@ input {
 }
 
 .info-pane {
-  flex: 1 1 40%;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
   overflow: hidden;
+}
+
+.info-collapsibles {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow: auto;
+  max-height: 34%;
+}
+
+.panel {
+  background: #fff;
+  border: 1px solid #ececec;
+  border-radius: 6px;
+  padding: 8px;
+}
+
+.panel summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.panel ul {
+  margin: 8px 0 0;
+  padding-left: 20px;
 }
 
 .player-info {
@@ -340,7 +409,8 @@ input {
 }
 
 .chat-con {
-  flex: 1 1;
+  flex: 1 1 auto;
+  min-height: 0;
   background: #fff;
   border: 1px solid #ececec;
   border-radius: 6px;
@@ -349,5 +419,30 @@ input {
   display: flex;
   align-items: stretch;
   overflow: hidden;
+}
+
+.details-modal {
+  max-height: 70dvh;
+  overflow: auto;
+  padding-right: 6px;
+}
+
+@media (max-width: 980px) {
+  .content {
+    grid-template-columns: 1fr;
+    overflow: auto;
+  }
+
+  .puzzle-pane {
+    min-height: 48dvh;
+  }
+
+  .info-pane {
+    min-height: 40dvh;
+  }
+
+  .room-id {
+    display: none;
+  }
 }
 </style>

@@ -1,60 +1,92 @@
 <template>
-  <SetterEditorComponent
-    :grid="grid"
-    :show-rules-layer="showRulesLayerPreview"
-    @edit-problem-message="onEditProblemMessage"
-    @edit-solution-message="onEditSolutionMessage"
-    @resize-grid="onResizeGrid"
-  />
+  <div class="editor-page">
+    <section class="editor-canvas">
+      <SetterEditorComponent
+        :grid="grid"
+        :show-rules-layer="showRulesLayerPreview"
+        @edit-problem-message="onEditProblemMessage"
+        @edit-solution-message="onEditSolutionMessage"
+        @resize-grid="onResizeGrid"
+      />
+    </section>
 
-  <div style="margin-top: 2em">
-    <h2>Editor options</h2>
-    <h2>Export puzzle</h2>
-    <button @click="exportPuzzle">Export current puzzle</button>
-    <br />
+    <aside class="editor-sidebar">
+      <h2 class="sidebar-title">Editor Controls</h2>
 
-    Preview rendering of enabled rules
-    <input type="checkbox" v-model="showRulesLayerPreview" />
+      <div class="action-row">
+        <button @click="exportPuzzle">Export puzzle</button>
+        <button :disabled="isPublishing" @click="publishPuzzle">
+          {{ isPublishing ? "Publishing..." : "Publish puzzle" }}
+        </button>
+      </div>
 
-    <br />
+      <details class="panel" open>
+        <summary>View options</summary>
+        <label class="checkbox-row">
+          <input type="checkbox" v-model="showRulesLayerPreview" />
+          Preview rendering of enabled rules
+        </label>
+      </details>
 
-    Pre-defined rules
-    <ul>
-      <li v-for="rule in customRulesInfoList" :key="rule.id">
-        <input
-          type="checkbox"
-          :value="rule.id"
-          v-model="customRulesInput[rule.id]"
-          @change="updateGridRules"
-        />
-        <strong>{{ rule.name }}</strong
-        >: {{ rule.description }}
-      </li>
-    </ul>
+      <details class="panel">
+        <summary>
+          Pre-defined rules
+          <span class="count">({{ enabledRulesCount }})</span>
+        </summary>
+        <ul class="settings-list">
+          <li v-for="rule in customRulesInfoList" :key="rule.id">
+            <label class="checkbox-row">
+              <input
+                type="checkbox"
+                :value="rule.id"
+                v-model="customRulesInput[rule.id]"
+                @change="updateGridRules"
+              />
+              <span
+                ><strong>{{ rule.name }}</strong
+                >: {{ rule.description }}</span
+              >
+            </label>
+          </li>
+        </ul>
+      </details>
 
-    <br />
-
-    Answer-checking (enabling this will include the solution in the exported
-    puzzle)
-    <ul>
-      <li v-for="type in answerCheckInfoList" :key="type.type">
-        <input
-          type="checkbox"
-          :value="type.type"
-          v-model="typesToCheckInput[type.type]"
-        />
-        <strong>{{ type.name }}</strong
-        >: {{ type.description }}
-      </li>
-    </ul>
-    <h2>Publish Puzzle</h2>
-    <button @click="publishPuzzle">Publish current puzzle</button>
-    <div v-if="uploadStatus">{{ uploadStatus }}</div>
+      <details class="panel">
+        <summary>
+          Answer checking
+          <span class="count">({{ selectedTypesToCheck.length }})</span>
+        </summary>
+        <p class="helper-text">
+          Enabling this includes the solution in the exported puzzle.
+        </p>
+        <ul class="settings-list">
+          <li v-for="type in answerCheckInfoList" :key="type.type">
+            <label class="checkbox-row">
+              <input
+                type="checkbox"
+                :value="type.type"
+                v-model="typesToCheckInput[type.type]"
+              />
+              <span
+                ><strong>{{ type.name }}</strong
+                >: {{ type.description }}</span
+              >
+            </label>
+          </li>
+        </ul>
+      </details>
+    </aside>
   </div>
+
+  <BaseModal v-if="showPublishModal" @close="showPublishModal = false">
+    <h3>Publish status</h3>
+    <p>{{ uploadStatus }}</p>
+  </BaseModal>
 </template>
 
 <script setup lang="ts">
 import SetterEditorComponent from "../components/SetterEditorComponent.vue";
+import BaseModal from "@/components/BaseModal.vue";
 
 import { computed, ref } from "vue";
 import api from "@/services/api";
@@ -73,6 +105,8 @@ import {
 } from "@puzzpals/puzzle-models";
 
 const uploadStatus = ref("");
+const showPublishModal = ref(false);
+const isPublishing = ref(false);
 const answerCheckInfoList = getAnswerCheckList();
 const customRulesInfoList = getRulesList();
 
@@ -182,6 +216,11 @@ const includeSolution = computed(() => {
   return selectedTypesToCheck.value.length > 0;
 });
 
+const enabledRulesCount = computed(() => {
+  return customRulesInfoList.filter((rule) => customRulesInput.value[rule.id])
+    .length;
+});
+
 function updateGridRules() {
   grid.value = {
     ...grid.value,
@@ -267,7 +306,10 @@ const downloadObjectAsJson = (exportObj: object, exportName: string) => {
 };
 
 async function publishPuzzle() {
+  isPublishing.value = true;
   uploadStatus.value = "Publishing...";
+  showPublishModal.value = true;
+
   try {
     const puzzleObj = getPuzzleJSON();
 
@@ -282,6 +324,107 @@ async function publishPuzzle() {
     uploadStatus.value =
       "Publish failed: " +
       (e?.response?.data?.details || e?.message || "Unknown error");
+  } finally {
+    isPublishing.value = false;
   }
 }
 </script>
+
+<style scoped>
+.editor-page {
+  height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  gap: 12px;
+  padding: 12px;
+  box-sizing: border-box;
+  background: #f7f8fb;
+  overflow: hidden;
+}
+
+.editor-canvas {
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid #e7e7e7;
+  border-radius: 8px;
+  background: #fff;
+  padding: 10px;
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+.editor-sidebar {
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid #e7e7e7;
+  border-radius: 8px;
+  background: #fff;
+  padding: 12px;
+  box-sizing: border-box;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sidebar-title {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.action-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.panel {
+  border: 1px solid #ebebeb;
+  border-radius: 8px;
+  padding: 8px 10px;
+  background: #fafafa;
+}
+
+.panel summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.settings-list {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.helper-text {
+  margin: 8px 0 0;
+  color: #555;
+}
+
+.count {
+  font-weight: 500;
+  color: #5f5f5f;
+}
+
+@media (max-width: 980px) {
+  .editor-page {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: 100dvh;
+    overflow: auto;
+  }
+
+  .editor-canvas {
+    min-height: 60dvh;
+  }
+}
+</style>
