@@ -2,7 +2,6 @@ html {
   margin: 0;
   padding: 0;
   font-weight: normal;
-  background-color: rgb(211, 247, 247);
   height: 100%;
   font-family: Arial, sans-serif;
 }
@@ -26,9 +25,16 @@ button,
   background: #fff;
   border: 1px solid #ccc;
   border-radius: 4px;
+  padding: 10px;
   font-size: 1rem;
   padding: 8px 16px;
   cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+button:hover,
+.button:hover {
+  background-color: #e0e0e0;
 }
 
 input {

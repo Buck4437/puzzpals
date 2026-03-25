@@ -3,13 +3,6 @@
     <div class="center-box">
       <div class="title">Welcome to Puzzpals!</div>
       <div class="options">
-        <div class="join-room">
-          <div>Enter 10-Digit Room Code:</div>
-          <div class="input-con">
-            <input placeholder="Room Code" v-model="roomCode" />
-            <button @click="redirect">Join Room</button>
-          </div>
-        </div>
         <div class="create-room">
           <div>Create a room:</div>
           <div class="input-con">
@@ -34,11 +27,9 @@
 
 <script setup lang="ts">
 import api from "@/services/api";
-import { ref } from "vue";
 import { useRouter } from "vue-router";
 
 const router = useRouter();
-const roomCode = ref("");
 
 let pickedFile: File | null = null;
 
@@ -49,10 +40,6 @@ function readFile(file: File) {
     reader.onerror = () => reject(reader.error);
     reader.readAsText(file);
   });
-}
-
-function redirect() {
-  router.push(`/room/${roomCode.value}`);
 }
 
 async function uploadFile() {
@@ -93,9 +80,6 @@ async function uploadFile() {
   }
 }
 
-function openEditor() {
-  router.push("/editor");
-}
 // Normally called by FilePicker
 // During tests, call this directly
 function onFilePicked(file: File | null) {
