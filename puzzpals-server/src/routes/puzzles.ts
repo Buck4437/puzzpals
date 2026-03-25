@@ -1,6 +1,7 @@
 import express from "express";
 import { addPuzzle, getPuzzles, getPuzzleById } from "../db.js";
 import type { Puzzle } from "../models/Puzzle.js";
+import { parsePuzzle } from "@puzzpals/puzzle-parser";
 
 const router = express.Router();
 
@@ -21,34 +22,39 @@ router.get("/", async (req, res) => {
 
 // Add a new puzzle
 router.post("/", async (req, res) => {
-  const { author, description, puzzle_json, publish_date } = req.body;
-  if (!author || !puzzle_json) {
-    return res.status(400).json({ error: "Missing author or puzzle_json" });
+  const payload = req.body as unknown;
+
+  if (
+    !(
+      typeof payload === "object" &&
+      payload !== null &&
+      "title" in payload &&
+      typeof payload.title === "string" &&
+      "author" in payload &&
+      typeof payload.author === "string" &&
+      "description" in payload &&
+      typeof payload.description === "string" &&
+      "puzzleJson" in payload
+    )
+  ) {
+    return res.sendStatus(400);
   }
+
+  let parsedPuzzle;
   try {
-    // Ensure publish_date is a Date object
-    let dateObj;
-    if (publish_date) {
-      dateObj = new Date(publish_date);
-      if (isNaN(dateObj.getTime())) dateObj = new Date();
-    } else {
-      dateObj = new Date();
-    }
-    const puzzle = await addPuzzle(
-      author,
-      description || "",
-      puzzle_json,
-      dateObj,
-    );
-    res.status(201).json(puzzle);
-  } catch (err) {
-    console.error("Error adding puzzle:", err);
-    const details =
-      err && typeof err === "object" && "message" in err
-        ? (err as Error).message
-        : String(err);
-    res.status(500).json({ error: "Failed to add puzzle", details });
+    parsedPuzzle = parsePuzzle(payload.puzzleJson);
+  } catch {
+    return res.sendStatus(400);
   }
+
+  const savedPuzzle = await addPuzzle(
+    payload.title,
+    payload.author,
+    payload.description,
+    parsedPuzzle,
+  );
+
+  res.status(201).json(savedPuzzle);
 });
 
 // Get puzzle by id

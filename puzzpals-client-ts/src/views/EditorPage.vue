@@ -171,10 +171,10 @@ async function publishPuzzle() {
     console.log(puzzleObj);
 
     await api.post("/puzzles", {
+      title: "Untitled",
       author: "synthetic",
       description: "Published from editor",
-      puzzle_json: puzzleObj,
-      publish_date: new Date().toISOString(),
+      puzzleJson: puzzleObj,
     });
     uploadStatus.value = "Publish successful!";
   } catch (e: any) {

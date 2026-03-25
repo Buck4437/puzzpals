@@ -56,6 +56,7 @@ async function createTable() {
     );
     CREATE TABLE IF NOT EXISTS Puzzle (
       id SERIAL PRIMARY KEY,
+      title TEXT NOT NULL,
       author TEXT NOT NULL,
       description TEXT,
       puzzle_json JSONB NOT NULL,
@@ -66,17 +67,19 @@ async function createTable() {
 
 // Puzzle DB functions
 export async function addPuzzle(
+  title: string,
   author: string,
   description: string,
   puzzleJson: object,
-  publishDate?: Date,
 ) {
-  const sql = `INSERT INTO Puzzle (author, description, puzzle_json, publish_date) VALUES ($1, $2, $3, $4) RETURNING *`;
+  const sql = `INSERT INTO Puzzle (title, author, description, puzzle_json, publish_date) 
+               VALUES ($1, $2, $3, $4, $5) RETURNING *`;
   const result = await pool.query(sql, [
+    title,
     author,
     description,
     puzzleJson,
-    publishDate || new Date(),
+    new Date(),
   ]);
   return result.rows[0];
 }
