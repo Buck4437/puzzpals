@@ -21,12 +21,11 @@ export async function getRoomFromStore(
   }
   // Fetch from db
   const dbEntry = await fetchRoom(token);
-  if (dbEntry && typeof dbEntry.puzzle_data === "string") {
+  if (dbEntry !== null) {
     try {
-      const parsedData = JSON.parse(dbEntry.puzzle_data) as GameData;
       const roomEntry = {
         token: dbEntry.token,
-        gameData: parsedData,
+        gameData: dbEntry.puzzle_data,
         isDirty: false,
       };
       store.set(token, roomEntry);
@@ -95,8 +94,7 @@ async function autosave(forced = false) {
       // If we put mark as clean after saving, then there's a chance that
       // new changes could be made before we mark as clean, which causes data loss.
       markAsClean(room);
-      const serializedData = JSON.stringify(room.gameData);
-      await upsertRoom(token, serializedData);
+      await upsertRoom(token, room.gameData);
     }
   }
 

@@ -1,3 +1,4 @@
+import type { GameData } from "@puzzpals/puzzle-models";
 import type { Room } from "./models/Room.js";
 import { Pool } from "pg";
 
@@ -51,7 +52,7 @@ async function createTable() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS Room (
       token TEXT PRIMARY KEY UNIQUE,
-      puzzle_data TEXT
+      puzzle_data JSONB NOT NULL
     );
     CREATE TABLE IF NOT EXISTS Puzzle (
       id SERIAL PRIMARY KEY,
@@ -93,7 +94,7 @@ export async function getPuzzleById(id: number) {
   const result = await pool.query(sql, [id]);
   return result.rows[0];
 }
-async function upsertRoom(token: string, puzzleJson: string) {
+async function upsertRoom(token: string, puzzleJson: GameData) {
   const sql = `INSERT INTO Room (token, puzzle_data) VALUES ($1, $2)
                ON CONFLICT (token) DO UPDATE SET puzzle_data = EXCLUDED.puzzle_data`;
   await pool.query(sql, [token, puzzleJson]);
