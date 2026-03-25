@@ -3,6 +3,24 @@
   <div v-else>
     <h2>Room {{ token }}</h2>
     <button @click="leaveRoom">Leave</button>
+    <div v-if="enabledRulesInfo.length > 0">
+      <h3>Pre-defined rules</h3>
+      <ul>
+        <li v-for="rule in enabledRulesInfo" :key="rule.id">
+          <strong>{{ rule.name }}</strong
+          >: {{ rule.description }}
+        </li>
+      </ul>
+    </div>
+    <div v-if="answerCheckInfo.length > 0">
+      <h3>Answer checks</h3>
+      <ul>
+        <li v-for="check in answerCheckInfo" :key="check.type">
+          <strong>{{ check.name }}</strong
+          >: {{ check.description }}
+        </li>
+      </ul>
+    </div>
     <PuzzleArea
       :grid="gameData.puzzle"
       :player-solution="gameData.playerSolution"
@@ -18,7 +36,15 @@
 </template>
 
 <script setup lang="ts">
-import { onBeforeMount, onBeforeUnmount, onMounted, ref, type Ref } from "vue";
+import {
+  computed,
+  nextTick,
+  onBeforeMount,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  type Ref,
+} from "vue";
 import { useRouter } from "vue-router";
 
 import api from "@/services/api";
@@ -29,14 +55,18 @@ import Chat from "@/components/Chat.vue";
 import type ChatState from "@/models/ChatState";
 import {
   applyEditMessage,
+  getAnswerCheckListFromTypes,
+  getEnabledRulesList,
   toEditMessage,
   type EditMessage,
   type GameData,
+  hasWon as checkWin,
 } from "@puzzpals/puzzle-models";
 
 const router = useRouter();
 
 const gameData: Ref<GameData | null> = ref(null);
+let hasWon = false;
 
 const chatState: Ref<ChatState> = ref({ messages: [] });
 const chatComponent = ref<InstanceType<typeof Chat> | null>(null);
@@ -44,6 +74,24 @@ const chatComponent = ref<InstanceType<typeof Chat> | null>(null);
 const userID = ref<string | null>(null);
 const props = defineProps({
   token: { type: String, required: true },
+});
+
+const enabledRulesInfo = computed(() => {
+  if (gameData.value === null) {
+    return [];
+  }
+
+  return getEnabledRulesList(gameData.value.puzzle);
+});
+
+const answerCheckInfo = computed(() => {
+  if (gameData.value?.puzzle.solution === undefined) {
+    return [];
+  }
+
+  return getAnswerCheckListFromTypes(
+    gameData.value.puzzle.solution.typeToCheck,
+  );
 });
 
 async function checkRoomExists() {
@@ -58,6 +106,7 @@ async function checkRoomExists() {
 }
 
 async function joinRoom() {
+  socket.connect();
   socket.emit("room:join", props.token);
 }
 
@@ -77,6 +126,29 @@ function applyIncomingEdit(message: EditMessage) {
     ...gameData.value,
     playerSolution: applyEditMessage(gameData.value.playerSolution, message),
   };
+
+  checkWinCondition();
+}
+
+function checkWinCondition() {
+  if (gameData.value === null) {
+    return;
+  }
+
+  if (!hasWon && gameData.value.puzzle.solution !== undefined) {
+    const currentSolution = gameData.value.playerSolution;
+    const solutionToCheck = gameData.value.puzzle.solution;
+
+    const win = checkWin(currentSolution, solutionToCheck);
+    if (win) {
+      hasWon = true;
+      nextTick(() => {
+        setTimeout(() => {
+          alert("Win");
+        }, 0);
+      });
+    }
+  }
 }
 
 function onGridEdited(message: EditMessage) {
@@ -91,8 +163,11 @@ function onChatSubmit(text: string) {
 
 function initiateSocket() {
   socket.on("room:initialize", (data: GameData, id: string) => {
+    hasWon = false;
     gameData.value = data;
     userID.value = id;
+
+    checkWinCondition();
   });
 
   socket.on("grid:edited", (payload: unknown) => {

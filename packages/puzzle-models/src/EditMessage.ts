@@ -1,17 +1,20 @@
 import {
   KeyToCoordinate,
   KeyToPairCoordinate,
+  type ShapeObject,
   type LayerData,
   type LineObject,
   type ObjectTypes,
   type SurfaceObject,
-  type SymbolObject,
+  type TextObject,
   isObjectType,
+  isShapeObject,
   isLineObject,
   isSurfaceObject,
-  isSymbolObject,
+  isTextObject,
   PairCoordinateToKey,
   CoordinateToKey,
+  NormalizePairCoordinates,
 } from "./Grid.js";
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -38,16 +41,23 @@ export interface SurfaceUpdateMessage {
   data: SurfaceObject;
 }
 
-export interface SymbolUpdateMessage {
+export interface TextUpdateMessage {
   messageType: "edit";
-  type: "symbolObjects";
-  data: SymbolObject;
+  type: "textObjects";
+  data: TextObject;
+}
+
+export interface ShapeUpdateMessage {
+  messageType: "edit";
+  type: "shapeObjects";
+  data: ShapeObject;
 }
 
 export type UpdateMessage =
   | LineUpdateMessage
   | SurfaceUpdateMessage
-  | SymbolUpdateMessage;
+  | TextUpdateMessage
+  | ShapeUpdateMessage;
 
 export type EditMessage = RemoveMessage | UpdateMessage;
 
@@ -64,14 +74,16 @@ function isValidRemoveKey(type: ObjectTypes, value: unknown): value is string {
 function isValidUpdateData(
   type: ObjectTypes,
   value: unknown,
-): value is LineObject | SurfaceObject | SymbolObject {
+): value is LineObject | SurfaceObject | TextObject | ShapeObject {
   switch (type) {
     case "lineObjects":
       return isLineObject(value);
     case "surfaceObjects":
       return isSurfaceObject(value);
-    case "symbolObjects":
-      return isSymbolObject(value);
+    case "textObjects":
+      return isTextObject(value);
+    case "shapeObjects":
+      return isShapeObject(value);
   }
 }
 
@@ -126,7 +138,8 @@ function applyRemoveMessage(
   const nextLayerData: LayerData = {
     lineObjects: { ...layerData.lineObjects },
     surfaceObjects: { ...layerData.surfaceObjects },
-    symbolObjects: { ...layerData.symbolObjects },
+    textObjects: { ...layerData.textObjects },
+    shapeObjects: { ...layerData.shapeObjects },
   };
 
   switch (message.type) {
@@ -140,9 +153,14 @@ function applyRemoveMessage(
         Reflect.deleteProperty(nextLayerData.surfaceObjects, message.data);
       }
       break;
-    case "symbolObjects":
-      if (message.data in nextLayerData.symbolObjects) {
-        Reflect.deleteProperty(nextLayerData.symbolObjects, message.data);
+    case "textObjects":
+      if (message.data in nextLayerData.textObjects) {
+        Reflect.deleteProperty(nextLayerData.textObjects, message.data);
+      }
+      break;
+    case "shapeObjects":
+      if (message.data in nextLayerData.shapeObjects) {
+        Reflect.deleteProperty(nextLayerData.shapeObjects, message.data);
       }
       break;
   }
@@ -157,13 +175,18 @@ function applyUpdateMessage(
   const nextLayerData: LayerData = {
     lineObjects: { ...layerData.lineObjects },
     surfaceObjects: { ...layerData.surfaceObjects },
-    symbolObjects: { ...layerData.symbolObjects },
+    textObjects: { ...layerData.textObjects },
+    shapeObjects: { ...layerData.shapeObjects },
   };
 
   switch (message.type) {
     case "lineObjects": {
-      const key = PairCoordinateToKey([message.data.start, message.data.end]);
-      nextLayerData.lineObjects[key] = message.data;
+      const key = PairCoordinateToKey(message.data.endpoints);
+      const endpoints = NormalizePairCoordinates(message.data.endpoints);
+      nextLayerData.lineObjects[key] = {
+        ...message.data,
+        endpoints,
+      };
       break;
     }
     case "surfaceObjects": {
@@ -171,9 +194,14 @@ function applyUpdateMessage(
       nextLayerData.surfaceObjects[key] = message.data;
       break;
     }
-    case "symbolObjects": {
+    case "textObjects": {
       const key = CoordinateToKey(message.data.location);
-      nextLayerData.symbolObjects[key] = message.data;
+      nextLayerData.textObjects[key] = message.data;
+      break;
+    }
+    case "shapeObjects": {
+      const key = CoordinateToKey(message.data.location);
+      nextLayerData.shapeObjects[key] = message.data;
       break;
     }
   }
@@ -193,9 +221,11 @@ export function applyEditMessage(
 
 function cloneLineObject(value: LineObject): LineObject {
   return {
-    start: [...value.start] as typeof value.start,
-    end: [...value.end] as typeof value.end,
+    endpoints: value.endpoints.map(
+      (coord) => [...coord] as typeof coord,
+    ) as typeof value.endpoints,
     color: value.color,
+    thickness: value.thickness,
   };
 }
 
@@ -206,7 +236,7 @@ function cloneSurfaceObject(value: SurfaceObject): SurfaceObject {
   };
 }
 
-function cloneSymbolObject(value: SymbolObject): SymbolObject {
+function cloneTextObject(value: TextObject): TextObject {
   return {
     location: [...value.location] as typeof value.location,
     content: value.content,
@@ -214,30 +244,43 @@ function cloneSymbolObject(value: SymbolObject): SymbolObject {
   };
 }
 
+function cloneShapeObject(value: ShapeObject): ShapeObject {
+  return {
+    location: [...value.location] as typeof value.location,
+    content: value.content,
+  };
+}
+
 function getExistingObject(
   layerData: LayerData,
   type: ObjectTypes,
   key: string,
-): LineObject | SurfaceObject | SymbolObject | null {
+): LineObject | SurfaceObject | TextObject | ShapeObject | null {
   switch (type) {
     case "lineObjects":
       return layerData.lineObjects[key] ?? null;
     case "surfaceObjects":
       return layerData.surfaceObjects[key] ?? null;
-    case "symbolObjects":
-      return layerData.symbolObjects[key] ?? null;
+    case "textObjects":
+      return layerData.textObjects[key] ?? null;
+    case "shapeObjects":
+      return layerData.shapeObjects[key] ?? null;
   }
 }
 
 function cloneExistingObject(
-  value: LineObject | SurfaceObject | SymbolObject,
-): LineObject | SurfaceObject | SymbolObject {
-  if ("start" in value) {
+  value: LineObject | SurfaceObject | TextObject | ShapeObject,
+): LineObject | SurfaceObject | TextObject | ShapeObject {
+  if ("endpoints" in value) {
     return cloneLineObject(value);
   }
 
+  if ("content" in value && "color" in value) {
+    return cloneTextObject(value);
+  }
+
   if ("content" in value) {
-    return cloneSymbolObject(value);
+    return cloneShapeObject(value);
   }
 
   return cloneSurfaceObject(value);
@@ -246,10 +289,12 @@ function cloneExistingObject(
 function getUpdateKey(message: UpdateMessage): string {
   switch (message.type) {
     case "lineObjects":
-      return PairCoordinateToKey([message.data.start, message.data.end]);
+      return PairCoordinateToKey(message.data.endpoints);
     case "surfaceObjects":
       return CoordinateToKey(message.data.location);
-    case "symbolObjects":
+    case "textObjects":
+      return CoordinateToKey(message.data.location);
+    case "shapeObjects":
       return CoordinateToKey(message.data.location);
   }
 }
