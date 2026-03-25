@@ -132,6 +132,44 @@ export async function addPuzzle(
   return result.rows[0];
 }
 
+export async function updatePuzzle(
+  id: number,
+  author_id: number,
+  fields: {
+    description?: string;
+    puzzle_json?: object;
+    published?: boolean;
+    publish_date?: Date;
+  },
+) {
+  // Only allow updating fields that are present
+  const set: string[] = [];
+  const values: unknown[] = [];
+  let idx = 1;
+  if (fields.description !== undefined) {
+    set.push(`description = $${idx++}`);
+    values.push(fields.description);
+  }
+  if (fields.puzzle_json !== undefined) {
+    set.push(`puzzle_json = $${idx++}`);
+    values.push(fields.puzzle_json);
+  }
+  if (fields.published !== undefined) {
+    set.push(`published = $${idx++}`);
+    values.push(fields.published);
+  }
+  if (fields.publish_date !== undefined) {
+    set.push(`publish_date = $${idx++}`);
+    values.push(fields.publish_date);
+  }
+  if (!set.length) throw new Error("No fields to update");
+  // Only allow update if author_id matches
+  const sql = `UPDATE Puzzle SET ${set.join(", ")} WHERE id = $${idx} AND author_id = $${idx + 1} RETURNING *`;
+  values.push(id, author_id);
+  const result = await pool.query(sql, values);
+  return result.rows[0];
+}
+
 export async function getPuzzles(limit = 5) {
   const safeLimit = limit <= 0 ? 5 : limit;
 

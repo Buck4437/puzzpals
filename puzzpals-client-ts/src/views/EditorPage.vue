@@ -74,6 +74,7 @@ import {
 } from "@puzzpals/puzzle-models";
 
 const uploadStatus = ref("");
+const puzzleId = ref<number | null>(null);
 const answerCheckInfoList = getAnswerCheckList();
 const customRulesInfoList = getRulesList();
 
@@ -271,13 +272,23 @@ async function savePuzzle() {
   uploadStatus.value = "Saving...";
   try {
     const puzzleObj = JSON.parse(JSON.stringify(grid.value));
-    await api.post("/puzzles", {
-      author: "synthetic",
-      description: "Saved from editor",
-      puzzle_json: puzzleObj,
-      publish_date: new Date().toISOString(),
-      published: false,
-    });
+    let res;
+    if (puzzleId.value == null) {
+      res = await api.post("/puzzles", {
+        author: "synthetic",
+        description: "Saved from editor",
+        puzzle_json: puzzleObj,
+        publish_date: new Date().toISOString(),
+        published: false,
+      });
+      puzzleId.value = res.data.id;
+    } else {
+      res = await api.patch(`/puzzles/${puzzleId.value}`, {
+        description: "Saved from editor",
+        puzzle_json: puzzleObj,
+        published: false,
+      });
+    }
     uploadStatus.value = "Save successful!";
   } catch (e: any) {
     uploadStatus.value =
@@ -290,14 +301,23 @@ async function publishPuzzle() {
   uploadStatus.value = "Publishing...";
   try {
     const puzzleObj = getPuzzleJSON();
-
-    await api.post("/puzzles", {
-      author: "synthetic",
-      description: "Published from editor",
-      puzzle_json: puzzleObj,
-      publish_date: new Date().toISOString(),
-      published: true,
-    });
+    let res;
+    if (puzzleId.value == null) {
+      res = await api.post("/puzzles", {
+        author: "synthetic",
+        description: "Published from editor",
+        puzzle_json: puzzleObj,
+        publish_date: new Date().toISOString(),
+        published: true,
+      });
+      puzzleId.value = res.data.id;
+    } else {
+      res = await api.patch(`/puzzles/${puzzleId.value}`, {
+        description: "Published from editor",
+        puzzle_json: puzzleObj,
+        published: true,
+      });
+    }
     uploadStatus.value = "Publish successful!";
   } catch (e: any) {
     uploadStatus.value =

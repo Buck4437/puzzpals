@@ -1,8 +1,32 @@
 import express from "express";
-import { addPuzzle, getPuzzles, getPuzzleById, getUserPuzzles } from "../db.js";
+import {
+  addPuzzle,
+  getPuzzles,
+  getPuzzleById,
+  getUserPuzzles,
+  updatePuzzle,
+} from "../db.js";
 import type { Puzzle } from "../models/Puzzle.js";
 
 const router = express.Router();
+
+// function stripSolutionFromPuzzle(puzzle: Puzzle): Puzzle {
+//   if (!puzzle || typeof puzzle !== "object") {
+//     return puzzle;
+//   }
+//   const puzzleJson = puzzle.puzzle_json;
+//   if (!puzzleJson || typeof puzzleJson !== "object") {
+//     return puzzle;
+//   }
+//   const puzzleClone = structuredClone(puzzleJson)
+//   if (puzzleClone.solution) {
+//     delete puzzleClone.solution;
+//   }
+//   return {
+//     ...puzzle,
+//     puzzle_json: restPuzzleJson,
+//   };
+// }
 
 // Get all puzzles
 router.get("/", async (req, res) => {
@@ -99,6 +123,35 @@ router.get("/:id", async (req, res) => {
     res.json(puzzle);
   } catch {
     res.status(500).json({ error: "Failed to fetch puzzle" });
+  }
+});
+
+// Update a puzzle (draft or publish)
+router.patch("/:id", async (req, res) => {
+  if (!req.session.user) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id < 0) {
+    return res.status(400).json({ error: "Invalid puzzle id" });
+  }
+  const author_id = req.session.user.id;
+  const { description, puzzle_json, published, publish_date } = req.body;
+  try {
+    const updated = await updatePuzzle(id, author_id, {
+      description,
+      puzzle_json,
+      published,
+      publish_date,
+    });
+    if (!updated) {
+      return res
+        .status(404)
+        .json({ error: "Puzzle not found or not owned by user" });
+    }
+    res.json(updated);
+  } catch {
+    res.status(500).json({ error: "Failed to update puzzle" });
   }
 });
 
