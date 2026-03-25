@@ -27,6 +27,11 @@ router.post("/", async (req, res) => {
       .status(403)
       .json({ error: "Only signed-in users can publish puzzles." });
   }
+  // Prevent browser caching for this endpoint
+  res.setHeader(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, proxy-revalidate",
+  );
   // Populate author and author_id from session
   const author = req.session.user.name || req.session.user.email || "Unknown";
   const author_id = req.session.user.id;
@@ -67,6 +72,11 @@ router.get("/user", async (req, res) => {
   if (!req.session.user) {
     return res.status(401).json({ error: "Not authenticated" });
   }
+  // Prevent browser caching for this endpoint
+  res.setHeader(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, proxy-revalidate",
+  );
   try {
     const puzzles = await getUserPuzzles(req.session.user.id);
     res.json(puzzles);
