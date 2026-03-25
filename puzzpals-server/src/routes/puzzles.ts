@@ -42,14 +42,14 @@ router.post("/", async (req, res) => {
       "puzzleJson" in payload
     )
   ) {
-    return res.sendStatus(400);
+    return res.status(400).json({ error: "Invalid payload" });
   }
 
   let parsedPuzzle;
   try {
     parsedPuzzle = parsePuzzle(payload.puzzleJson);
   } catch {
-    return res.sendStatus(400);
+    return res.status(400).json({ error: "Invalid puzzleJson" });
   }
 
   const savedPuzzle = await addPuzzle(
