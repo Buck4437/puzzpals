@@ -8,7 +8,12 @@ const router = express.Router();
 // Get all puzzles
 router.get("/", async (req, res) => {
   const limit = Number(req.query.limit) || 5;
-  if (!Number.isFinite(limit) || !Number.isInteger(limit) || limit < 0) {
+  if (
+    !Number.isFinite(limit) ||
+    !Number.isInteger(limit) ||
+    limit < 1 ||
+    limit > 100
+  ) {
     res.status(400).json({ error: "Invalid limit param" });
     return;
   }
