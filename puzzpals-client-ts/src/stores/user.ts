@@ -24,6 +24,7 @@ export const useUserStore = defineStore("user", {
       await api.post("/auth/logout");
       this.user = null;
       localStorage.setItem("authChanged", Date.now().toString());
+      location.reload();
     },
   },
 });

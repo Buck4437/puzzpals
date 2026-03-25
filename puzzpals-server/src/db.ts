@@ -59,7 +59,8 @@ async function createTable() {
       author_id INTEGER NOT NULL REFERENCES "User"(id),
       description TEXT,
       puzzle_json JSONB NOT NULL,
-      publish_date TIMESTAMP NOT NULL DEFAULT NOW()
+      publish_date TIMESTAMP NOT NULL DEFAULT NOW(),
+      published BOOLEAN NOT NULL DEFAULT FALSE
     );
     CREATE TABLE IF NOT EXISTS "User" (
       id SERIAL PRIMARY KEY,
@@ -117,14 +118,16 @@ export async function addPuzzle(
   description: string,
   puzzleJson: object,
   publishDate?: Date,
+  published = false,
 ) {
-  const sql = `INSERT INTO Puzzle (author, author_id, description, puzzle_json, publish_date) VALUES ($1, $2, $3, $4, $5) RETURNING *`;
+  const sql = `INSERT INTO Puzzle (author, author_id, description, puzzle_json, publish_date, published) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`;
   const result = await pool.query(sql, [
     author,
     author_id,
     description,
     puzzleJson,
     publishDate || new Date(),
+    published,
   ]);
   return result.rows[0];
 }
@@ -132,7 +135,7 @@ export async function addPuzzle(
 export async function getPuzzles(limit = 5) {
   const safeLimit = limit <= 0 ? 5 : limit;
 
-  const sql = `SELECT * FROM Puzzle ORDER BY publish_date DESC LIMIT $1`;
+  const sql = `SELECT * FROM Puzzle WHERE published = TRUE ORDER BY publish_date DESC LIMIT $1`;
   const result = await pool.query(sql, [safeLimit]);
   return result.rows;
 }
@@ -142,6 +145,13 @@ export async function getPuzzleById(id: number) {
   const result = await pool.query(sql, [id]);
   return result.rows[0];
 }
+
+export async function getUserPuzzles(userId: number) {
+  const sql = `SELECT * FROM Puzzle WHERE author_id = $1 ORDER BY publish_date DESC`;
+  const result = await pool.query(sql, [userId]);
+  return result.rows;
+}
+
 async function upsertRoom(token: string, puzzleJson: string) {
   const sql = `INSERT INTO Room (token, puzzle_data) VALUES ($1, $2)
                ON CONFLICT (token) DO UPDATE SET puzzle_data = EXCLUDED.puzzle_data`;

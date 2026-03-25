@@ -6,6 +6,7 @@ import NotFound from "@/views/NotFound.vue";
 import RoomPage from "@/views/RoomPage.vue";
 import config from "@/config";
 import EditorPage from "@/views/EditorPage.vue";
+import MyPuzzles from "@/views/MyPuzzles.vue";
 
 const router = createRouter({
   history: createWebHistory(config.baseUrl),
@@ -16,6 +17,7 @@ const router = createRouter({
     { path: "/room/:token", component: RoomPage, props: true },
     { path: "/editor", component: EditorPage },
     { path: "/catalogue", component: () => import("@/views/Catalogue.vue") },
+    { path: "/my-puzzles", component: MyPuzzles },
   ],
 });
 

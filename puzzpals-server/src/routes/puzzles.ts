@@ -1,5 +1,5 @@
 import express from "express";
-import { addPuzzle, getPuzzles, getPuzzleById } from "../db.js";
+import { addPuzzle, getPuzzles, getPuzzleById, getUserPuzzles } from "../db.js";
 import type { Puzzle } from "../models/Puzzle.js";
 
 const router = express.Router();
@@ -30,7 +30,7 @@ router.post("/", async (req, res) => {
   // Populate author and author_id from session
   const author = req.session.user.name || req.session.user.email || "Unknown";
   const author_id = req.session.user.id;
-  const { description, puzzle_json, publish_date } = req.body;
+  const { description, puzzle_json, publish_date, published } = req.body;
   if (!puzzle_json) {
     return res.status(400).json({ error: "Missing puzzle_json" });
   }
@@ -49,6 +49,7 @@ router.post("/", async (req, res) => {
       description || "",
       puzzle_json,
       dateObj,
+      published === true,
     );
     res.status(201).json(puzzle);
   } catch (err) {
@@ -58,6 +59,19 @@ router.post("/", async (req, res) => {
         ? (err as Error).message
         : String(err);
     res.status(500).json({ error: "Failed to add puzzle", details });
+  }
+});
+
+// Get all puzzles for a user
+router.get("/user", async (req, res) => {
+  if (!req.session.user) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+  try {
+    const puzzles = await getUserPuzzles(req.session.user.id);
+    res.json(puzzles);
+  } catch {
+    res.status(500).json({ error: "Failed to fetch user's puzzles" });
   }
 });
 

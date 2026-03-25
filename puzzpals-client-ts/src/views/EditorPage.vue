@@ -29,6 +29,7 @@
     </ul>
     <h2>Publish Puzzle</h2>
     <button @click="publishPuzzle">Publish current puzzle</button>
+    <button @click="savePuzzle">Save puzzle (draft)</button>
     <div v-if="uploadStatus">{{ uploadStatus }}</div>
   </div>
 </template>
@@ -219,18 +220,35 @@ const downloadObjectAsJson = (exportObj: object, exportName: string) => {
   downloadAnchorNode.remove();
 };
 
+async function savePuzzle() {
+  uploadStatus.value = "Saving...";
+  try {
+    const puzzleObj = JSON.parse(JSON.stringify(grid.value));
+    await api.post("/puzzles", {
+      author: "synthetic",
+      description: "Saved from editor",
+      puzzle_json: puzzleObj,
+      publish_date: new Date().toISOString(),
+      published: false,
+    });
+    uploadStatus.value = "Save successful!";
+  } catch (e: any) {
+    uploadStatus.value =
+      "Save failed: " +
+      (e?.response?.data?.details || e?.message || "Unknown error");
+  }
+}
+
 async function publishPuzzle() {
   uploadStatus.value = "Publishing...";
   try {
     const puzzleObj = JSON.parse(JSON.stringify(grid.value));
-
-    console.log(puzzleObj);
-
     await api.post("/puzzles", {
       author: "synthetic",
       description: "Published from editor",
       puzzle_json: puzzleObj,
       publish_date: new Date().toISOString(),
+      published: true,
     });
     uploadStatus.value = "Publish successful!";
   } catch (e: any) {
