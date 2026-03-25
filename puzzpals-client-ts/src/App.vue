@@ -1,5 +1,5 @@
 <template>
-  <header class="main-header" v-if="$route.meta.hideHeader !== true">
+  <header class="main-header" v-if="$route.meta.fullScreen !== true">
     <h1>Puzzpals</h1>
     <div>
       <button class="create-room-btn" @click="openRoomDialog">
@@ -10,15 +10,18 @@
   </header>
   <main
     class="main-page"
-    :class="{ 'main-page-no-header': $route.meta.hideHeader === true }"
+    :class="{ 'main-page-fullscreen': $route.meta.fullScreen === true }"
   >
     <!-- Side Bar -->
     <NavigationSidebar
-      v-if="$route.meta.hideHeader !== true"
+      v-if="$route.meta.fullScreen !== true"
       :routes="routes"
       @route-selected="handleRouteSelected"
     />
-    <div class="content-area">
+    <div
+      class="content-area"
+      :class="{ 'content-area-fullscreen': $route.meta.fullScreen === true }"
+    >
       <RouterView />
     </div>
     <CreateRoomDialog
@@ -85,6 +88,7 @@ main {
   background: #f8f8f8;
   font-size: 24px;
   border-bottom: 1px solid #e0e0e0;
+  height: 67px;
 }
 
 .login-btn {
@@ -105,16 +109,21 @@ main {
 
 .main-page {
   display: flex;
-  height: 100%;
+  height: calc(100% - 67px);
 }
 
-.main-page-no-header {
-  margin-top: 0;
+.main-page-fullscreen {
+  height: 100%;
 }
 
 .content-area {
   flex: 1;
-  height: 100%;
   overflow-y: scroll;
+  padding: 16px;
+}
+
+.content-area-fullscreen {
+  height: 100%;
+  padding: 0;
 }
 </style>
