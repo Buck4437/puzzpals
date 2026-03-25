@@ -1,43 +1,38 @@
 <template>
-  <PageWithNavigationSidebar>
-    <template #default>
-      <div class="main">
-        <div class="center-box">
-          <div class="title">Welcome to Puzzpals!</div>
-          <div class="options">
-            <div class="join-room">
-              <div>Enter 10-Digit Room Code:</div>
-              <div class="input-con">
-                <input placeholder="Room Code" v-model="roomCode" />
-                <button @click="redirect">Join Room</button>
-              </div>
-            </div>
-            <div class="create-room">
-              <div>Create a room:</div>
-              <div class="input-con">
-                <label class="fake-file-input button" for="file-upload">
-                  Choose Puzzle File (JSON)
-                </label>
-                <input
-                  id="file-upload"
-                  class="file-input-box"
-                  ref="fileInput"
-                  type="file"
-                  name="avatar"
-                  accept=".json"
-                  @change="uploadFile"
-                />
-              </div>
-            </div>
+  <div class="main">
+    <div class="center-box">
+      <div class="title">Welcome to Puzzpals!</div>
+      <div class="options">
+        <div class="join-room">
+          <div>Enter 10-Digit Room Code:</div>
+          <div class="input-con">
+            <input placeholder="Room Code" v-model="roomCode" />
+            <button @click="redirect">Join Room</button>
+          </div>
+        </div>
+        <div class="create-room">
+          <div>Create a room:</div>
+          <div class="input-con">
+            <label class="fake-file-input button" for="file-upload">
+              Choose Puzzle File (JSON)
+            </label>
+            <input
+              id="file-upload"
+              class="file-input-box"
+              ref="fileInput"
+              type="file"
+              name="avatar"
+              accept=".json"
+              @change="uploadFile"
+            />
           </div>
         </div>
       </div>
-    </template>
-  </PageWithNavigationSidebar>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import PageWithNavigationSidebar from "@/components/PageWithNavigationSidebar.vue";
 import api from "@/services/api";
 import { ref } from "vue";
 import { useRouter } from "vue-router";

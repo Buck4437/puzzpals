@@ -23,13 +23,14 @@ body {
 
 button,
 .button {
-  min-width: 150px;
-  min-height: 50px;
+  /* min-width: 150px;
+  min-height: 50px; */
+  background: #fff;
+  border: 1px solid #ccc;
+  border-radius: 4px;
   font-size: 1rem;
+  padding: 8px 16px;
   cursor: pointer;
-  border: none;
-  border-radius: 10px;
-  background-color: rgb(71, 219, 174);
 }
 
 input {
@@ -37,6 +38,6 @@ input {
   min-height: 50px;
   font-size: 1rem;
   border: 2px solid rgb(169, 169, 169);
-  border-radius: 10px;
+  border-radius: 4px;
   text-align: center;
 }

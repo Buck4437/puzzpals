@@ -10,8 +10,13 @@ const router = createRouter({
   history: createWebHistory(config.baseUrl),
   routes: [
     { path: "/", component: Home },
-    { path: "/404", component: NotFound },
-    { path: "/room/:token", component: RoomPage, props: true },
+    { path: "/404", component: NotFound, meta: { hideHeader: true } },
+    {
+      path: "/room/:token",
+      component: RoomPage,
+      props: true,
+      meta: { hideHeader: true },
+    },
     { path: "/editor", component: EditorPage },
     { path: "/catalogue", component: () => import("@/views/Catalogue.vue") },
   ],
