@@ -10,7 +10,11 @@
   </header>
   <main class="main-page">
     <!-- Side Bar -->
-    <NavigationSidebar :routes="routes" @route-selected="handleRouteSelected" />
+    <NavigationSidebar
+      v-if="$route.meta.hideHeader !== true"
+      :routes="routes"
+      @route-selected="handleRouteSelected"
+    />
     <div class="content-area">
       <RouterView />
     </div>
