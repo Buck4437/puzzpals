@@ -18,11 +18,15 @@ defineProps<{
 
 <style scoped>
 .navigation-sidebar {
-  width: 200px;
+  width: 300px;
+  flex: 0 0 300px;
+  height: 100%;
   background-color: #f0f0f0;
   padding: 20px;
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
+  overflow-y: auto;
 }
 .navigation-sidebar button {
   margin-bottom: 10px;
