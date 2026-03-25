@@ -46,29 +46,14 @@ const props = defineProps({
   token: { type: String, required: true },
 });
 
-function is404(err: unknown) {
-  return (
-    typeof err === "object" &&
-    err !== null &&
-    "response" in err &&
-    typeof err.response === "object" &&
-    err.response !== null &&
-    "status" in err.response &&
-    err.response.status === 404
-  );
-}
-
 async function checkRoomExists() {
   try {
     // Check that the room exists
-    await api.get(`/rooms/${props.token}`);
+    const res = await api.get(`/rooms/${props.token}/exists`);
+    if (res.data.exists === false) router.push("/404");
   } catch (err) {
-    if (is404(err)) {
-      router.push("/404");
-    } else {
-      console.error(err);
-      router.push("/");
-    }
+    console.error(err);
+    router.push("/");
   }
 }
 

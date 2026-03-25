@@ -60,19 +60,18 @@ router.post("/create", async (req, res) => {
   res.json(token);
 });
 
-// Get room by token
-router.get("/:token", async (req, res) => {
+// Check room existence
+router.get("/:token/exists", async (req, res) => {
   const { token } = req.params;
 
   // Return if token length is incorrect, saving a memory lookup
   if (token.length !== 10) {
-    return res.status(404).json({ error: "Room not found" });
+    return res.json({ exists: false });
   }
 
   try {
     const room = await getRoomFromStore(token);
-    if (!room) return res.status(404).json({ error: "Room not found" });
-    res.json({ room });
+    return res.json({ exists: room !== null });
   } catch (err) {
     console.log("Error fetching room:", (err as Error).message);
     res.status(500).json({ error: "Internal server error" });
