@@ -1,4 +1,29 @@
 <template>
+  <div>
+    Current dimensions: Row: {{ rowCount }}, Col: {{ colCount }}
+
+    <br />
+
+    Set dimensions:
+    <label for="row-count">Row:</label>
+    <input
+      type="number"
+      id="row-count"
+      v-model.number="inputRowCount"
+      min="1"
+      max="100"
+    />
+    <label for="col-count">Col:</label>
+    <input
+      type="number"
+      id="col-count"
+      v-model.number="inputColCount"
+      min="1"
+      max="100"
+    />
+
+    <button @click="setDimensions">Set</button>
+  </div>
   <div class="layer-selector">
     <button
       :class="{ active: selectedLayer === 'problem' }"
@@ -17,27 +42,31 @@
     :grid="grid"
     :rendered-layer-list="renderedLayerList"
     :editable-layer-index="editableLayerIndex"
-    :show-resize-controls="true"
     @edit-message="onEditMessage"
-    @resize-grid="emit('resize-grid', $event)"
   />
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, watch, type Ref } from "vue";
 
 import BaseEditorComponent from "./BaseEditorComponent.vue";
 import type {
+  RulesType,
   EditMessage,
   Grid,
   LayerData,
   SolutionData,
+} from "@puzzpals/puzzle-models";
+import {
+  getEnabledCustomRulesLayers,
+  getEnabledRulesList,
 } from "@puzzpals/puzzle-models";
 
 type SelectedLayer = "problem" | "solution";
 
 const props = defineProps<{
   grid: Grid;
+  showRulesLayer?: boolean;
 }>();
 
 const emit = defineEmits<{
@@ -57,17 +86,75 @@ const emptySolutionLayer: SolutionData = {
 };
 
 const grid = computed(() => props.grid);
+const showRulesLayer = computed(() => props.showRulesLayer === true);
 const solutionLayer = computed<SolutionData>(() => {
   return props.grid.solution ?? emptySolutionLayer;
 });
 
+const rulesLayers = computed(() => {
+  return getEnabledCustomRulesLayers(props.grid, solutionLayer.value);
+});
+
+const enabledRules = computed<RulesType[]>(() => {
+  return getEnabledRulesList(props.grid).map((rule) => rule.id);
+});
+
 const renderedLayerList = computed<LayerData[]>(() => {
-  return [props.grid.problem, solutionLayer.value];
+  const renderedLayers: LayerData[] = [props.grid.problem];
+
+  if (showRulesLayer.value && enabledRules.value.length > 0) {
+    for (const rulesLayer of rulesLayers.value) {
+      renderedLayers.push(rulesLayer);
+    }
+  }
+
+  renderedLayers.push(solutionLayer.value);
+  return renderedLayers;
 });
 
 const editableLayerIndex = computed(() => {
-  return selectedLayer.value === "problem" ? 0 : 1;
+  return selectedLayer.value === "problem"
+    ? 0
+    : renderedLayerList.value.length - 1;
 });
+
+const rowCount = computed(() => grid.value.size[0]);
+const colCount = computed(() => grid.value.size[1]);
+const inputRowCount: Ref<string | number> = ref(rowCount.value);
+const inputColCount: Ref<string | number> = ref(colCount.value);
+
+const setDimensions = () => {
+  // Validate input
+  const x = Number(inputRowCount.value);
+  const y = Number(inputColCount.value);
+
+  if (
+    !Number.isFinite(x) ||
+    !Number.isFinite(y) ||
+    !Number.isInteger(x) ||
+    !Number.isInteger(y) ||
+    x < 1 ||
+    y < 1 ||
+    x > 100 ||
+    y > 100
+  ) {
+    alert("Please enter valid positive integers for dimensions (1-100).");
+    return;
+  }
+
+  const newRowCount = x;
+  const newColCount = y;
+  emit("resize-grid", [newRowCount, newColCount]);
+};
+
+watch(
+  () => grid.value.size,
+  ([rows, cols]: [number, number]) => {
+    inputRowCount.value = rows;
+    inputColCount.value = cols;
+  },
+  { immediate: true },
+);
 
 function onEditMessage(message: EditMessage) {
   if (selectedLayer.value === "problem") {

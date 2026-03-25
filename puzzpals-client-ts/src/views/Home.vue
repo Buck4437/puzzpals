@@ -1,16 +1,45 @@
 <template>
-  <FilePicker @file-picked="onFilePicked" />
-  <button @click="uploadFile">Upload</button>
-  <button @click="openEditor">Open Editor</button>
+  <div class="main">
+    <div class="center-box">
+      <div class="title">Welcome to Puzzpals!</div>
+      <div class="options">
+        <div class="join-room">
+          <div>Enter 10-Digit Room Code:</div>
+          <div class="input-con">
+            <input placeholder="Room Code" v-model="roomCode" />
+            <button @click="redirect">Join Room</button>
+          </div>
+        </div>
+        <div class="create-room">
+          <div>Create a room:</div>
+          <div class="input-con">
+            <label class="fake-file-input button" for="file-upload">
+              Choose Puzzle File (JSON)
+            </label>
+            <input
+              id="file-upload"
+              class="file-input-box"
+              ref="fileInput"
+              type="file"
+              name="avatar"
+              accept=".json"
+              @change="uploadFile"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
-import FilePicker from "@/components/FilePicker.vue";
 import api from "@/services/api";
 import { useRouter } from "vue-router";
 import { ref } from "vue";
 
 const router = useRouter();
+const roomCode = ref("");
+
 let pickedFile: File | null = null;
 
 function readFile(file: File) {
@@ -20,6 +49,10 @@ function readFile(file: File) {
     reader.onerror = () => reject(reader.error);
     reader.readAsText(file);
   });
+}
+
+function redirect() {
+  router.push(`/room/${roomCode.value}`);
 }
 
 async function uploadFile() {
@@ -71,12 +104,62 @@ function onFilePicked(file: File | null) {
 
 defineExpose({ onFilePicked });
 </script>
+
 <style scoped>
-.user-debug {
-  margin-top: 32px;
-  padding: 16px;
-  background: #f9f9f9;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+.main {
+  height: calc(100% - 4rem);
+  width: calc(100% - 4rem);
+  padding: 2rem;
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+}
+
+.center-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.title {
+  font-size: 2rem;
+  display: flex;
+  align-items: center;
+}
+
+.options {
+  display: flex;
+  gap: 4rem;
+}
+
+.join-room,
+.create-room {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 1rem;
+}
+
+.input-con {
+  display: flex;
+  gap: 1rem;
+  flex-direction: column;
+}
+
+.fake-file-input {
+  cursor: pointer;
+  width: 100%;
+  min-width: 250px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.file-input-box {
+  display: none;
 }
 </style>

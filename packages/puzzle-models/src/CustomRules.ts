@@ -1,4 +1,9 @@
-import { CoordinateToKey, type Grid, type LayerData } from "./Grid.js";
+import {
+  CoordinateToKey,
+  type Grid,
+  type LayerData,
+  type RulesType,
+} from "./Grid.js";
 import { SPECIAL_CHARACTERS } from "./SpecialCharacters.js";
 
 const ADJACENT_DIRECTIONS: [number, number][] = [
@@ -21,17 +26,7 @@ function calculateAkariRulesLayer(grid: Grid, playerSolution: LayerData) {
     (surfaceObject) => surfaceObject.color === "black",
   );
 
-  // // Fetch all walls with numbers
-  // const numberedWalls = walls.filter((wall) => {
-  //     const symbolObject = Object.values(grid.problem.textObjects).find(
-  //         (symbol) =>
-  //             symbol.location[0] === wall.location[0] &&
-  //             symbol.location[1] === wall.location[1],
-  //     );
-  //     return symbolObject !== undefined;
-  // })
-
-  // Fetch all light bulbs, represented by the symbol "O"
+  // Fetch all light bulbs
   const lightBulbs = Object.values(playerSolution.shapeObjects).filter(
     (shape) => shape.content === SPECIAL_CHARACTERS.AKARI_BULB.id,
   );
@@ -41,7 +36,7 @@ function calculateAkariRulesLayer(grid: Grid, playerSolution: LayerData) {
     const originKey = CoordinateToKey(lightBulb.location);
     rulesLayer.surfaceObjects[originKey] = {
       location: lightBulb.location,
-      color: "yellow", // You can choose any color to represent lit surfaces
+      color: "yellow",
     };
 
     for (const direction of ADJACENT_DIRECTIONS) {
@@ -63,13 +58,13 @@ function calculateAkariRulesLayer(grid: Grid, playerSolution: LayerData) {
         );
 
         if (wallAtCurrentLocation) {
-          break; // Stop lighting up in this direction if a wall is hit
+          break;
         }
 
         const key = CoordinateToKey(currentLocation);
         rulesLayer.surfaceObjects[key] = {
           location: currentLocation,
-          color: "yellow", // You can choose any color to represent lit surfaces
+          color: "yellow",
         };
 
         currentLocation = [
@@ -80,6 +75,41 @@ function calculateAkariRulesLayer(grid: Grid, playerSolution: LayerData) {
     }
   }
   return rulesLayer;
+}
+
+export interface RuleObject {
+  id: RulesType;
+  name: string;
+  description: string;
+  calculateRulesLayer: (grid: Grid, playerSolution: LayerData) => LayerData;
+}
+
+export const CUSTOM_RULES_LIST: Record<RulesType, RuleObject> = {
+  akari: {
+    id: "akari",
+    name: "Akari",
+    description: `Highlights all cells that are lit by ${SPECIAL_CHARACTERS.AKARI_BULB.textGlyph}`,
+    calculateRulesLayer: calculateAkariRulesLayer,
+  },
+};
+
+export function getRulesList(): RuleObject[] {
+  return Object.values(CUSTOM_RULES_LIST);
+}
+
+export function getEnabledRulesList(grid: Grid): RuleObject[] {
+  return grid.options.rules.map((ruleId) => CUSTOM_RULES_LIST[ruleId]);
+}
+
+export function getEnabledCustomRulesLayers(
+  grid: Grid,
+  playerSolution: LayerData,
+): LayerData[] {
+  const rulesLayers = getEnabledRulesList(grid).map((rule) =>
+    rule.calculateRulesLayer(grid, playerSolution),
+  );
+
+  return rulesLayers;
 }
 
 export { calculateAkariRulesLayer };

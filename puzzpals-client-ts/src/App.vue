@@ -1,61 +1,93 @@
 <template>
-  <header class="main-header">
+  <header class="main-header" v-if="$route.meta.hideHeader !== true">
     <h1>Puzzpals</h1>
-    <NavBar />
+    <div>
+      <button class="create-room-btn" @click="openRoomDialog">
+        Create Room
+      </button>
+      <button class="login-btn" @click="goToLogin">Login</button>
+    </div>
   </header>
-  <main>
-    <RouterView />
+  <main class="main-page">
+    <!-- Side Bar -->
+    <NavigationSidebar
+      v-if="$route.meta.hideHeader !== true"
+      :routes="routes"
+      @route-selected="handleRouteSelected"
+    />
+    <div class="content-area">
+      <RouterView />
+    </div>
+    <CreateRoomDialog
+      v-if="showCreateRoomDialog"
+      @close="showCreateRoomDialog = false"
+    />
   </main>
 </template>
 
-<!-- NavBar integrated for user info display -->
-<script setup>
-import NavBar from "./components/NavBar.vue";
-import { useUserStore } from "./stores/user";
+<script setup lang="ts">
+import "./assets/main.css";
+import { ref } from "vue";
 import { useRouter } from "vue-router";
+import NavigationSidebar from "./components/NavigationSidebar.vue";
 
+import { useUserStore } from "./stores/user";
 const userStore = useUserStore();
 const router = useRouter();
 
-function goLogin() {
-  router.push("/Login");
+const showCreateRoomDialog = ref(false);
+const routes = [
+  {
+    name: "Home",
+    route: "/",
+  },
+  {
+    name: "Editor",
+    route: "/editor",
+  },
+  {
+    name: "Catalog",
+    route: "/catalogue",
+  },
+];
+
+function handleRouteSelected(route: string) {
+  router.push(route);
+}
+
+function goToLogin() {
+  router.push("/login");
+}
+
+function openRoomDialog() {
+  showCreateRoomDialog.value = true;
 }
 </script>
 
 <style scoped>
+h1 {
+  font-size: 24px;
+  margin: 0;
+}
+main {
+  height: 100%;
+  width: 100%;
+}
 .main-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 32px;
+  padding: 8px 16px;
   background: #f8f8f8;
   border-bottom: 1px solid #e0e0e0;
-}
-.user-panel {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.user-meta {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  line-height: 1.2;
-}
-.user-name {
-  margin: 0;
-  font-weight: 600;
-}
-.user-email {
-  margin: 0;
-  font-size: 12px;
-  color: #666;
 }
 .login-btn {
   background: #fff;
   border: 1px solid #ccc;
   border-radius: 4px;
-  padding: 8px 18px;
+  margin: 4px 0;
+  margin-left: 8px;
+  padding: 8px 16px;
   font-size: 16px;
   cursor: pointer;
   transition: box-shadow 0.2s;
@@ -63,28 +95,12 @@ function goLogin() {
 .login-btn:hover {
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
-.profile-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  vertical-align: middle;
+.main-page {
+  display: flex;
+  height: 100%;
 }
-.loading-spinner {
-  display: inline-block;
-  width: 24px;
-  height: 24px;
-  border: 3px solid #ccc;
-  border-top: 3px solid #4285f4;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-  margin-right: 8px;
-}
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+.content-area {
+  flex: 1;
+  padding: 20px;
 }
 </style>

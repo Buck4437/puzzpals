@@ -1,6 +1,7 @@
 <template>
   <SetterEditorComponent
     :grid="grid"
+    :show-rules-layer="showRulesLayerPreview"
     @edit-problem-message="onEditProblemMessage"
     @edit-solution-message="onEditSolutionMessage"
     @resize-grid="onResizeGrid"
@@ -11,20 +12,39 @@
     <h2>Export puzzle</h2>
     <button @click="exportPuzzle">Export current puzzle</button>
     <br />
-    Include solution (Enables answer-checking)
-    <input type="checkbox" v-model="includeSolution" />
+
+    Preview rendering of enabled rules
+    <input type="checkbox" v-model="showRulesLayerPreview" />
 
     <br />
 
-    Types to check
+    Pre-defined rules
     <ul>
-      <li v-for="type in typesToCheckOptions" :key="type.name">
+      <li v-for="rule in customRulesInfoList" :key="rule.id">
         <input
           type="checkbox"
-          :value="type"
-          v-model="typesToCheckInput[type.value]"
+          :value="rule.id"
+          v-model="customRulesInput[rule.id]"
+          @change="updateGridRules"
         />
-        {{ type.name }}
+        <strong>{{ rule.name }}</strong
+        >: {{ rule.description }}
+      </li>
+    </ul>
+
+    <br />
+
+    Answer-checking (enabling this will include the solution in the exported
+    puzzle)
+    <ul>
+      <li v-for="type in answerCheckInfoList" :key="type.type">
+        <input
+          type="checkbox"
+          :value="type.type"
+          v-model="typesToCheckInput[type.type]"
+        />
+        <strong>{{ type.name }}</strong
+        >: {{ type.description }}
       </li>
     </ul>
     <h2>Publish Puzzle</h2>
@@ -37,44 +57,38 @@
 <script setup lang="ts">
 import SetterEditorComponent from "../components/SetterEditorComponent.vue";
 
-import { ref } from "vue";
+import { computed, ref } from "vue";
 import api from "@/services/api";
 import {
   applyEditMessage,
+  getAnswerCheckList,
+  getRulesList,
   KeyToCoordinate,
   KeyToPairCoordinate,
   type EditMessage,
   type Grid,
   type LayerData,
+  type RulesType,
   type SolutionData,
   type TypeToCheck,
 } from "@puzzpals/puzzle-models";
 
 const uploadStatus = ref("");
-const typesToCheckOptions: { name: string; value: TypeToCheck }[] = [
-  {
-    name: "Surface",
-    value: "surfaceObjects",
-  },
-  {
-    name: "Line",
-    value: "lineObjects",
-  },
-  {
-    name: "Text",
-    value: "textObjects",
-  },
-  {
-    name: "Shape",
-    value: "shapeObjects",
-  },
-];
+const answerCheckInfoList = getAnswerCheckList();
+const customRulesInfoList = getRulesList();
 
 const typesToCheckInput = ref<Record<TypeToCheck, boolean>>({
-  lineObjects: false,
-  surfaceObjects: false,
-  textObjects: false,
-  shapeObjects: false,
+  lineObjectsExact: false,
+  lineObjectsGreenOnly: false,
+  surfaceObjectsExact: false,
+  surfaceObjectsDarkOnly: false,
+  textObjectsExact: false,
+  textObjectsContentOnly: false,
+  shapeObjectsExcludeCrossMarks: false,
+});
+
+const customRulesInput = ref<Record<RulesType, boolean>>({
+  akari: false,
 });
 
 function createEmptyLayerData(): LayerData {
@@ -152,9 +166,34 @@ const grid = ref<Grid>({
   size: [10, 10],
   problem: createEmptyLayerData(),
   solution: createEmptySolutionData(),
+  options: {
+    rules: [],
+  },
 });
 
-const includeSolution = ref(false);
+const showRulesLayerPreview = ref(true);
+
+const selectedTypesToCheck = computed<TypeToCheck[]>(() => {
+  return answerCheckInfoList
+    .filter((type) => typesToCheckInput.value[type.type])
+    .map((type) => type.type);
+});
+
+const includeSolution = computed(() => {
+  return selectedTypesToCheck.value.length > 0;
+});
+
+function updateGridRules() {
+  grid.value = {
+    ...grid.value,
+    options: {
+      ...grid.value.options,
+      rules: customRulesInfoList
+        .filter((rule) => customRulesInput.value[rule.id])
+        .map((rule) => rule.id),
+    },
+  };
+}
 
 function onEditProblemMessage(message: EditMessage) {
   grid.value = {
@@ -194,17 +233,25 @@ function onResizeGrid(size: [number, number]) {
   };
 }
 
-const exportPuzzle = () => {
+const getPuzzleJSON = () => {
   const puzzleObj = JSON.parse(JSON.stringify(grid.value));
   if (!includeSolution.value) {
     delete puzzleObj.solution;
   } else if (puzzleObj.solution) {
-    puzzleObj.solution.typeToCheck = [
-      ...typesToCheckOptions
-        .filter((type) => typesToCheckInput.value[type.value])
-        .map((type) => type.value as TypeToCheck),
-    ];
+    puzzleObj.solution.typeToCheck = [...selectedTypesToCheck.value];
   }
+
+  puzzleObj.options = {
+    ...puzzleObj.options,
+    rules: [...grid.value.options.rules],
+  };
+
+  return puzzleObj;
+};
+
+const exportPuzzle = () => {
+  updateGridRules();
+  const puzzleObj = getPuzzleJSON();
   downloadObjectAsJson(puzzleObj, "puzzpals-puzzle");
 };
 
@@ -242,7 +289,8 @@ async function savePuzzle() {
 async function publishPuzzle() {
   uploadStatus.value = "Publishing...";
   try {
-    const puzzleObj = JSON.parse(JSON.stringify(grid.value));
+    const puzzleObj = getPuzzleJSON();
+
     await api.post("/puzzles", {
       author: "synthetic",
       description: "Published from editor",

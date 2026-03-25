@@ -1,24 +1,68 @@
 <template>
-  <div v-if="!gameData">Joining room...</div>
+  <div v-if="!gameData" class="joining-text">Joining room {{ token }}...</div>
   <div v-else>
-    <h2>Room {{ token }}</h2>
-    <button @click="leaveRoom">Leave</button>
-    <PuzzleArea
-      :grid="gameData.puzzle"
-      :player-solution="gameData.playerSolution"
-      @edit-message="onGridEdited"
-    ></PuzzleArea>
-    <Chat
-      :chat-state="chatState"
-      :userID="userID"
-      @newMessage="onChatSubmit"
-      ref="chatComponent"
-    />
+    <div class="solving-page">
+      <header class="top-bar">
+        <h1>Puzzpals</h1>
+        <span class="room-id">Room ID: {{ token }}</span>
+        <button @click="leaveRoom">Leave</button>
+      </header>
+
+      <div class="content">
+        <div class="puzzle-pane">
+          <div class="left-inner">
+            <PuzzleArea
+              :grid="gameData.puzzle"
+              :player-solution="gameData.playerSolution"
+              @edit-message="onGridEdited"
+            ></PuzzleArea>
+          </div>
+        </div>
+
+        <div class="info-pane">
+          <div v-if="enabledRulesInfo.length > 0">
+            <h3>Pre-defined rules</h3>
+            <ul>
+              <li v-for="rule in enabledRulesInfo" :key="rule.id">
+                <strong>{{ rule.name }}</strong
+                >: {{ rule.description }}
+              </li>
+            </ul>
+          </div>
+          <div v-if="answerCheckInfo.length > 0">
+            <h3>Answer checks</h3>
+            <ul>
+              <li v-for="check in answerCheckInfo" :key="check.type">
+                <strong>{{ check.name }}</strong
+                >: {{ check.description }}
+              </li>
+            </ul>
+          </div>
+
+          <div class="chat-con">
+            <Chat
+              :chat-state="chatState"
+              :userID="userID"
+              @newMessage="onChatSubmit"
+              ref="chatComponent"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onBeforeMount, onBeforeUnmount, onMounted, ref, type Ref } from "vue";
+import {
+  computed,
+  nextTick,
+  onBeforeMount,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  type Ref,
+} from "vue";
 import { useRouter } from "vue-router";
 
 import api from "@/services/api";
@@ -29,6 +73,8 @@ import Chat from "@/components/Chat.vue";
 import type ChatState from "@/models/ChatState";
 import {
   applyEditMessage,
+  getAnswerCheckListFromTypes,
+  getEnabledRulesList,
   toEditMessage,
   type EditMessage,
   type GameData,
@@ -46,6 +92,24 @@ const chatComponent = ref<InstanceType<typeof Chat> | null>(null);
 const userID = ref<string | null>(null);
 const props = defineProps({
   token: { type: String, required: true },
+});
+
+const enabledRulesInfo = computed(() => {
+  if (gameData.value === null) {
+    return [];
+  }
+
+  return getEnabledRulesList(gameData.value.puzzle);
+});
+
+const answerCheckInfo = computed(() => {
+  if (gameData.value?.puzzle.solution === undefined) {
+    return [];
+  }
+
+  return getAnswerCheckListFromTypes(
+    gameData.value.puzzle.solution.typeToCheck,
+  );
 });
 
 function is404(err: unknown) {
@@ -75,6 +139,7 @@ async function checkRoomExists() {
 }
 
 async function joinRoom() {
+  socket.connect();
   socket.emit("room:join", props.token);
 }
 
@@ -110,7 +175,11 @@ function checkWinCondition() {
     const win = checkWin(currentSolution, solutionToCheck);
     if (win) {
       hasWon = true;
-      alert("Win");
+      nextTick(() => {
+        setTimeout(() => {
+          alert("Win");
+        }, 0);
+      });
     }
   }
 }
@@ -127,6 +196,7 @@ function onChatSubmit(text: string) {
 
 function initiateSocket() {
   socket.on("room:initialize", (data: GameData, id: string) => {
+    hasWon = false;
     gameData.value = data;
     userID.value = id;
 
@@ -185,3 +255,99 @@ onBeforeUnmount(() => {
   socket.off();
 });
 </script>
+
+<style scoped>
+.joining-text {
+  font-size: 1.5rem;
+  text-align: center;
+  margin-top: 2rem;
+}
+
+button {
+  min-width: 100px;
+}
+
+input {
+  min-width: 50px;
+}
+
+.solving-page {
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.top-bar {
+  background: linear-gradient(90deg, #26cda9, #2b8de2);
+  color: #fff;
+  padding: 12px 16px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+  justify-content: space-between;
+  position: relative;
+}
+
+.room-id {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  white-space: nowrap;
+  text-align: center;
+  pointer-events: none;
+}
+
+.content {
+  flex: 1;
+  display: flex;
+  gap: 12px;
+  padding: 12px;
+  box-sizing: border-box;
+  background: #f7f8fb;
+}
+
+.puzzle-pane {
+  flex: 1 1 60%;
+  min-width: 0;
+  background: #fff;
+  border: 1px solid #ececec;
+  border-radius: 6px;
+  padding: 12px;
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+.info-pane {
+  flex: 1 1 40%;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow: hidden;
+}
+
+.player-info {
+  height: 100px;
+  background: #fff;
+  border: 1px solid #ececec;
+  border-radius: 6px;
+  padding: 12px;
+  box-sizing: border-box;
+  overflow: auto;
+}
+
+.chat-con {
+  flex: 1 1;
+  background: #fff;
+  border: 1px solid #ececec;
+  border-radius: 6px;
+  padding: 8px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: stretch;
+  overflow: hidden;
+}
+</style>
