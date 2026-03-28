@@ -1,5 +1,9 @@
-import type { Room } from "./models/Room.js";
 import { Pool } from "pg";
+
+import type { Grid } from "@puzzpals/puzzle-models";
+
+import type { Puzzle } from "./models/Puzzle.js";
+import type { Room } from "./models/Room.js";
 
 function getConnectionString(): string {
   const {
@@ -69,7 +73,7 @@ export async function addPuzzle(
   title: string,
   author: string,
   description: string,
-  puzzleJson: object,
+  puzzleJson: Grid,
 ) {
   const sql = `INSERT INTO Puzzle (title, author, description, puzzle_json, publish_date) 
                VALUES ($1, $2, $3, $4, $5) RETURNING *`;
@@ -80,7 +84,7 @@ export async function addPuzzle(
     puzzleJson,
     new Date(),
   ]);
-  return result.rows[0];
+  return result.rows[0] as Puzzle;
 }
 
 export async function getPuzzles(limit = 5) {
@@ -88,14 +92,16 @@ export async function getPuzzles(limit = 5) {
 
   const sql = `SELECT * FROM Puzzle ORDER BY publish_date DESC LIMIT $1`;
   const result = await pool.query(sql, [safeLimit]);
-  return result.rows;
+  return result.rows as Puzzle[];
 }
 
 export async function getPuzzleById(id: number) {
   const sql = `SELECT * FROM Puzzle WHERE id = $1`;
   const result = await pool.query(sql, [id]);
-  return result.rows[0];
+  const row = result.rows[0] as Puzzle | undefined;
+  return row ?? null;
 }
+
 async function upsertRoom(room: Room) {
   const sql = `INSERT INTO Room (token, puzzle_data) VALUES ($1, $2)
                ON CONFLICT (token) DO UPDATE SET puzzle_data = EXCLUDED.puzzle_data`;
@@ -106,16 +112,11 @@ async function fetchRoom(token: string) {
   const sql = "SELECT * FROM Room WHERE token = $1";
   const result = await pool.query(sql, [token]);
   const row = result.rows[0] as Room | undefined;
-
-  if (!row) {
-    return null;
-  }
-
-  return row;
+  return row ?? null;
 }
 
 async function closeDb() {
   await pool.end();
 }
 
-export { initDb, upsertRoom, fetchRoom, closeDb };
+export { closeDb, fetchRoom, initDb, upsertRoom };
