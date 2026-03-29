@@ -29,6 +29,7 @@ function getConnectionString(): string {
 const pool = new Pool({
   connectionString: getConnectionString(),
   ssl: {
+    // TODO: Get certificate for HTTPS
     rejectUnauthorized: false,
   },
 });
