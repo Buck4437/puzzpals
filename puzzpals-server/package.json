@@ -11,7 +11,7 @@
     "build": "npm run build:models && npm run build:parser && tsc",
     "start": "node dist/bin/www.js",
     "dev": "npm run build:models && npm run build:parser && npm run watch:models & npm run watch:parser & tsx watch ./src/bin/www.ts",
-    "test": "vitest run --coverage"
+    "test": "vitest run"
   },
   "dependencies": {
     "@puzzpals/puzzle-models": "0.0.0",

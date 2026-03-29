@@ -55,8 +55,8 @@ async function uploadFile() {
       alert(`Upload failed: ${err.response?.data?.error || err.message}`);
     });
 
-  if (res !== undefined && res.data) {
-    router.push(`/room/${res.data}`);
+  if (res) {
+    router.push(`/room/${res.data.token}`);
   }
 }
 
