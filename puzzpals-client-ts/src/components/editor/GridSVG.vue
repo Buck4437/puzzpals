@@ -118,21 +118,21 @@
           {{ getShapeGlyph(shapeObject.content) }}
         </text>
       </g>
-
-      <!-- Cursor -->
-      <rect
-        v-if="props.cursor"
-        :x="toSvgCoordinates(topLeft(props.cursor))[0]"
-        :y="toSvgCoordinates(topLeft(props.cursor))[1]"
-        :width="cellSize"
-        :height="cellSize"
-        fill="none"
-        stroke="red"
-        stroke-width="5"
-        opacity="0.7"
-        pointer-events="none"
-      />
     </g>
+
+    <!-- Cursor -->
+    <rect
+      v-if="props.cursor"
+      :x="toSvgCoordinates(topLeft(props.cursor))[0]"
+      :y="toSvgCoordinates(topLeft(props.cursor))[1]"
+      :width="cellSize"
+      :height="cellSize"
+      fill="none"
+      stroke="red"
+      stroke-width="5"
+      opacity="0.7"
+      pointer-events="none"
+    />
   </svg>
 </template>
 
