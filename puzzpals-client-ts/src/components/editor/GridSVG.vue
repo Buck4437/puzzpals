@@ -10,7 +10,14 @@
     @mousemove="handlePointerMove"
     @mouseleave="handleMouseLeave"
   >
-    <g v-for="(layer, index) in layers" :key="index">
+    <!--
+    Why use `background-${index}` and `foreground-${index}`:
+    https://vuejs.org/api/built-in-special-attributes.html#key
+    "Children of the same common parent must have unique keys."
+    "Duplicate keys will cause render errors."
+    -->
+
+    <g v-for="(layer, index) in layers" :key="`background-${index}`">
       <!-- Surface objects -->
       <rect
         v-for="surface in layer.surfaceObjects"
@@ -22,51 +29,53 @@
         :fill="surface.color"
         pointer-events="none"
       />
+    </g>
 
-      <!-- Vertical lines -->
-      <line
-        v-for="col in props.gridSize[1] + 1"
-        :key="`grid-v-line-${col}`"
-        :x1="toSvgCoordinates([0, col - 1])[0]"
-        :y1="toSvgCoordinates([0, col - 1])[1]"
-        :x2="toSvgCoordinates([props.gridSize[0], col - 1])[0]"
-        :y2="toSvgCoordinates([props.gridSize[0], col - 1])[1]"
-        stroke="black"
-        :stroke-width="col === 1 || col === props.gridSize[1] + 1 ? 3 : 1"
-        pointer-events="none"
-      />
+    <!-- Vertical lines -->
+    <line
+      v-for="col in props.gridSize[1] + 1"
+      :key="`grid-v-line-${col}`"
+      :x1="toSvgCoordinates([0, col - 1])[0]"
+      :y1="toSvgCoordinates([0, col - 1])[1]"
+      :x2="toSvgCoordinates([props.gridSize[0], col - 1])[0]"
+      :y2="toSvgCoordinates([props.gridSize[0], col - 1])[1]"
+      stroke="black"
+      :stroke-width="col === 1 || col === props.gridSize[1] + 1 ? 3 : 1"
+      pointer-events="none"
+    />
 
-      <!-- Horizontal lines -->
-      <line
-        v-for="row in props.gridSize[0] + 1"
-        :key="`grid-h-line-${row}`"
-        :x1="toSvgCoordinates([row - 1, 0])[0]"
-        :y1="toSvgCoordinates([row - 1, 0])[1]"
-        :x2="toSvgCoordinates([row - 1, props.gridSize[1]])[0]"
-        :y2="toSvgCoordinates([row - 1, props.gridSize[1]])[1]"
-        stroke="black"
-        :stroke-width="row === 1 || row === props.gridSize[0] + 1 ? 3 : 1"
-        pointer-events="none"
-      />
+    <!-- Horizontal lines -->
+    <line
+      v-for="row in props.gridSize[0] + 1"
+      :key="`grid-h-line-${row}`"
+      :x1="toSvgCoordinates([row - 1, 0])[0]"
+      :y1="toSvgCoordinates([row - 1, 0])[1]"
+      :x2="toSvgCoordinates([row - 1, props.gridSize[1]])[0]"
+      :y2="toSvgCoordinates([row - 1, props.gridSize[1]])[1]"
+      stroke="black"
+      :stroke-width="row === 1 || row === props.gridSize[0] + 1 ? 3 : 1"
+      pointer-events="none"
+    />
 
+    <g v-for="(layer, index) in layers" :key="`foreground-${index}`">
       <!-- Line objects -->
       <line
         v-for="line in layer.lineObjects"
-        :key="`line-${line.start}-${line.end}`"
-        :x1="toSvgCoordinates(line.start)[0]"
-        :y1="toSvgCoordinates(line.start)[1]"
-        :x2="toSvgCoordinates(line.end)[0]"
-        :y2="toSvgCoordinates(line.end)[1]"
+        :key="`line-${line.endpoints[0]}-${line.endpoints[1]}`"
+        :x1="toSvgCoordinates(line.endpoints[0])[0]"
+        :y1="toSvgCoordinates(line.endpoints[0])[1]"
+        :x2="toSvgCoordinates(line.endpoints[1])[0]"
+        :y2="toSvgCoordinates(line.endpoints[1])[1]"
         :stroke="line.color"
-        :stroke-width="3"
+        :stroke-width="line.thickness || 3"
         pointer-events="none"
       />
 
-      <!-- symbol objects -->
+      <!-- text objects -->
       <g
-        v-for="symbol in layer.symbolObjects"
-        :key="`symbol-${symbol.location}`"
-        :transform="`translate(${toSvgCoordinates(symbol.location)[0]}, ${toSvgCoordinates(symbol.location)[1]})`"
+        v-for="textObject in layer.textObjects"
+        :key="`text-${textObject.location}`"
+        :transform="`translate(${toSvgCoordinates(textObject.location)[0]}, ${toSvgCoordinates(textObject.location)[1]})`"
         pointer-events="none"
       >
         <text
@@ -75,31 +84,64 @@
           text-anchor="middle"
           dominant-baseline="central"
           :font-size="cellSize / 2"
-          :fill="symbol.color"
+          :fill="textObject.color"
         >
-          {{ symbol.content }}
+          {{ textObject.content }}
         </text>
       </g>
 
-      <!-- Cursor -->
-      <rect
-        v-if="props.cursor"
-        :x="toSvgCoordinates(topLeft(props.cursor))[0]"
-        :y="toSvgCoordinates(topLeft(props.cursor))[1]"
-        :width="cellSize"
-        :height="cellSize"
-        fill="none"
-        stroke="red"
-        stroke-width="5"
-        opacity="0.7"
+      <!-- shape objects -->
+      <g
+        v-for="shapeObject in layer.shapeObjects"
+        :key="`shape-${shapeObject.location}`"
+        :transform="`translate(${toSvgCoordinates(shapeObject.location)[0]}, ${toSvgCoordinates(shapeObject.location)[1]})`"
         pointer-events="none"
-      />
+      >
+        <image
+          v-if="getShapeRenderMode(shapeObject.content) === 'image'"
+          :href="getShapeImageAsset(shapeObject.content) ?? undefined"
+          :x="-cellSize / 3"
+          :y="-cellSize / 3"
+          :width="(2 * cellSize) / 3"
+          :height="(2 * cellSize) / 3"
+          preserveAspectRatio="xMidYMid meet"
+        />
+        <text
+          v-else
+          x="0"
+          y="0"
+          text-anchor="middle"
+          dominant-baseline="central"
+          :font-size="cellSize / 2"
+          fill="black"
+        >
+          {{ getShapeGlyph(shapeObject.content) }}
+        </text>
+      </g>
     </g>
+
+    <!-- Cursor -->
+    <rect
+      v-if="props.cursor"
+      :x="toSvgCoordinates(topLeft(props.cursor))[0]"
+      :y="toSvgCoordinates(topLeft(props.cursor))[1]"
+      :width="cellSize"
+      :height="cellSize"
+      fill="none"
+      stroke="red"
+      stroke-width="5"
+      opacity="0.7"
+      pointer-events="none"
+    />
   </svg>
 </template>
 
 <script setup lang="ts">
-import { type Coordinate, type LayerData } from "@puzzpals/puzzle-models";
+import {
+  type Coordinate,
+  type LayerData,
+  getSpecialCharacterById,
+} from "@puzzpals/puzzle-models";
 import { ref, computed } from "vue";
 
 const FULLSIZE = 480;
@@ -275,6 +317,19 @@ function handlePointerMove(event: MouseEvent) {
 
 function topLeft(coordinate: [number, number]): [number, number] {
   return [coordinate[0] - 0.5, coordinate[1] - 0.5];
+}
+
+function getShapeGlyph(shapeId: string): string {
+  return getSpecialCharacterById(shapeId)?.textGlyph ?? "?";
+}
+
+function getShapeRenderMode(shapeId: string): "text" | "image" {
+  const shape = getSpecialCharacterById(shapeId);
+  return shape?.imageAsset ? "image" : "text";
+}
+
+function getShapeImageAsset(shapeId: string): string | null {
+  return getSpecialCharacterById(shapeId)?.imageAsset ?? null;
 }
 </script>
 

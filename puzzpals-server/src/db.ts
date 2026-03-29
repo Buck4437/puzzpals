@@ -1,3 +1,6 @@
+import type { Grid } from "@puzzpals/puzzle-models";
+
+import type { Puzzle } from "./models/Puzzle.js";
 import type { Room } from "./models/Room.js";
 import pool from "./pool.js";
 
@@ -16,10 +19,11 @@ async function createTable() {
   await pool.query(`
     CREATE TABLE IF NOT EXISTS Room (
       token TEXT PRIMARY KEY UNIQUE,
-      puzzle_data TEXT
+      puzzle_data JSONB NOT NULL
     );
     CREATE TABLE IF NOT EXISTS Puzzle (
       id SERIAL PRIMARY KEY,
+      title TEXT NOT NULL,
       author TEXT NOT NULL,
       description TEXT,
       puzzle_json JSONB NOT NULL,
@@ -30,19 +34,21 @@ async function createTable() {
 
 // Puzzle DB functions
 export async function addPuzzle(
+  title: string,
   author: string,
   description: string,
-  puzzleJson: object,
-  publishDate?: Date,
+  puzzleJson: Grid,
 ) {
-  const sql = `INSERT INTO Puzzle (author, description, puzzle_json, publish_date) VALUES ($1, $2, $3, $4) RETURNING *`;
+  const sql = `INSERT INTO Puzzle (title, author, description, puzzle_json, publish_date) 
+               VALUES ($1, $2, $3, $4, $5) RETURNING *`;
   const result = await pool.query(sql, [
+    title,
     author,
     description,
     puzzleJson,
-    publishDate || new Date(),
+    new Date(),
   ]);
-  return result.rows[0];
+  return result.rows[0] as Puzzle;
 }
 
 export async function getPuzzles(limit = 5) {
@@ -50,34 +56,31 @@ export async function getPuzzles(limit = 5) {
 
   const sql = `SELECT * FROM Puzzle ORDER BY publish_date DESC LIMIT $1`;
   const result = await pool.query(sql, [safeLimit]);
-  return result.rows;
+  return result.rows as Puzzle[];
 }
 
 export async function getPuzzleById(id: number) {
   const sql = `SELECT * FROM Puzzle WHERE id = $1`;
   const result = await pool.query(sql, [id]);
-  return result.rows[0];
+  const row = result.rows[0] as Puzzle | undefined;
+  return row ?? null;
 }
-async function upsertRoom(token: string, puzzleJson: string) {
+
+async function upsertRoom(room: Room) {
   const sql = `INSERT INTO Room (token, puzzle_data) VALUES ($1, $2)
                ON CONFLICT (token) DO UPDATE SET puzzle_data = EXCLUDED.puzzle_data`;
-  await pool.query(sql, [token, puzzleJson]);
+  await pool.query(sql, [room.token, room.puzzle_data]);
 }
 
 async function fetchRoom(token: string) {
   const sql = "SELECT * FROM Room WHERE token = $1";
   const result = await pool.query(sql, [token]);
   const row = result.rows[0] as Room | undefined;
-
-  if (!row) {
-    return null;
-  }
-
-  return row;
+  return row ?? null;
 }
 
 async function closeDb() {
   await pool.end();
 }
 
-export { initDb, upsertRoom, fetchRoom, closeDb };
+export { closeDb, fetchRoom, initDb, upsertRoom };
