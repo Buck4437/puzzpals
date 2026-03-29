@@ -146,11 +146,13 @@ defineExpose({ onFilePicked });
   display: flex;
   gap: 1rem;
   flex-direction: column;
+  align-items: center;
+  width: 100%;
 }
 
 .fake-file-input {
   cursor: pointer;
-  width: 100%;
+  width: min(100%, 320px);
   min-width: 250px;
   text-align: center;
   display: flex;
