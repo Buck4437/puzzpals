@@ -31,13 +31,15 @@
 import { ref, onMounted } from "vue";
 import GridSVG from "@/components/editor/GridSVG.vue";
 import api from "@/services/api";
+import type { Grid } from "@puzzpals/puzzle-models";
 
 interface Puzzle {
   id: number;
+  title: string;
   author: string;
   description: string;
-  puzzle_json: any;
-  publish_date?: string;
+  puzzle_json: Grid;
+  publish_date: Date;
 }
 
 const puzzles = ref<Puzzle[]>([]);
