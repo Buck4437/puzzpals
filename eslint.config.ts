@@ -10,10 +10,18 @@ import eslintConfigPrettier from "eslint-config-prettier/flat";
 
 const gitignorePath = fileURLToPath(new URL(".gitignore", import.meta.url));
 
-export default defineConfig(
-  includeIgnoreFile(gitignorePath),
-  eslint.configs.recommended,
-  tseslint.configs.strict,
-  tseslint.configs.stylistic,
-  eslintConfigPrettier,
-);
+export default defineConfig({
+  languageOptions: {
+    parserOptions: {
+      projectService: true,
+      tsconfigRootDir: import.meta.dirname,
+    },
+  },
+  extends: [
+    includeIgnoreFile(gitignorePath),
+    eslint.configs.recommended,
+    tseslint.configs.strict,
+    tseslint.configs.stylistic,
+    eslintConfigPrettier,
+  ],
+});
