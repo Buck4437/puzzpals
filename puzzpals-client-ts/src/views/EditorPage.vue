@@ -57,7 +57,7 @@
 <script setup lang="ts">
 import SetterEditorComponent from "../components/SetterEditorComponent.vue";
 
-import { computed, ref } from "vue";
+import { computed, onMounted, ref } from "vue";
 import api from "@/services/api";
 import { useRoute } from "vue-router";
 import {

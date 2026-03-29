@@ -3,27 +3,13 @@
     <h1>Puzzle Catalogue</h1>
     <div v-if="loading">Loading puzzles...</div>
     <div v-else>
-      <div v-for="puzzle in puzzles" :key="puzzle.id" class="puzzle-card">
-        <div class="puzzle-card-content" @click="goToDetail(puzzle.id)">
-          <h2>{{ puzzle.description || "Untitled Puzzle" }}</h2>
-          <p><strong>Author:</strong> {{ puzzle.author }}</p>
-          <p>
-            <strong>Date:</strong>
-            {{
-              puzzle.publish_date
-                ? new Date(puzzle.publish_date).toLocaleString()
-                : "Unknown"
-            }}
-          </p>
-          <div v-if="puzzle.puzzle_json">
-            <GridSVG
-              :size="240"
-              :grid-size="puzzle.puzzle_json.size"
-              :layers="[puzzle.puzzle_json.problem]"
-            />
-          </div>
-        </div>
-      </div>
+      <PuzzleCard
+        v-for="puzzle in puzzles"
+        :key="puzzle.id"
+        :puzzle="puzzle"
+        :clickable="true"
+        @click="goToDetail"
+      />
       <div v-if="puzzles.length === 0">No puzzles found.</div>
     </div>
   </div>
@@ -31,7 +17,7 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from "vue";
-import GridSVG from "@/components/editor/GridSVG.vue";
+import PuzzleCard from "@/components/PuzzleCard.vue";
 import api from "@/services/api";
 import type { Grid } from "@puzzpals/puzzle-models";
 
@@ -72,17 +58,5 @@ function goToDetail(id: number) {
 .catalogue {
   max-width: 800px;
   margin: 0 auto;
-}
-.puzzle-card {
-  border: 1px solid #ccc;
-  padding: 1em;
-  margin-bottom: 1em;
-  border-radius: 8px;
-  background: #fafafa;
-  cursor: pointer;
-  transition: box-shadow 0.2s;
-}
-.puzzle-card:hover {
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 </style>

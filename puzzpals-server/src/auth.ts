@@ -1,5 +1,5 @@
 import express from "express";
-import type { Request, Response, NextFunction } from "express";
+import type { Request, Response } from "express";
 import { google } from "googleapis";
 import { OAuth2Client } from "google-auth-library";
 import { readFileSync } from "fs";
@@ -73,15 +73,7 @@ declare module "express-session" {
   }
 }
 
-function requireAuth(req: Request, res: Response, next: NextFunction) {
-  if (!req.session.user) {
-    console.log("Session missing user");
-    return res.status(401).json({ error: "Not authenticated" });
-  }
-  next();
-}
-
-router.get("/me", requireAuth, async (req: Request, res: Response) => {
+router.get("/me", async (req: Request, res: Response) => {
   // Prevent browser caching for this endpoint
   res.setHeader(
     "Cache-Control",
