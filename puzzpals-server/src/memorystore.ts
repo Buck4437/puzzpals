@@ -20,16 +20,12 @@ export async function getRoomFromStore(token: string): Promise<Room | null> {
   // Fetch from db
   const dbEntry = await fetchRoom(token);
   if (dbEntry !== null) {
-    try {
-      const roomEntry = {
-        room: dbEntry,
-        isDirty: false,
-      };
-      store.set(token, roomEntry);
-      return roomEntry.room;
-    } catch (e) {
-      console.error("Failed to parse puzzle data from DB for token:", token, e);
-    }
+    const roomEntry = {
+      room: dbEntry,
+      isDirty: false,
+    };
+    store.set(token, roomEntry);
+    return roomEntry.room;
   }
   return null;
 }
