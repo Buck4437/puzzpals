@@ -1,5 +1,5 @@
 <template>
-  <div class="editor-page">
+  <div class="editor-page" :class="{ 'controls-collapsed': controlsCollapsed }">
     <section class="editor-canvas">
       <SetterEditorComponent
         :grid="grid"
@@ -7,9 +7,28 @@
         @edit-problem-message="onEditProblemMessage"
         @edit-solution-message="onEditSolutionMessage"
       />
+
+      <button
+        class="floating-controls-handle"
+        :class="{ collapsed: controlsCollapsed }"
+        type="button"
+        @click="controlsCollapsed = !controlsCollapsed"
+      >
+        {{ !controlsCollapsed ? "▶" : "◀" }}
+      </button>
+
+      <button
+        class="floating-controls-handle-bottom"
+        v-show="controlsCollapsed"
+        :class="{ collapsed: controlsCollapsed }"
+        type="button"
+        @click="controlsCollapsed = !controlsCollapsed"
+      >
+        Show editor controls
+      </button>
     </section>
 
-    <aside class="editor-sidebar">
+    <aside class="editor-sidebar" :class="{ collapsed: controlsCollapsed }">
       <h2 class="sidebar-title">Editor Controls</h2>
 
       <div class="action-con">
@@ -71,7 +90,7 @@
         </button>
       </section>
 
-      <details class="panel bottom-panel">
+      <details class="panel">
         <summary>View options</summary>
         <label class="checkbox-row">
           <input type="checkbox" v-model="showRulesLayerPreview" />
@@ -157,6 +176,7 @@ const uploadStatus = ref("");
 const showPublishModal = ref(false);
 const showRulesModal = ref(false);
 const showAnswerCheckModal = ref(false);
+const controlsCollapsed = ref(false);
 const isPublishing = ref(false);
 const answerCheckInfoList = getAnswerCheckList();
 const customRulesInfoList = getRulesList();
@@ -419,17 +439,25 @@ async function publishPuzzle() {
   gap: 12px;
   box-sizing: border-box;
   overflow: hidden;
+  position: relative;
+}
+
+.editor-page.controls-collapsed {
+  grid-template-columns: minmax(0, 1fr) 0;
 }
 
 .editor-canvas {
   min-width: 0;
   min-height: 0;
+  display: flex;
+  flex-direction: column;
   border: 1px solid #e7e7e7;
   border-radius: 8px;
   background: #fff;
-  padding: 10px;
+  padding: 16px;
   box-sizing: border-box;
   overflow: auto;
+  position: relative;
 }
 
 .editor-sidebar {
@@ -444,11 +472,52 @@ async function publishPuzzle() {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  transition: opacity 0.2s ease;
+}
+
+.editor-sidebar.collapsed {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .sidebar-title {
   margin: 0;
   font-size: 1.15rem;
+}
+
+.collapse-button {
+  border: 1px solid #d5daef;
+  background: #f2f5ff;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.floating-controls-handle,
+.floating-controls-handle-bottom {
+  position: absolute;
+  border-radius: 4px;
+  color: #1f2a4d;
+  cursor: pointer;
+  z-index: 100;
+}
+
+.floating-controls-handle {
+  right: 8px;
+  top: 50%;
+  height: 200px;
+  transform: translateY(-50%);
+  padding: 12px 10px;
+}
+
+.floating-controls-handle-bottom {
+  bottom: 8px;
+  left: 50%;
+  width: 200px;
+  transform: translateX(-50%);
+  padding: 10px 12px;
+  display: none;
 }
 
 .action-con {
@@ -536,10 +605,6 @@ async function publishPuzzle() {
   color: #5f5f5f;
 }
 
-.bottom-panel {
-  margin-top: auto;
-}
-
 h3 {
   margin-top: 0;
   margin-bottom: 12px;
@@ -555,6 +620,14 @@ h3 {
 
   .editor-canvas {
     min-height: 60dvh;
+  }
+
+  .floating-controls-handle {
+    display: none;
+  }
+
+  .floating-controls-handle-bottom {
+    display: block;
   }
 }
 </style>

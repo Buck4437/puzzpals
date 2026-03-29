@@ -1,37 +1,53 @@
 <template>
   <div class="editor-con">
-    <div class="tool-bar">
-      <button
-        v-for="(tool, i) in tools"
-        :key="i"
-        class="tool-button"
-        :class="{ active: currentTool.codename === tool.codename }"
-        @click="currentToolId = i"
-      >
-        {{ tool.name }}
-      </button>
-    </div>
-
-    <div class="tool-panel">
-      <div class="subtool-row">
-        Subtool:
+    <div>
+      <div class="tool-bar">
         <button
-          v-for="(tool, i) in subtools"
+          v-for="(tool, i) in tools"
           :key="i"
-          class="subtool-button"
-          :class="{ active: currentSubtoolId === i }"
-          @click="currentSubtoolId = i"
+          class="tool-button"
+          :class="{ active: currentTool.codename === tool.codename }"
+          @click="currentToolId = i"
         >
-          {{ tool }}
+          {{ tool.name }}
         </button>
       </div>
-      <div v-show="currentTool.codename === 'surface'" class="tool-group">
-        <div class="tool-options-con">
+
+      <div class="tool-panel">
+        <div class="subtool-row">
+          Subtool:
+          <button
+            v-for="(tool, i) in subtools"
+            :key="i"
+            class="subtool-button"
+            :class="{ active: currentSubtoolId === i }"
+            @click="currentSubtoolId = i"
+          >
+            {{ tool }}
+          </button>
+        </div>
+        <div v-show="currentTool.codename === 'surface'" class="tool-group">
+          <div class="tool-options-con">
+            <label>
+              Surface color:
+              <select v-model="selectedSurfaceColor">
+                <option
+                  v-for="color in surfaceColorTable"
+                  :key="color"
+                  :value="color"
+                >
+                  {{ color }}
+                </option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div v-show="currentTool.codename === 'line'" class="tool-group">
           <label>
-            Surface color:
-            <select v-model="selectedSurfaceColor">
+            Color:
+            <select v-model="selectedLineColor">
               <option
-                v-for="color in surfaceColorTable"
+                v-for="color in lineColorTable"
                 :key="color"
                 :value="color"
               >
@@ -39,87 +55,85 @@
               </option>
             </select>
           </label>
+          <label>
+            Thickness:
+            <select v-model="selectedLineThickness">
+              <option
+                v-for="thickness in lineThicknessOptions"
+                :key="thickness.name"
+                :value="thickness.value"
+              >
+                {{ thickness.name }}
+              </option>
+            </select>
+          </label>
         </div>
-      </div>
-      <div v-show="currentTool.codename === 'line'" class="tool-group">
-        <label>
-          Color:
-          <select v-model="selectedLineColor">
-            <option v-for="color in lineColorTable" :key="color" :value="color">
-              {{ color }}
-            </option>
-          </select>
-        </label>
-        <label>
-          Thickness:
-          <select v-model="selectedLineThickness">
-            <option
-              v-for="thickness in lineThicknessOptions"
-              :key="thickness.name"
-              :value="thickness.value"
-            >
-              {{ thickness.name }}
-            </option>
-          </select>
-        </label>
-      </div>
-      <div v-show="currentTool.codename === 'edge'" class="tool-group">
-        <label>
-          Color:
-          <select v-model="selectedLineColor">
-            <option v-for="color in lineColorTable" :key="color" :value="color">
-              {{ color }}
-            </option>
-          </select>
-        </label>
-        <label>
-          Thickness:
-          <select v-model="selectedLineThickness">
-            <option
-              v-for="thickness in lineThicknessOptions"
-              :key="thickness.name"
-              :value="thickness.value"
-            >
-              {{ thickness.name }}
-            </option>
-          </select>
-        </label>
-      </div>
-      <div v-show="currentTool.codename === 'text'" class="tool-group">
-        <label>
-          Color:
-          <select v-model="selectedTextColor">
-            <option value="auto">Auto</option>
-            <option v-for="color in textColorTable" :key="color" :value="color">
-              {{ color }}
-            </option>
-          </select>
-        </label>
-        <div v-show="currentSubtoolId === 1">
-          <input
-            ref="textInput"
-            v-model="textInputValue"
-            type="text"
-            @input="updateSelectedCell"
-            :disabled="!cursor"
-          />
+        <div v-show="currentTool.codename === 'edge'" class="tool-group">
+          <label>
+            Color:
+            <select v-model="selectedLineColor">
+              <option
+                v-for="color in lineColorTable"
+                :key="color"
+                :value="color"
+              >
+                {{ color }}
+              </option>
+            </select>
+          </label>
+          <label>
+            Thickness:
+            <select v-model="selectedLineThickness">
+              <option
+                v-for="thickness in lineThicknessOptions"
+                :key="thickness.name"
+                :value="thickness.value"
+              >
+                {{ thickness.name }}
+              </option>
+            </select>
+          </label>
         </div>
-      </div>
-      <div v-show="currentTool.codename === 'shapes'" class="tool-group">
-        <label>
-          Shape
-          <select v-model="selectedShapeId">
-            <option v-for="shape in shapes" :key="shape.id" :value="shape.id">
-              {{ shape.label }}
-            </option>
-          </select>
-        </label>
+        <div v-show="currentTool.codename === 'text'" class="tool-group">
+          <label>
+            Color:
+            <select v-model="selectedTextColor">
+              <option value="auto">Auto</option>
+              <option
+                v-for="color in textColorTable"
+                :key="color"
+                :value="color"
+              >
+                {{ color }}
+              </option>
+            </select>
+          </label>
+          <div v-show="currentSubtoolId === 1">
+            <input
+              ref="textInput"
+              v-model="textInputValue"
+              type="text"
+              @input="updateSelectedCell"
+              :disabled="!cursor"
+            />
+          </div>
+        </div>
+        <div v-show="currentTool.codename === 'shapes'" class="tool-group">
+          <label>
+            Shape
+            <select v-model="selectedShapeId">
+              <option v-for="shape in shapes" :key="shape.id" :value="shape.id">
+                {{ shape.label }}
+              </option>
+            </select>
+          </label>
+        </div>
       </div>
     </div>
 
     <GridSVG
       class="grid-canvas"
-      :size="480"
+      :size="gridSizePx"
       :grid-size="grid.size"
       :layers="layers"
       :cursor="currentTool.codename === 'text' ? cursor : null"
@@ -205,6 +219,21 @@ const layers = computed(() => {
   }
 
   return renderedLayerList.value;
+});
+
+const BASE_GRID_SIZE_PX = 480;
+const BASE_GRID_DIMENSION = 10;
+
+const gridSizePx = computed(() => {
+  const [rows, cols] = grid.value.size;
+  const maxDimension = Math.max(rows, cols, 1);
+
+  if (maxDimension <= BASE_GRID_DIMENSION) {
+    return BASE_GRID_SIZE_PX;
+  }
+
+  const pixelsPerCell = BASE_GRID_SIZE_PX / BASE_GRID_DIMENSION;
+  return Math.round(maxDimension * pixelsPerCell);
 });
 
 const editableLayer = computed<LayerData>(() => {
@@ -830,6 +859,7 @@ watch(
 .editor-con {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 8px;
   --color-tool-active: #e9e9e9;
   --border-color-tool-active: #3747ef;
@@ -838,6 +868,7 @@ watch(
 .tool-bar {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 8px;
 }
 
@@ -887,11 +918,14 @@ watch(
   border: 1px solid var(--border-color);
   border-radius: 10px;
   padding: 6px;
+  display: block;
+  flex: 0 0 auto;
 }
 
 .undo-redo-button {
   display: flex;
   gap: 8px;
+  justify-content: center;
 }
 
 select,

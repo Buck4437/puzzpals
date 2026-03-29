@@ -1,24 +1,28 @@
 <template>
-  <div class="layer-selector">
-    <button
-      :class="{ active: selectedLayer === 'problem' }"
-      @click="selectedLayer = 'problem'"
-    >
-      Problem
-    </button>
-    <button
-      :class="{ active: selectedLayer === 'solution' }"
-      @click="selectedLayer = 'solution'"
-    >
-      Solution
-    </button>
+  <div class="setter-editor-scroll">
+    <div class="setter-editor-content">
+      <div class="layer-selector">
+        <button
+          :class="{ active: selectedLayer === 'problem' }"
+          @click="selectedLayer = 'problem'"
+        >
+          Problem
+        </button>
+        <button
+          :class="{ active: selectedLayer === 'solution' }"
+          @click="selectedLayer = 'solution'"
+        >
+          Solution
+        </button>
+      </div>
+      <BaseEditorComponent
+        :grid="grid"
+        :rendered-layer-list="renderedLayerList"
+        :editable-layer-index="editableLayerIndex"
+        @edit-message="onEditMessage"
+      />
+    </div>
   </div>
-  <BaseEditorComponent
-    :grid="grid"
-    :rendered-layer-list="renderedLayerList"
-    :editable-layer-index="editableLayerIndex"
-    @edit-message="onEditMessage"
-  />
 </template>
 
 <script setup lang="ts">
@@ -103,10 +107,24 @@ function onEditMessage(message: EditMessage) {
 </script>
 
 <style scoped>
+.setter-editor-scroll {
+  width: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  overflow: auto;
+}
+
+.setter-editor-content {
+  min-width: 100%;
+  width: max-content;
+}
+
 .layer-selector {
   display: flex;
   gap: 8px;
   margin-bottom: 12px;
+  align-items: center;
+  justify-content: flex-start;
 
   --background-color-layer-active: rgb(11, 207, 207);
   --color-layer-active: rgb(65, 65, 65);

@@ -1,6 +1,6 @@
 <template>
   <header class="main-header" v-if="$route.meta.fullScreen !== true">
-    <h1>Puzzpals</h1>
+    <h1 @click="goToHome">Puzzpals</h1>
     <div>
       <button class="create-room-btn" @click="openRoomDialog">
         Create Room
@@ -65,6 +65,10 @@ function goToLogin() {
   router.push("/login");
 }
 
+function goToHome() {
+  router.push("/");
+}
+
 function openRoomDialog() {
   showCreateRoomDialog.value = true;
 }
@@ -74,6 +78,7 @@ function openRoomDialog() {
 h1 {
   font-size: 24px;
   margin: 0;
+  cursor: pointer;
 }
 
 main {
