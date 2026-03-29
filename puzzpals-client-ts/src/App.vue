@@ -34,6 +34,7 @@
 
 <script setup lang="ts">
 import "./assets/main.css";
+import "./assets/colors.css";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import NavigationSidebar from "./components/NavigationSidebar.vue";
@@ -92,19 +93,10 @@ main {
 }
 
 .login-btn {
-  background: #fff;
-  border: 1px solid #ccc;
-  border-radius: 4px;
   margin: 4px 0;
   margin-left: 8px;
   padding: 8px 16px;
   font-size: 16px;
-  cursor: pointer;
-  transition: box-shadow 0.2s;
-}
-
-.login-btn:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .main-page {

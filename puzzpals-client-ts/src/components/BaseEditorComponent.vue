@@ -1,173 +1,151 @@
 <template>
-  <div>
-    <button
-      v-for="(tool, i) in tools"
-      :key="i"
-      :class="{ active: currentTool.codename === tool.codename }"
-      @click="currentToolId = i"
-    >
-      {{ tool.name }}
-    </button>
-  </div>
-  <div>
-    <div v-show="currentTool.codename === 'surface'">
-      <div>
-        Surface color:
-        <select v-model="selectedSurfaceColor">
-          <option
-            v-for="color in surfaceColorTable"
-            :key="color"
-            :value="color"
-          >
-            {{ color }}
-          </option>
-        </select>
-      </div>
+  <div class="editor-con">
+    <div class="tool-bar">
+      <button
+        v-for="(tool, i) in tools"
+        :key="i"
+        class="tool-button"
+        :class="{ active: currentTool.codename === tool.codename }"
+        @click="currentToolId = i"
+      >
+        {{ tool.name }}
+      </button>
     </div>
-    <div v-show="currentTool.codename === 'line'">
-      <p>Line tool: connect cell centers</p>
-      <div>
-        Line color:
-        <select v-model="selectedLineColor">
-          <option v-for="color in lineColorTable" :key="color" :value="color">
-            {{ color }}
-          </option>
-        </select>
-      </div>
-      <div>
-        Line thickness:
-        <select v-model="selectedLineThickness">
-          <option
-            v-for="thickness in lineThicknessOptions"
-            :key="thickness.name"
-            :value="thickness.value"
-          >
-            {{ thickness.name }}
-          </option>
-        </select>
-      </div>
-      <div>
-        <button
-          :class="{ active: currentSubtoolId === 0 }"
-          @click="currentSubtoolId = 0"
-        >
-          Normal
-        </button>
-        <button
-          :class="{ active: currentSubtoolId === 1 }"
-          @click="currentSubtoolId = 1"
-        >
-          Diagonal
-        </button>
-      </div>
-    </div>
-    <div v-show="currentTool.codename === 'edge'">
-      <p>Edge tool: connect cell corners</p>
-      <div>
-        Line color:
-        <select v-model="selectedLineColor">
-          <option v-for="color in lineColorTable" :key="color" :value="color">
-            {{ color }}
-          </option>
-        </select>
-      </div>
-      <div>
-        Line thickness:
-        <select v-model="selectedLineThickness">
-          <option
-            v-for="thickness in lineThicknessOptions"
-            :key="thickness.name"
-            :value="thickness.value"
-          >
-            {{ thickness.name }}
-          </option>
-        </select>
-      </div>
-      <div>
-        <button
-          :class="{ active: currentSubtoolId === 0 }"
-          @click="currentSubtoolId = 0"
-        >
-          Normal
-        </button>
-        <button
-          :class="{ active: currentSubtoolId === 1 }"
-          @click="currentSubtoolId = 1"
-        >
-          Diagonal
-        </button>
-      </div>
-    </div>
-    <div v-show="currentTool.codename === 'text'">
-      <div>
-        Text color:
-        <select v-model="selectedTextColor">
-          <option value="auto">Auto</option>
-          <option v-for="color in textColorTable" :key="color" :value="color">
-            {{ color }}
-          </option>
-        </select>
-      </div>
-      <div>
+
+    <div class="tool-panel">
+      <div class="subtool-row">
+        Subtool:
         <button
           v-for="(tool, i) in subtools"
           :key="i"
+          class="subtool-button"
           :class="{ active: currentSubtoolId === i }"
           @click="currentSubtoolId = i"
         >
           {{ tool }}
         </button>
       </div>
-      <div v-show="currentSubtoolId === 0">
-        <p>Simple mode: Type directly (max 2 characters)</p>
+      <div v-show="currentTool.codename === 'surface'" class="tool-group">
+        <div class="tool-options-con">
+          <label>
+            Surface color:
+            <select v-model="selectedSurfaceColor">
+              <option
+                v-for="color in surfaceColorTable"
+                :key="color"
+                :value="color"
+              >
+                {{ color }}
+              </option>
+            </select>
+          </label>
+        </div>
       </div>
-      <div v-show="currentSubtoolId === 1">
-        <label>Text: </label>
-        <input
-          ref="textInput"
-          v-model="textInputValue"
-          type="text"
-          @input="updateSelectedCell"
-          :disabled="!cursor"
-        />
-        <p v-if="cursor">Selected: [{{ cursor[0] }}, {{ cursor[1] }}]</p>
-        <p v-else>Click a cell to select</p>
+      <div v-show="currentTool.codename === 'line'" class="tool-group">
+        <label>
+          Color:
+          <select v-model="selectedLineColor">
+            <option v-for="color in lineColorTable" :key="color" :value="color">
+              {{ color }}
+            </option>
+          </select>
+        </label>
+        <label>
+          Thickness:
+          <select v-model="selectedLineThickness">
+            <option
+              v-for="thickness in lineThicknessOptions"
+              :key="thickness.name"
+              :value="thickness.value"
+            >
+              {{ thickness.name }}
+            </option>
+          </select>
+        </label>
+      </div>
+      <div v-show="currentTool.codename === 'edge'" class="tool-group">
+        <label>
+          Color:
+          <select v-model="selectedLineColor">
+            <option v-for="color in lineColorTable" :key="color" :value="color">
+              {{ color }}
+            </option>
+          </select>
+        </label>
+        <label>
+          Thickness:
+          <select v-model="selectedLineThickness">
+            <option
+              v-for="thickness in lineThicknessOptions"
+              :key="thickness.name"
+              :value="thickness.value"
+            >
+              {{ thickness.name }}
+            </option>
+          </select>
+        </label>
+      </div>
+      <div v-show="currentTool.codename === 'text'" class="tool-group">
+        <label>
+          Color:
+          <select v-model="selectedTextColor">
+            <option value="auto">Auto</option>
+            <option v-for="color in textColorTable" :key="color" :value="color">
+              {{ color }}
+            </option>
+          </select>
+        </label>
+        <div v-show="currentSubtoolId === 1">
+          <input
+            ref="textInput"
+            v-model="textInputValue"
+            type="text"
+            @input="updateSelectedCell"
+            :disabled="!cursor"
+          />
+        </div>
+      </div>
+      <div v-show="currentTool.codename === 'shapes'" class="tool-group">
+        <label>
+          Shape
+          <select v-model="selectedShapeId">
+            <option v-for="shape in shapes" :key="shape.id" :value="shape.id">
+              {{ shape.label }}
+            </option>
+          </select>
+        </label>
       </div>
     </div>
-    <div v-show="currentTool.codename === 'shapes'">
-      <label>Shape: </label>
-      <select v-model="selectedShapeId">
-        <option v-for="shape in shapes" :key="shape.id" :value="shape.id">
-          {{ shape.label }}
-        </option>
-      </select>
-      <p>Click a cell to place or remove the selected shape</p>
+
+    <GridSVG
+      class="grid-canvas"
+      :size="480"
+      :grid-size="grid.size"
+      :layers="layers"
+      :cursor="currentTool.codename === 'text' ? cursor : null"
+      @center-cell-enter="onCenterEnter"
+      @corner-cell-enter="onCornerEnter"
+      @mouse-release="onMouseRelease"
+    />
+
+    <div class="undo-redo-button">
+      <button
+        class="tool-button"
+        @click="undo"
+        :disabled="undoStack.length === 0"
+        aria-label="Undo last edit"
+      >
+        Undo
+      </button>
+      <button
+        class="tool-button"
+        @click="redo"
+        :disabled="redoStack.length === 0"
+        aria-label="Redo last undone edit"
+      >
+        Redo
+      </button>
     </div>
-  </div>
-  <GridSVG
-    :size="480"
-    :grid-size="grid.size"
-    :layers="layers"
-    :cursor="currentTool.codename === 'text' ? cursor : null"
-    @center-cell-enter="onCenterEnter"
-    @corner-cell-enter="onCornerEnter"
-    @mouse-release="onMouseRelease"
-  />
-  <div class="undo-redo-button">
-    <button
-      @click="undo"
-      :disabled="undoStack.length === 0"
-      aria-label="Undo last edit"
-    >
-      Undo
-    </button>
-    <button
-      @click="redo"
-      :disabled="redoStack.length === 0"
-      aria-label="Redo last undone edit"
-    >
-      Redo
-    </button>
   </div>
 </template>
 
@@ -849,44 +827,78 @@ watch(
 </script>
 
 <style scoped>
-.grid-wrapper {
-  padding: 12px;
+.editor-con {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  --color-tool-active: #e9e9e9;
+  --border-color-tool-active: #3747ef;
 }
 
-.grid-row {
+.tool-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.tool-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.subtool-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  height: 45px;
+}
+
+.tool-group {
   display: flex;
   flex-direction: row;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
-.cell {
-  border: 1px solid #ccc;
-  width: 60px;
-  height: 60px;
+.tool-options-con {
   display: flex;
+  flex-direction: row;
   align-items: center;
-  justify-content: center;
-  user-select: none;
-  -moz-user-select: none;
+  gap: 12px;
+}
+
+.tool-button,
+.subtool-button {
+  border-radius: 4px;
+  padding: 5px 6px;
   cursor: pointer;
 }
 
-.cell-color-white {
-  background-color: white;
+.tool-button.active,
+.subtool-button.active {
+  border-color: var(--border-color-tool-active);
+  background: var(--border-color-tool-active);
+  color: var(--color-tool-active);
 }
 
-.cell-color-black {
-  background-color: black;
-  color: white;
-}
-
-button.active {
-  background-color: aqua;
-  color: black;
+.grid-canvas {
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  padding: 6px;
 }
 
 .undo-redo-button {
   display: flex;
   gap: 8px;
-  margin-top: 12px;
+}
+
+select,
+input[type="text"] {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 6px 8px;
+  font: inherit;
 }
 </style>

@@ -4,7 +4,7 @@ html {
   font-weight: normal;
   height: 100%;
   font-family: Arial, sans-serif;
-  background-color: rgb(193, 232, 232);
+  background-color: rgb(231, 231, 231);
 }
 
 body {
@@ -26,21 +26,26 @@ button,
   background: #fff;
   border: 1px solid #ccc;
   border-radius: 4px;
-  padding: 10px;
   font-size: 1rem;
   padding: 8px 16px;
   cursor: pointer;
-  transition: background-color 0.2s;
+  transition:
+    background-color 0.25s,
+    color 0.25s;
 }
 
 button:hover,
 .button:hover {
-  background-color: #e0e0e0;
+  background-color: var(--hover);
+}
+
+button:disabled,
+.button:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 input {
-  min-width: 250px;
-  min-height: 50px;
   font-size: 1rem;
   border: 2px solid rgb(169, 169, 169);
   border-radius: 4px;
