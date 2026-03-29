@@ -59,6 +59,7 @@ import SetterEditorComponent from "../components/SetterEditorComponent.vue";
 
 import { computed, ref } from "vue";
 import api from "@/services/api";
+import { useRoute } from "vue-router";
 import {
   applyEditMessage,
   getAnswerCheckList,
@@ -75,6 +76,7 @@ import {
 
 const uploadStatus = ref("");
 const puzzleId = ref<number | null>(null);
+const route = useRoute();
 const answerCheckInfoList = getAnswerCheckList();
 const customRulesInfoList = getRulesList();
 
@@ -171,6 +173,24 @@ const grid = ref<Grid>({
     rules: [],
   },
 });
+
+async function loadPuzzleIfNeeded() {
+  const idParam = route.query.id;
+  if (idParam && typeof idParam === "string" && /^[0-9]+$/.test(idParam)) {
+    try {
+      const res = await api.get(`/puzzles/${idParam}`);
+      if (res.data && res.data.puzzle_json) {
+        grid.value = res.data.puzzle_json;
+        puzzleId.value = Number(idParam);
+      }
+    } catch (e) {
+      uploadStatus.value = "Failed to load puzzle for editing.";
+    }
+  }
+}
+
+// TODO: Check if needed
+loadPuzzleIfNeeded();
 
 const showRulesLayerPreview = ref(true);
 

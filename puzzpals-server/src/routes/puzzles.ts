@@ -126,18 +126,22 @@ router.get("/user", async (req, res) => {
 
 // Get puzzle by id
 router.get("/:id", async (req, res) => {
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id < 0) {
+  const idParam = req.params.id;
+  if (typeof idParam !== "string" || !/^[0-9]+$/.test(idParam)) {
+    return res.status(400).json({ error: "Invalid puzzle id" });
+  }
+  const id = Number(idParam);
+  if (!Number.isSafeInteger(id) || id < 0) {
     return res.status(400).json({ error: "Invalid puzzle id" });
   }
   try {
-    const puzzle = await getPuzzleById(id);
+    const puzzle: Puzzle | null = await getPuzzleById(id);
     if (!puzzle) {
       return res.status(404).json({ error: "Puzzle not found" });
     }
-    res.json(puzzle);
+    return res.json(puzzle);
   } catch {
-    res.status(500).json({ error: "Failed to fetch puzzle" });
+    return res.status(500).json({ error: "Failed to fetch puzzle" });
   }
 });
 
@@ -151,13 +155,12 @@ router.patch("/:id", async (req, res) => {
     return res.status(400).json({ error: "Invalid puzzle id" });
   }
   const author_id = req.session.user.id;
-  const { description, puzzle_json, published, publish_date } = req.body;
+  const { description, puzzleJson, published } = req.body;
   try {
     const updated = await updatePuzzle(id, author_id, {
       description,
-      puzzle_json,
+      puzzle_json: puzzleJson,
       published,
-      publish_date,
     });
     if (!updated) {
       return res

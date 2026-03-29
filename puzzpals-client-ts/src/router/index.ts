@@ -21,6 +21,11 @@ const router = createRouter({
     },
     { path: "/editor", component: EditorPage },
     { path: "/catalogue", component: () => import("@/views/Catalogue.vue") },
+    {
+      path: "/puzzle/:id",
+      component: () => import("@/views/PuzzleDetail.vue"),
+      props: true,
+    },
     { path: "/my-puzzles", component: MyPuzzles },
     { path: "/login", component: Login, meta: { hideHeader: false } },
   ],

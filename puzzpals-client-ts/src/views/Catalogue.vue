@@ -4,22 +4,24 @@
     <div v-if="loading">Loading puzzles...</div>
     <div v-else>
       <div v-for="puzzle in puzzles" :key="puzzle.id" class="puzzle-card">
-        <h2>{{ puzzle.description || "Untitled Puzzle" }}</h2>
-        <p><strong>Author:</strong> {{ puzzle.author }}</p>
-        <p>
-          <strong>Date:</strong>
-          {{
-            puzzle.publish_date
-              ? new Date(puzzle.publish_date).toLocaleString()
-              : "Unknown"
-          }}
-        </p>
-        <div v-if="puzzle.puzzle_json">
-          <GridSVG
-            :size="240"
-            :grid-size="puzzle.puzzle_json.size"
-            :layers="[puzzle.puzzle_json.problem]"
-          />
+        <div class="puzzle-card-content" @click="goToDetail(puzzle.id)">
+          <h2>{{ puzzle.description || "Untitled Puzzle" }}</h2>
+          <p><strong>Author:</strong> {{ puzzle.author }}</p>
+          <p>
+            <strong>Date:</strong>
+            {{
+              puzzle.publish_date
+                ? new Date(puzzle.publish_date).toLocaleString()
+                : "Unknown"
+            }}
+          </p>
+          <div v-if="puzzle.puzzle_json">
+            <GridSVG
+              :size="240"
+              :grid-size="puzzle.puzzle_json.size"
+              :layers="[puzzle.puzzle_json.problem]"
+            />
+          </div>
         </div>
       </div>
       <div v-if="puzzles.length === 0">No puzzles found.</div>
@@ -58,6 +60,12 @@ async function fetchPuzzles() {
 }
 
 onMounted(fetchPuzzles);
+
+import { useRouter } from "vue-router";
+const router = useRouter();
+function goToDetail(id: number) {
+  router.push(`/puzzle/${id}`);
+}
 </script>
 
 <style scoped>
@@ -71,5 +79,10 @@ onMounted(fetchPuzzles);
   margin-bottom: 1em;
   border-radius: 8px;
   background: #fafafa;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+}
+.puzzle-card:hover {
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
 }
 </style>
