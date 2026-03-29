@@ -52,14 +52,17 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ error: "Invalid puzzleJson" });
   }
 
-  const savedPuzzle = await addPuzzle(
-    payload.title,
-    payload.author,
-    payload.description,
-    parsedPuzzle,
-  );
-
-  res.status(201).json(savedPuzzle);
+  try {
+    const savedPuzzle = await addPuzzle(
+      payload.title,
+      payload.author,
+      payload.description,
+      parsedPuzzle,
+    );
+    res.status(201).json(savedPuzzle);
+  } catch {
+    return res.status(500).json({ error: "Failed to save puzzle" });
+  }
 });
 
 // Get puzzle by id
