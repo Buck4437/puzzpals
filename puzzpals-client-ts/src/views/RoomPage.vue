@@ -99,9 +99,11 @@ async function checkRoomExists() {
     // Check that the room exists
     const res = await api.get(`/rooms/${props.token}/exists`);
     if (res.data.exists === false) router.push("/404");
+    return res.data.exists;
   } catch (err) {
     console.error(err);
     router.push("/");
+    return false;
   }
 }
 
@@ -212,7 +214,10 @@ function initiateSocket() {
 onBeforeMount(initiateSocket);
 
 onMounted(async () => {
-  await checkRoomExists();
+  const roomExists = await checkRoomExists();
+  if (!roomExists) {
+    return;
+  }
   console.log(`Joining room ${props.token}`);
   await joinRoom();
 });
