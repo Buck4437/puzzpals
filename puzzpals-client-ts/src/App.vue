@@ -1,51 +1,58 @@
 <template>
-  <div class="app-shell">
-    <header class="main-header" v-if="$route.meta.hideHeader !== true">
-      <h1>Puzzpals</h1>
-      <div>
-        <button class="create-room-btn" @click="openRoomDialog">
-          Create Room
-        </button>
-        <nav class="user-icon-dropdown">
-          <div v-if="currentUser">
-            <img
-              :src="currentUser.picture"
-              class="profile-icon"
-              @click="toggleDropdown"
-              alt="User Icon"
-            />
-            <div v-if="dropdownOpen" class="dropdown-menu">
-              <div>{{ currentUser.email }}</div>
-              <button class="login-btn" @click="logout">Logout</button>
-            </div>
+  <header class="main-header" v-if="$route.meta.hideHeader !== true">
+    <h1>Puzzpals</h1>
+    <div>
+      <button class="create-room-btn" @click="openRoomDialog">
+        Create Room
+      </button>
+      <nav class="user-icon-dropdown">
+        <div v-if="currentUser">
+          <img
+            :src="currentUser.picture"
+            class="profile-icon"
+            @click="toggleDropdown"
+            alt="User Icon"
+          />
+          <div v-if="dropdownOpen" class="dropdown-menu">
+            <div>{{ currentUser.email }}</div>
+            <button class="login-btn" @click="logout">Logout</button>
           </div>
-          <div v-else>
-            <button class="login-btn" @click="goLogin">Login</button>
-          </div>
-        </nav>
-      </div>
-    </header>
-    <main class="main-page">
-      <!-- Side Bar -->
-      <NavigationSidebar
-        v-if="$route.meta.hideHeader !== true"
-        :routes="navRoutes"
-        @route-selected="handleRouteSelected"
-      />
-      <div class="content-area">
-        <RouterView />
-      </div>
-      <CreateRoomDialog
-        v-if="showCreateRoomDialog"
-        @close="showCreateRoomDialog = false"
-      />
-    </main>
-  </div>
+        </div>
+        <div v-else>
+          <button class="login-btn" @click="goLogin">Login</button>
+        </div>
+      </nav>
+    </div>
+  </header>
+  <main
+    class="main-page"
+    :class="{ 'main-page-fullscreen': $route.meta.fullScreen === true }"
+  >
+    <!-- Side Bar -->
+    <NavigationSidebar
+      v-if="$route.meta.fullScreen !== true"
+      :routes="navRoutes"
+      @route-selected="handleRouteSelected"
+    />
+    <div
+      class="content-area"
+      :class="{ 'content-area-fullscreen': $route.meta.fullScreen === true }"
+    >
+      <RouterView />
+    </div>
+    <CreateRoomDialog
+      v-if="showCreateRoomDialog"
+      @close="showCreateRoomDialog = false"
+      @upload-success="showCreateRoomDialog = false"
+    />
+  </main>
 </template>
 
 <script setup lang="ts">
 import "./assets/main.css";
+import "./assets/colors.css";
 import { computed, ref } from "vue";
+
 import { useRouter } from "vue-router";
 import NavigationSidebar from "./components/NavigationSidebar.vue";
 import CreateRoomDialog from "./components/CreateRoomModal.vue";
@@ -104,6 +111,10 @@ function goLogin() {
   router.push("/Login");
 }
 
+function goToHome() {
+  router.push("/");
+}
+
 function openRoomDialog() {
   showCreateRoomDialog.value = true;
 }
@@ -113,6 +124,7 @@ function openRoomDialog() {
 h1 {
   font-size: 24px;
   margin: 0;
+  cursor: pointer;
 }
 .app-shell {
   height: 100%;
@@ -134,9 +146,6 @@ main {
   border-bottom: 1px solid #e0e0e0;
 }
 .login-btn {
-  background: #fff;
-  border: 1px solid #ccc;
-  border-radius: 4px;
   margin: 4px 0;
   margin-left: 8px;
   padding: 8px 16px;

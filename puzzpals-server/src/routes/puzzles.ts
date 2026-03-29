@@ -38,7 +38,7 @@ const router = express.Router();
  */
 
 router.get("/", async (req, res) => {
-  const limit = Number(req.query.limit) || 5;
+  const limit = Number(req.query.limit);
   if (
     !Number.isFinite(limit) ||
     !Number.isInteger(limit) ||
@@ -100,15 +100,19 @@ router.post("/", async (req, res) => {
   } catch {
     return res.status(400).json({ error: "Invalid puzzleJson" });
   }
-  const savedPuzzle = await addPuzzle(
-    payload.title,
-    author,
-    author_id,
-    payload.description,
-    parsedPuzzle,
-    payload.published,
-  );
-  res.status(201).json(savedPuzzle);
+  try {
+    const savedPuzzle = await addPuzzle(
+      payload.title,
+      author,
+      author_id,
+      payload.description,
+      parsedPuzzle,
+      payload.published,
+    );
+    res.status(201).json(savedPuzzle);
+  } catch {
+    return res.status(500).json({ error: "Failed to save puzzle" });
+  }
 });
 
 /*

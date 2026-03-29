@@ -19,9 +19,10 @@ function createMockSocket() {
       events[ev] = listener;
     },
 
-    call(ev: string, ...args: unknown[]) {
+    async call(ev: string, ...args: unknown[]) {
       if (events[ev] !== undefined) {
-        events[ev](...args);
+        // Callback might be async
+        await events[ev](...args);
       }
     },
 

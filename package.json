@@ -14,7 +14,8 @@
     "build:client": "cd puzzpals-client-ts && npm run build",
     "build:server": "cd puzzpals-server && npm run build",
     "postinstall": "npm run build:server",
-    "build-all": "npm run build:server && npm run build:client"
+    "build-all": "npm run build:server && npm run build:client",
+    "test": "npm run -w puzzpals-server test && npm run -w puzzpals-client-ts test"
   },
   "devDependencies": {
     "@eslint/compat": "^2.0.3",

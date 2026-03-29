@@ -4,7 +4,8 @@ html {
   font-weight: normal;
   background-color: rgb(211, 247, 247);
   height: 100%;
-  font-family: Arial, sans-serif;
+  font-family: "Montserrat", Arial, sans-serif;
+  background-color: rgb(231, 231, 231);
 }
 
 body {
@@ -23,19 +24,63 @@ body {
 
 button,
 .button {
-  background: #fff;
-  border: 1px solid #ccc;
-  border-radius: 4px;
+  font-family: "Montserrat", Arial, sans-serif;
+  background: #f8f9fa;
+  color: #222;
+  border: none;
+  border-radius: 6px;
   font-size: 1rem;
-  padding: 8px 16px;
+  padding: 10px 22px;
   cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  transition:
+    background 0.2s,
+    color 0.2s,
+    box-shadow 0.2s;
+  outline: none;
 }
 
-input {
-  min-width: 250px;
-  min-height: 50px;
+button:hover,
+.button:hover {
+  background: #ececec;
+  color: #111;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+button:active,
+.button:active {
+  background: #e0e0e0;
+  color: #111;
+}
+
+button:disabled,
+.button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+button:hover,
+.button:hover {
+  background-color: var(--hover);
+}
+
+button:disabled,
+.button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+input,
+select,
+textarea {
+  font-family: "Montserrat", Arial, sans-serif;
   font-size: 1rem;
   border: 2px solid rgb(169, 169, 169);
   border-radius: 4px;
   text-align: center;
+}
+
+input[type="range"] {
+  font-family: "Montserrat", Arial, sans-serif;
 }
