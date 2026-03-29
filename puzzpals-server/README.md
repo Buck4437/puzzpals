@@ -9,7 +9,7 @@
 A room. An object with the following properties:
 
 - `token`: `string`. Room token, used to uniquely identify a room. Anyone who has the room token can join the room.
-- `puzzle_data`: `string`, stringified [`GameData`](../packages/puzzle-models/README.md#gamedata). Optional. State of the grid in the room.
+- `puzzle_data`: [`GameData`](../packages/puzzle-models/README.md#gamedata). The current state of the grid in the room.
 
 ### `Puzzle`
 
@@ -32,7 +32,7 @@ Join a client to a room. Arguments:
 
 If successful, `room:initialize` is emitted to the client with the following arguments:
 
-- `grid`: [`GameData`](../packages/puzzle-models/README.md#gamedata). The current state of the grid in the room.
+- `game`: [`GameData`](../packages/puzzle-models/README.md#gamedata). The current state of the grid in the room.
 - `userID`: `string`. Username assigned by the server to the user.
 
 ### `grid:edit`
@@ -71,21 +71,21 @@ If successful, the server responds with a `string`, token of the created room.
 
 If the request body is invalid, the server responds with `400 Bad Request`.
 
-### GET `/api/rooms/:token`
+### GET `/api/rooms/:token/exists`
 
-Fetch a room by its token. Parameters:
+Check whether a room exists. Parameters:
 
-- `token`: The token of the room to fetch.
+- `token`: The token of the room to check.
 
-If successful, the server responds with [`GameData`](../packages/puzzle-models/README.md#gamedata) of the room.
+If successful, the server responds with an object with the following property:
 
-If the room does not exist, the server responds with `404 Not Found`.
+- `exists`: `boolean`. Whether the room exists.
 
 ### GET `/api/puzzles/`
 
 Fetch the most recent puzzles. Query parameters:
 
-- `limit`: The maximum number of puzzles to fetch. Maximum 100. Default 5.
+- `limit`: The maximum number of puzzles to fetch. Must be an integer between 1 and 100 (both inclusive). Default 5.
 
 If successful, the server responds with an array of `Puzzle`s.
 
@@ -98,7 +98,7 @@ Add a puzzle to the catalogue. The request body should contain the following pro
 - `title`: `string`. Puzzle title.
 - `author`: `string`. Name of the puzzle author.
 - `description`: `string`. Puzzle description.
-- `puzzle_json`: [`Grid`](../packages/puzzle-models/README.md#grid). Puzzle data.
+- `puzzleJson`: [`Grid`](../packages/puzzle-models/README.md#grid). Puzzle data.
 
 If successful, the server responds with `201 Created` with the newly created `Puzzle`.
 
@@ -125,7 +125,6 @@ Add a puzzle to the `Puzzle` table. Arguments:
 - `author`: `string`. Name of the puzzle author.
 - `description`: `string`. Puzzle description.
 - `puzzleJson`: `Grid`. Puzzle data.
-- `publishDate`: `Date`. Optional, defaults to the current time. Publishing time.
 
 Returns the newly created `Puzzle`.
 
@@ -149,8 +148,7 @@ Returns the `Puzzle` if found, `null` otherwise.
 
 Save a room to the database. Arguments:
 
-- `token`: `string`. Room token.
-- `puzzleJson`: `string`, stringified [`GameData`](../packages/puzzle-models/README.md#gamedata). State of the grid in the room.
+- `room`: `Room`. The room to save.
 
 ### `fetchRoom`
 

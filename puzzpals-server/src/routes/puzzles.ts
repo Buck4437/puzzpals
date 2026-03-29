@@ -7,6 +7,8 @@ import {
   updatePuzzle,
 } from "../db.js";
 import type { Puzzle } from "../models/Puzzle.js";
+import { parsePuzzle } from "@puzzpals/puzzle-parser";
+// import { auth } from "google-auth-library";
 
 const router = express.Router();
 
@@ -31,7 +33,12 @@ const router = express.Router();
 // Get all puzzles
 router.get("/", async (req, res) => {
   const limit = Number(req.query.limit) || 5;
-  if (!Number.isFinite(limit) || !Number.isInteger(limit) || limit < 0) {
+  if (
+    !Number.isFinite(limit) ||
+    !Number.isInteger(limit) ||
+    limit < 1 ||
+    limit > 100
+  ) {
     res.status(400).json({ error: "Invalid limit param" });
     return;
   }
@@ -56,39 +63,47 @@ router.post("/", async (req, res) => {
     "Cache-Control",
     "no-store, no-cache, must-revalidate, proxy-revalidate",
   );
+
   // Populate author and author_id from session
   const author = req.session.user.name || req.session.user.email || "Unknown";
   const author_id = req.session.user.id;
-  const { description, puzzle_json, publish_date, published } = req.body;
-  if (!puzzle_json) {
-    return res.status(400).json({ error: "Missing puzzle_json" });
+  const payload = req.body as unknown;
+
+  if (
+    !(
+      typeof payload === "object" &&
+      payload !== null &&
+      "title" in payload &&
+      typeof payload.title === "string" &&
+      "author" in payload &&
+      typeof payload.author === "string" &&
+      "description" in payload &&
+      typeof payload.description === "string" &&
+      "published" in payload &&
+      typeof payload.published === "boolean" &&
+      "puzzleJson" in payload
+    )
+  ) {
+    return res.status(400).json({ error: "Invalid payload" });
   }
+
+  let parsedPuzzle;
   try {
-    let dateObj;
-    if (publish_date) {
-      dateObj = new Date(publish_date);
-      if (isNaN(dateObj.getTime())) dateObj = new Date();
-    } else {
-      dateObj = new Date();
-    }
-    // Pass author and author_id to addPuzzle
-    const puzzle = await addPuzzle(
-      author,
-      author_id,
-      description || "",
-      puzzle_json,
-      dateObj,
-      published === true,
-    );
-    res.status(201).json(puzzle);
-  } catch (err) {
-    console.error("Error adding puzzle:", err);
-    const details =
-      err && typeof err === "object" && "message" in err
-        ? (err as Error).message
-        : String(err);
-    res.status(500).json({ error: "Failed to add puzzle", details });
+    parsedPuzzle = parsePuzzle(payload.puzzleJson);
+  } catch {
+    return res.status(400).json({ error: "Invalid puzzleJson" });
   }
+
+  const savedPuzzle = await addPuzzle(
+    payload.title,
+    author,
+    author_id,
+    payload.description,
+    parsedPuzzle,
+    payload.published,
+  );
+
+  res.status(201).json(savedPuzzle);
 });
 
 // Get all puzzles for a user

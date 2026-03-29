@@ -302,21 +302,39 @@ async function publishPuzzle() {
   try {
     const puzzleObj = getPuzzleJSON();
     let res;
-    if (puzzleId.value == null) {
-      res = await api.post("/puzzles", {
+    //     if (puzzleId.value == null) {
+    //       res = await api.post("/puzzles", {
+    //         author: "synthetic",
+    //         description: "Published from editor",
+    //         puzzle_json: puzzleObj,
+    //         publish_date: new Date().toISOString(),
+    //         published: true,
+    //       });
+    //       puzzleId.value = res.data.id;
+    //     } else {
+    //       res = await api.patch(`/puzzles/${puzzleId.value}`, {
+    //         description: "Published from editor",
+    //         puzzle_json: puzzleObj,
+    //         published: true,
+    //       });
+    //     }
+    // =======
+    if (puzzleId.value != null) {
+      res = await api.patch(`/puzzles/${puzzleId.value}`, {
         author: "synthetic",
         description: "Published from editor",
-        puzzle_json: puzzleObj,
-        publish_date: new Date().toISOString(),
+        puzzleJson: puzzleObj,
+        published: true,
+      });
+    } else {
+      res = await api.post("/puzzles", {
+        title: "Untitled",
+        author: "synthetic",
+        description: "Published from editor",
+        puzzleJson: puzzleObj,
         published: true,
       });
       puzzleId.value = res.data.id;
-    } else {
-      res = await api.patch(`/puzzles/${puzzleId.value}`, {
-        description: "Published from editor",
-        puzzle_json: puzzleObj,
-        published: true,
-      });
     }
     uploadStatus.value = "Publish successful!";
   } catch (e: any) {
