@@ -57,7 +57,7 @@ router.post("/create", async (req, res) => {
     return res.status(400).json({ error: "Invalid puzzle data" });
   }
 
-  res.json(token);
+  res.json({ token: token });
 });
 
 // Check room existence

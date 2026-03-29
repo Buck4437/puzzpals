@@ -16,13 +16,18 @@ const gameData: GameData = {
     problem: {
       lineObjects: {},
       surfaceObjects: {},
-      symbolObjects: {},
+      textObjects: {},
+      shapeObjects: {},
+    },
+    options: {
+      rules: [],
     },
   },
   playerSolution: {
     lineObjects: {},
     surfaceObjects: {},
-    symbolObjects: {},
+    textObjects: {},
+    shapeObjects: {},
   },
 };
 
@@ -30,7 +35,7 @@ const token = "abcdefghij";
 
 const room: Room = {
   token: token,
-  puzzle_data: JSON.stringify(gameData),
+  puzzle_data: gameData,
 };
 
 async function createSocketInRoom() {

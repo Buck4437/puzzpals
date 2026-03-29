@@ -21,13 +21,18 @@ describe("RoomPage", () => {
       problem: {
         lineObjects: {},
         surfaceObjects: {},
-        symbolObjects: {},
+        textObjects: {},
+        shapeObjects: {},
+      },
+      options: {
+        rules: [],
       },
     },
     playerSolution: {
       lineObjects: {},
       surfaceObjects: {},
-      symbolObjects: {},
+      textObjects: {},
+      shapeObjects: {},
     },
   };
 
@@ -42,7 +47,7 @@ describe("RoomPage", () => {
   // As a player, I want to synchronise my progress with other players
   // so that we can collaborate on the same puzzle.
   it("joins room", async () => {
-    api.get.mockResolvedValueOnce({ data: { room: token } });
+    api.get.mockResolvedValueOnce({ data: { exists: true } });
 
     // Load the room page
     mount(RoomPage, { props: { token: token } });
@@ -54,7 +59,7 @@ describe("RoomPage", () => {
   });
 
   it("redirects to 404 if room does not exist", async () => {
-    api.get.mockRejectedValueOnce({ response: { status: 404 } });
+    api.get.mockResolvedValueOnce({ data: { exists: false } });
 
     // Load the room page with non-existent room
     mount(RoomPage, { props: { token: token } });

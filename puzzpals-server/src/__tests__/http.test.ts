@@ -11,7 +11,11 @@ const validPayload = {
   problem: {
     lineObjects: {},
     surfaceObjects: {},
-    symbolObjects: {},
+    textObjects: {},
+    shapeObjects: {},
+  },
+  options: {
+    rules: [],
   },
 };
 
@@ -28,17 +32,17 @@ describe("Create room API", () => {
   });
 });
 
-describe("Get room API", () => {
-  it("succeeds when room exists", async () => {
+describe("Check room existence API", () => {
+  it("returns true when room exists", async () => {
     const res1 = await request(app)
       .post("/api/rooms/create")
       .send(validPayload);
-    const res2 = await request(app).get(`/api/rooms/${res1.body.token}`);
-    expect(res2.ok).toBe(true);
+    const res2 = await request(app).get(`/api/rooms/${res1.body.token}/exists`);
+    expect(res2.body.exists).toBe(true);
   });
 
-  it("responds 404 when room does not exist", async () => {
-    const res = await request(app).get("/api/rooms/abcdefghij");
-    expect(res.notFound).toBe(true);
+  it("returns false when room does not exist", async () => {
+    const res = await request(app).get("/api/rooms/abcdefghij/exists");
+    expect(res.body.exists).toBe(false);
   });
 });
