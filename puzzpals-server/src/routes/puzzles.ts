@@ -7,7 +7,7 @@ const router = express.Router();
 
 // Get all puzzles
 router.get("/", async (req, res) => {
-  const limit = Number(req.query.limit) || 5;
+  const limit = Number(req.query.limit);
   if (
     !Number.isFinite(limit) ||
     !Number.isInteger(limit) ||
