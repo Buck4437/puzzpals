@@ -30,7 +30,13 @@ const router = express.Router();
 //   };
 // }
 
-// Get all puzzles
+/*
+ * Catalogue Fetch
+ * - All published puzzles, sorted by newest first, with a limit parameter (default 5, max 100)
+ * - Anyone can fetch, no auth required
+ * - TODO: No solution data should be included in the response
+ */
+
 router.get("/", async (req, res) => {
   const limit = Number(req.query.limit) || 5;
   if (
@@ -50,25 +56,26 @@ router.get("/", async (req, res) => {
   }
 });
 
-// Add a new puzzle
+/*
+ * Puzzle Creation
+ * - Only signed-in users can create puzzles
+ * - Author and author_id are populated from session, not client input
+ * - puzzleJson must be validated and parsable
+ * - No caching for this endpoint
+ */
 router.post("/", async (req, res) => {
-  // Restrict to signed-in users only
   if (!req.session.user || req.session.user.is_guest) {
     return res
       .status(403)
       .json({ error: "Only signed-in users can publish puzzles." });
   }
-  // Prevent browser caching for this endpoint
   res.setHeader(
     "Cache-Control",
     "no-store, no-cache, must-revalidate, proxy-revalidate",
   );
-
-  // Populate author and author_id from session
   const author = req.session.user.name || req.session.user.email || "Unknown";
   const author_id = req.session.user.id;
   const payload = req.body as unknown;
-
   if (
     !(
       typeof payload === "object" &&
@@ -93,7 +100,6 @@ router.post("/", async (req, res) => {
   } catch {
     return res.status(400).json({ error: "Invalid puzzleJson" });
   }
-
   const savedPuzzle = await addPuzzle(
     payload.title,
     author,
@@ -102,16 +108,19 @@ router.post("/", async (req, res) => {
     parsedPuzzle,
     payload.published,
   );
-
   res.status(201).json(savedPuzzle);
 });
 
-// Get all puzzles for a user
+/*
+ * User Puzzles
+ * - Fetch all puzzles created by the signed-in user, sorted by newest first
+ * - Auth required, only returns puzzles where author_id matches session user id
+ * - No caching for this endpoint
+ */
 router.get("/user", async (req, res) => {
   if (!req.session.user) {
     return res.status(401).json({ error: "Not authenticated" });
   }
-  // Prevent browser caching for this endpoint
   res.setHeader(
     "Cache-Control",
     "no-store, no-cache, must-revalidate, proxy-revalidate",
@@ -124,7 +133,14 @@ router.get("/user", async (req, res) => {
   }
 });
 
-// Get puzzle by id
+/*
+ * Get Puzzle by ID
+ * - Fetch a single puzzle by its ID
+ * - If not auth, Only published puzzles are returned
+ * - If auth, users can fetch their own unpublished puzzles, but not others' unpublished puzzles
+ * - No caching for this endpoint
+ */
+
 router.get("/:id", async (req, res) => {
   const idParam = req.params.id;
   if (typeof idParam !== "string" || !/^[0-9]+$/.test(idParam)) {
@@ -138,6 +154,48 @@ router.get("/:id", async (req, res) => {
     const puzzle: Puzzle | null = await getPuzzleById(id);
     if (!puzzle) {
       return res.status(404).json({ error: "Puzzle not found" });
+    }
+    // If not authenticated, only allow published puzzles
+    if (!req.session.user) {
+      if (!puzzle.published) {
+        return res.status(403).json({ error: "Puzzle not found" });
+      }
+      return res.json(puzzle);
+    }
+    // If authenticated, allow own unpublished puzzles, but not others'
+    if (puzzle.published || puzzle.author_id === req.session.user.id) {
+      return res.json(puzzle);
+    } else {
+      return res.status(403).json({ error: "Puzzle not found" });
+    }
+  } catch {
+    return res.status(500).json({ error: "Failed to fetch puzzle" });
+  }
+});
+
+/*
+ * Get Puzzle by ID into Editor
+ * - Fetch a single puzzle by its ID
+ * - Auth required to fetch for editing
+ * - No caching for this endpoint
+ */
+
+router.get("/:id/edit", async (req, res) => {
+  const idParam = req.params.id;
+  if (typeof idParam !== "string" || !/^[0-9]+$/.test(idParam)) {
+    return res.status(400).json({ error: "Invalid puzzle id" });
+  }
+  const id = Number(idParam);
+  if (!Number.isSafeInteger(id) || id < 0) {
+    return res.status(400).json({ error: "Invalid puzzle id" });
+  }
+  try {
+    const puzzle: Puzzle | null = await getPuzzleById(id);
+    if (!puzzle) {
+      return res.status(404).json({ error: "Puzzle not found" });
+    }
+    if (!req.session.user || puzzle.author_id !== req.session.user.id) {
+      return res.status(403).json({ error: "Puzzle not found" });
     }
     return res.json(puzzle);
   } catch {

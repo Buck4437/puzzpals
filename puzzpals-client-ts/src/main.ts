@@ -12,11 +12,11 @@ app.use(router);
 
 app.mount("#app");
 
-import { useUserStore } from "./stores/user";
+// import { useUserStore } from "./stores/user";
 
-window.addEventListener("storage", (event) => {
-  if (event.key === "authChanged") {
-    const userStore = useUserStore();
-    userStore.fetchUser();
-  }
-});
+// window.addEventListener("storage", (event) => {
+//   if (event.key === "authChanged") {
+//     const userStore = useUserStore();
+//     userStore.fetchUser();
+//   }
+// });

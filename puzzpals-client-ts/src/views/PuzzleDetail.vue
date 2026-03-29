@@ -70,8 +70,23 @@ async function fetchPuzzle() {
   }
 }
 
-function openRoom() {
-  router.push({ path: `/room/${puzzleId.value}` });
+async function openRoom() {
+  try {
+    const res = await api.post(
+      "/rooms/create-from-id",
+      { puzzleId: puzzleId.value },
+      {
+        headers: { "Content-Type": "application/json" },
+      },
+    );
+    if (res && res.data) {
+      router.push(`/room/${res.data}`);
+    } else {
+      alert("Failed to create room.");
+    }
+  } catch (err: any) {
+    alert(`Failed to create room: ${err.response?.data?.error || err.message}`);
+  }
 }
 
 function editPuzzle() {

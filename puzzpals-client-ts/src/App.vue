@@ -48,6 +48,7 @@ import "./assets/main.css";
 import { computed, ref } from "vue";
 import { useRouter } from "vue-router";
 import NavigationSidebar from "./components/NavigationSidebar.vue";
+import CreateRoomDialog from "./components/CreateRoomModal.vue";
 
 import { useUserStore } from "./stores/user";
 const userStore = useUserStore();

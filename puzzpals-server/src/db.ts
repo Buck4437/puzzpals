@@ -138,6 +138,7 @@ export async function addPuzzle(
   return result.rows[0] as Puzzle;
 }
 
+// Only author can update their puzzle: Author-check implemented here
 export async function updatePuzzle(
   id: number,
   author_id: number,

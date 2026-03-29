@@ -8,4 +8,5 @@ export interface Puzzle {
   description: string;
   puzzle_json: Grid;
   publish_date: Date;
+  published: boolean;
 }

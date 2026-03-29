@@ -60,6 +60,42 @@ router.post("/create", async (req, res) => {
   res.json(token);
 });
 
+// Create room from puzzle ID in DB
+router.post("/create-from-id", async (req, res) => {
+  const { puzzleId } = req.body;
+  if (!puzzleId || typeof puzzleId !== "number" || puzzleId < 0) {
+    return res.status(400).json({ error: "Invalid puzzle id" });
+  }
+  try {
+    const { getPuzzleById } = await import("../db.js");
+    const puzzle = await getPuzzleById(puzzleId);
+    if (!puzzle || !puzzle.puzzle_json) {
+      return res.status(404).json({ error: "Puzzle not found" });
+    }
+    const { parsePuzzle, createEmptyLayerData } =
+      await import("@puzzpals/puzzle-parser");
+    const parsedPuzzle = parsePuzzle(puzzle.puzzle_json);
+    const gameData = {
+      puzzle: parsedPuzzle,
+      playerSolution: createEmptyLayerData(),
+    } as GameData;
+    const token = await generateToken();
+    if (token === null) {
+      return res
+        .status(500)
+        .json({ error: "Could not create room, please try again" });
+    }
+    createRoomInStore({ token: token, puzzle_data: gameData });
+    res.json(token);
+  } catch (err) {
+    console.log(
+      "Error creating room from id:",
+      err instanceof Error ? err.message : err,
+    );
+    res.status(500).json({ error: "Failed to create room from puzzle id" });
+  }
+});
+
 // Check room existence
 router.get("/:token/exists", async (req, res) => {
   const { token } = req.params;
