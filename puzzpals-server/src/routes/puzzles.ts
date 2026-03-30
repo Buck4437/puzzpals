@@ -59,21 +59,18 @@ router.get("/", async (req, res) => {
 /*
  * Puzzle Creation
  * - Only signed-in users can create puzzles
- * - Author and author_id are populated from session, not client input
+ * - Author_id is populated from session, not client input
  * - puzzleJson must be validated and parsable
  * - No caching for this endpoint
  */
 router.post("/", async (req, res) => {
   if (!req.session.user || req.session.user.is_guest) {
-    return res
-      .status(403)
-      .json({ error: "Only signed-in users can publish puzzles." });
+    return res.status(401).json({ error: "Not authenticated." });
   }
   res.setHeader(
     "Cache-Control",
     "no-store, no-cache, must-revalidate, proxy-revalidate",
   );
-  const author = req.session.user.name || req.session.user.email || "Unknown";
   const author_id = req.session.user.id;
   const payload = req.body as unknown;
   if (
@@ -93,7 +90,6 @@ router.post("/", async (req, res) => {
   ) {
     return res.status(400).json({ error: "Invalid payload" });
   }
-
   let parsedPuzzle;
   try {
     parsedPuzzle = parsePuzzle(payload.puzzleJson);
@@ -103,7 +99,7 @@ router.post("/", async (req, res) => {
   try {
     const savedPuzzle = await addPuzzle(
       payload.title,
-      author,
+      payload.author,
       author_id,
       payload.description,
       parsedPuzzle,
@@ -112,6 +108,65 @@ router.post("/", async (req, res) => {
     res.status(201).json(savedPuzzle);
   } catch {
     return res.status(500).json({ error: "Failed to save puzzle" });
+  }
+});
+
+// Update a puzzle (draft or publish)
+router.patch("/:id", async (req, res) => {
+  if (!req.session.user) {
+    return res.status(401).json({ error: "Not authenticated" });
+  }
+  res.setHeader(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, proxy-revalidate",
+  );
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id < 0) {
+    return res.status(400).json({ error: "Invalid puzzle id" });
+  }
+  const author_id = req.session.user.id;
+  const payload = req.body as unknown;
+  if (
+    !(
+      typeof payload === "object" &&
+      payload !== null &&
+      "title" in payload &&
+      typeof payload.title === "string" &&
+      "author" in payload &&
+      typeof payload.author === "string" &&
+      "description" in payload &&
+      typeof payload.description === "string" &&
+      "published" in payload &&
+      typeof payload.published === "boolean" &&
+      "puzzleJson" in payload
+    )
+  ) {
+    return res.status(400).json({ error: "Invalid payload" });
+  }
+  let parsedPuzzle;
+  try {
+    parsedPuzzle = parsePuzzle(payload.puzzleJson);
+  } catch {
+    return res.status(400).json({ error: "Invalid puzzleJson" });
+  }
+  try {
+    const updated = await updatePuzzle(
+      id,
+      author_id,
+      payload.title,
+      payload.author,
+      payload.description,
+      parsedPuzzle,
+      payload.published,
+    );
+    if (!updated) {
+      return res
+        .status(404)
+        .json({ error: "Puzzle not found or not owned by user" });
+    }
+    res.json(updated);
+  } catch {
+    res.status(500).json({ error: "Failed to update puzzle" });
   }
 });
 
@@ -204,34 +259,6 @@ router.get("/:id/edit", async (req, res) => {
     return res.json(puzzle);
   } catch {
     return res.status(500).json({ error: "Failed to fetch puzzle" });
-  }
-});
-
-// Update a puzzle (draft or publish)
-router.patch("/:id", async (req, res) => {
-  if (!req.session.user) {
-    return res.status(401).json({ error: "Not authenticated" });
-  }
-  const id = Number(req.params.id);
-  if (!Number.isInteger(id) || id < 0) {
-    return res.status(400).json({ error: "Invalid puzzle id" });
-  }
-  const author_id = req.session.user.id;
-  const { description, puzzleJson, published } = req.body;
-  try {
-    const updated = await updatePuzzle(id, author_id, {
-      description,
-      puzzle_json: puzzleJson,
-      published,
-    });
-    if (!updated) {
-      return res
-        .status(404)
-        .json({ error: "Puzzle not found or not owned by user" });
-    }
-    res.json(updated);
-  } catch {
-    res.status(500).json({ error: "Failed to update puzzle" });
   }
 });
 

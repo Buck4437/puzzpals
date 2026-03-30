@@ -110,13 +110,23 @@ function onEditMessage(message: EditMessage) {
 .setter-editor-scroll {
   width: 100%;
   max-width: 100%;
-  max-height: 100%;
-  overflow: auto;
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
 }
 
 .setter-editor-content {
+  height: 100%;
+  min-height: 0;
   min-width: 100%;
-  width: max-content;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.setter-editor-content :deep(.editor-con) {
+  height: 100%;
+  min-height: 0;
 }
 
 .layer-selector {

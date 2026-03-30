@@ -131,34 +131,70 @@
       </div>
     </div>
 
-    <GridSVG
-      class="grid-canvas"
-      :size="gridSizePx"
-      :grid-size="grid.size"
-      :layers="layers"
-      :cursor="currentTool.codename === 'text' ? cursor : null"
-      @center-cell-enter="onCenterEnter"
-      @corner-cell-enter="onCornerEnter"
-      @mouse-release="onMouseRelease"
-    />
+    <div class="canvas-toolbar">
+      <div class="canvas-zoom-controls" aria-label="Canvas zoom controls">
+        <!-- <button type="button" class="zoom-button" @click="zoomOut">-</button> -->
+        <label for="canvas-zoom-input">Zoom</label>
+        <input
+          id="canvas-zoom-input"
+          class="zoom-input"
+          type="number"
+          v-model.number="zoomPercentInput"
+          :min="MIN_CANVAS_ZOOM_PERCENT"
+          :max="MAX_CANVAS_ZOOM_PERCENT"
+          :step="5"
+          @change="applyZoomPercentInput"
+          @blur="applyZoomPercentInput"
+          @keydown.enter.prevent="applyZoomPercentInput"
+        />
+        <span class="zoom-unit">%</span>
+        <!-- <button type="button" class="zoom-button" @click="zoomIn">+</button> -->
+        <button type="button" class="zoom-button" @click="resetZoom">
+          Reset
+        </button>
+      </div>
 
-    <div class="undo-redo-button">
-      <button
-        class="tool-button"
-        @click="undo"
-        :disabled="undoStack.length === 0"
-        aria-label="Undo last edit"
-      >
-        Undo
-      </button>
-      <button
-        class="tool-button"
-        @click="redo"
-        :disabled="redoStack.length === 0"
-        aria-label="Redo last undone edit"
-      >
-        Redo
-      </button>
+      <div class="undo-redo-button">
+        <span
+          class="location-status"
+          aria-live="polite"
+          style="margin-right: 8px"
+        >
+          Hover: {{ formatCellStatus(hoverCell) }}
+        </span>
+        <button
+          class="tool-button"
+          @click="undo"
+          :disabled="undoStack.length === 0"
+          aria-label="Undo last edit"
+        >
+          Undo
+        </button>
+        <button
+          class="tool-button"
+          @click="redo"
+          :disabled="redoStack.length === 0"
+          aria-label="Redo last undone edit"
+        >
+          Redo
+        </button>
+      </div>
+    </div>
+
+    <div class="svg-only-viewport">
+      <div class="svg-only-zoom" :style="svgZoomStyle">
+        <GridSVG
+          class="grid-canvas"
+          :size="gridSizePx"
+          :grid-size="grid.size"
+          :layers="layers"
+          :cursor="currentTool.codename === 'text' ? cursor : null"
+          @center-cell-enter="onCenterEnter"
+          @center-cell-hover="onCenterHover"
+          @corner-cell-enter="onCornerEnter"
+          @mouse-release="onMouseRelease"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -198,6 +234,63 @@ const emit = defineEmits<{
 const grid = computed(() => props.grid);
 const renderedLayerList = computed(() => props.renderedLayerList);
 const editableLayerIndex = computed(() => props.editableLayerIndex ?? 0);
+const MIN_CANVAS_ZOOM = 0.1;
+const MAX_CANVAS_ZOOM = 3.0;
+const CANVAS_ZOOM_STEP = 0.1;
+const MIN_CANVAS_ZOOM_PERCENT = Math.round(MIN_CANVAS_ZOOM * 100);
+const MAX_CANVAS_ZOOM_PERCENT = Math.round(MAX_CANVAS_ZOOM * 100);
+const canvasZoom = ref(1);
+const zoomPercentInput = ref(100);
+const hoverCell = ref<Coordinate | null>(null);
+
+function formatCellStatus(coordinate: Coordinate | null): string {
+  if (coordinate === null) {
+    return "-";
+  }
+
+  return `R${Math.floor(coordinate[0]) + 1}, C${Math.floor(coordinate[1]) + 1}`;
+}
+
+function clampZoomPercent(value: number): number {
+  return Math.max(
+    MIN_CANVAS_ZOOM_PERCENT,
+    Math.min(MAX_CANVAS_ZOOM_PERCENT, Math.round(value)),
+  );
+}
+
+function setZoomPercent(value: number) {
+  const clampedPercent = clampZoomPercent(value);
+  zoomPercentInput.value = clampedPercent;
+  canvasZoom.value = Number((clampedPercent / 100).toFixed(2));
+}
+
+function zoomIn() {
+  setZoomPercent((canvasZoom.value + CANVAS_ZOOM_STEP) * 100);
+}
+
+function zoomOut() {
+  setZoomPercent((canvasZoom.value - CANVAS_ZOOM_STEP) * 100);
+}
+
+function resetZoom() {
+  setZoomPercent(100);
+}
+
+function applyZoomPercentInput() {
+  const parsedValue = Number(zoomPercentInput.value);
+  if (!Number.isFinite(parsedValue)) {
+    zoomPercentInput.value = Math.round(canvasZoom.value * 100);
+    return;
+  }
+
+  setZoomPercent(parsedValue);
+}
+
+const svgZoomStyle = computed(() => {
+  return {
+    transform: `scale(${canvasZoom.value})`,
+  };
+});
 
 const MAX_UNDO = 300;
 
@@ -730,6 +823,10 @@ const onMouseRelease = () => {
   edgeStrokeMode = null;
 };
 
+const onCenterHover = (coordinate: Coordinate | null) => {
+  hoverCell.value = coordinate;
+};
+
 const onCenterEnter = (coordinate: Coordinate) => {
   cursor.value = coordinate;
 
@@ -853,14 +950,20 @@ watch(
   },
   { deep: true },
 );
+
+watch(canvasZoom, (value) => {
+  zoomPercentInput.value = Math.round(value * 100);
+});
 </script>
 
 <style scoped>
 .editor-con {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: stretch;
   gap: 8px;
+  width: 100%;
+  min-height: 0;
   --color-tool-active: #e9e9e9;
   --border-color-tool-active: #3747ef;
 }
@@ -876,6 +979,43 @@ watch(
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.canvas-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.canvas-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.zoom-button {
+  border: 1px solid #d5daef;
+  background: #f2f5ff;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.zoom-value {
+  min-width: 56px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.zoom-input {
+  width: 84px;
+  text-align: center;
+}
+
+.zoom-unit {
+  font-weight: 600;
 }
 
 .subtool-row {
@@ -900,6 +1040,19 @@ watch(
   gap: 12px;
 }
 
+.location-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.92rem;
+  color: #4d5468;
+}
+.undo-redo-button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .tool-button,
 .subtool-button {
   border-radius: 4px;
@@ -922,10 +1075,24 @@ watch(
   flex: 0 0 auto;
 }
 
+.svg-only-viewport {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  max-width: 100%;
+  overflow: auto;
+}
+
+.svg-only-zoom {
+  width: max-content;
+  transform-origin: top left;
+}
+
 .undo-redo-button {
   display: flex;
+  align-items: center;
   gap: 8px;
-  justify-content: center;
+  justify-content: flex-end;
 }
 
 select,

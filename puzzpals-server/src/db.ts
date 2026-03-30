@@ -106,32 +106,35 @@ export async function addPuzzle(
 export async function updatePuzzle(
   id: number,
   author_id: number,
-  fields: {
-    description?: string;
-    puzzle_json?: object;
-    published?: boolean;
-    publish_date?: Date;
-  },
+  title?: string,
+  author?: string,
+  description?: string,
+  puzzleJson?: Grid,
+  published?: boolean,
 ) {
   // Only allow updating fields that are present
   const set: string[] = [];
   const values: unknown[] = [];
   let idx = 1;
-  if (fields.description !== undefined) {
+  if (title !== undefined) {
+    set.push(`title = $${idx++}`);
+    values.push(title);
+  }
+  if (author !== undefined) {
+    set.push(`author = $${idx++}`);
+    values.push(author);
+  }
+  if (description !== undefined) {
     set.push(`description = $${idx++}`);
-    values.push(fields.description);
+    values.push(description);
   }
-  if (fields.puzzle_json !== undefined) {
+  if (puzzleJson !== undefined) {
     set.push(`puzzle_json = $${idx++}`);
-    values.push(fields.puzzle_json);
+    values.push(puzzleJson);
   }
-  if (fields.published !== undefined) {
+  if (published !== undefined) {
     set.push(`published = $${idx++}`);
-    values.push(fields.published);
-  }
-  if (fields.publish_date !== undefined) {
-    set.push(`publish_date = $${idx++}`);
-    values.push(fields.publish_date);
+    values.push(published);
   }
   if (!set.length) throw new Error("No fields to update");
   // Only allow update if author_id matches

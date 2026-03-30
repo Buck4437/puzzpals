@@ -1,5 +1,8 @@
 <template>
   <div class="editor-page" :class="{ 'controls-collapsed': controlsCollapsed }">
+    <!-- Alert/Toast Notification -->
+    <AlertNotification ref="alertRef" />
+
     <section class="editor-canvas">
       <SetterEditorComponent
         :grid="grid"
@@ -31,12 +34,74 @@
     <aside class="editor-sidebar" :class="{ collapsed: controlsCollapsed }">
       <h2 class="sidebar-title">Editor Controls</h2>
 
+      <section class="panel editor-meta-panel">
+        <div class="dimension-row author-title-vertical-row">
+          <label for="editor-title-input" class="title-label">Title</label>
+          <input
+            id="editor-title-input"
+            v-model="puzzleTitle"
+            type="text"
+            class="editor-meta-input"
+            placeholder="Enter puzzle title"
+          />
+          <label for="editor-author-input">Author</label>
+          <input
+            id="editor-author-input"
+            v-model="authorName"
+            type="text"
+            class="editor-meta-input"
+            placeholder="Enter optional nickname"
+          />
+        </div>
+        <div
+          class="editor-meta-label"
+          style="
+            flex-direction: row;
+            align-items: center;
+            justify-content: space-between;
+            display: flex;
+            gap: 8px;
+          "
+        >
+          <span>Puzzle Description</span>
+          <button class="secondary-button" @click="showDescriptionModal = true">
+            Edit
+          </button>
+        </div>
+        <PuzzleDescriptionModal
+          :isOpen="showDescriptionModal"
+          :description="puzzleDescription"
+          @close="showDescriptionModal = false"
+          @save="onDescriptionSave"
+        />
+        <div class="publish-toggle-row">
+          <div class="publish-toggle-label-col">
+            <label class="publish-toggle-label" for="publish-toggle"
+              >Public</label
+            >
+            <div class="publish-toggle-helper">
+              If enabled, your puzzle will be visible to everyone in the
+              catalogue. If disabled, only you can access it.
+            </div>
+          </div>
+          <div class="publish-toggle-switch-col">
+            <label class="switch">
+              <input
+                id="publish-toggle"
+                type="checkbox"
+                v-model="publishToggle"
+              />
+              <span class="slider"></span>
+            </label>
+          </div>
+        </div>
+      </section>
+
       <div class="action-con">
         <button @click="exportPuzzle">Export puzzle</button>
         <button :disabled="isPublishing" @click="publishPuzzle">
           {{ isPublishing ? "Publishing..." : "Publish puzzle" }}
         </button>
-        <button @click="savePuzzle">Save puzzle (draft)</button>
       </div>
 
       <section class="panel" aria-labelledby="dimension-heading">
@@ -154,8 +219,20 @@
 </template>
 
 <script setup lang="ts">
+// Author, title, description, and publish toggle for editor controls
+const authorName = ref("");
+const puzzleTitle = ref("");
+const puzzleDescription = ref("");
+const publishToggle = ref(false);
+const showDescriptionModal = ref(false);
+
+function onDescriptionSave(description: string) {
+  puzzleDescription.value = description;
+}
 import SetterEditorComponent from "../components/SetterEditorComponent.vue";
 import BaseModal from "../components/BaseModal.vue";
+import AlertNotification from "../components/AlertNotification.vue";
+import PuzzleDescriptionModal from "../components/PuzzleDescriptionModal.vue";
 
 import { computed, ref, onMounted, watch, type Ref } from "vue";
 import api from "@/services/api";
@@ -184,6 +261,9 @@ const controlsCollapsed = ref(false);
 const isPublishing = ref(false);
 const answerCheckInfoList = getAnswerCheckList();
 const customRulesInfoList = getRulesList();
+
+// Alert/Toast notification component ref
+const alertRef = ref<InstanceType<typeof AlertNotification> | null>(null);
 
 const typesToCheckInput = ref<Record<TypeToCheck, boolean>>({
   lineObjectsExact: false,
@@ -284,9 +364,30 @@ async function fetchUploadedPuzzle() {
   if (idParam && typeof idParam === "string" && /^[0-9]+$/.test(idParam)) {
     try {
       const res = await api.get(`/puzzles/${idParam}/edit`);
-      if (res.data && res.data.puzzle_json) {
-        grid.value = res.data.puzzle_json;
+      if (res.data) {
+        if (res.data.puzzle_json) {
+          grid.value = res.data.puzzle_json;
+
+          // Set pre-defined rules
+          if (grid.value.options?.rules) {
+            customRulesInfoList.forEach((rule) => {
+              customRulesInput.value[rule.id] =
+                grid.value.options.rules.includes(rule.id);
+            });
+          }
+
+          // Set answer checking rules
+          if (grid.value.solution?.typeToCheck) {
+            grid.value.solution.typeToCheck.forEach((type) => {
+              typesToCheckInput.value[type] = true;
+            });
+          }
+        }
         puzzleId.value = Number(idParam);
+        puzzleTitle.value = res.data.title || "";
+        puzzleDescription.value = res.data.description || "";
+        authorName.value = res.data.author || "";
+        publishToggle.value = res.data.published || false;
       }
     } catch (e) {
       uploadStatus.value = "Failed to load puzzle for editing.";
@@ -302,6 +403,11 @@ const selectedTypesToCheck = computed<TypeToCheck[]>(() => {
   return answerCheckInfoList
     .filter((type) => typesToCheckInput.value[type.type])
     .map((type) => type.type);
+});
+
+const enabledRulesCount = computed(() => {
+  return customRulesInfoList.filter((rule) => customRulesInput.value[rule.id])
+    .length;
 });
 
 const includeSolution = computed(() => {
@@ -422,62 +528,47 @@ const downloadObjectAsJson = (exportObj: object, exportName: string) => {
   downloadAnchorNode.remove();
 };
 
-async function savePuzzle() {
-  uploadStatus.value = "Saving...";
-  try {
-    const puzzleObj = getPuzzleJSON();
-    let res;
-    if (puzzleId.value == null) {
-      res = await api.post("/puzzles", {
-        title: "Untitled",
-        author: "synthetic",
-        description: "Saved from editor",
-        puzzleJson: puzzleObj,
-        published: false,
-      });
-      puzzleId.value = res.data.id;
-    } else {
-      res = await api.patch(`/puzzles/${puzzleId.value}`, {
-        description: "Saved from editor",
-        puzzleJson: puzzleObj,
-        published: false,
-      });
-    }
-    uploadStatus.value = "Save successful!";
-  } catch (e: any) {
-    uploadStatus.value =
-      "Save failed: " +
-      (e?.response?.data?.details || e?.message || "Unknown error");
-  }
-}
-
 async function publishPuzzle() {
+  const title = puzzleTitle.value.trim();
+  if (!title) {
+    alertRef.value?.showAlert(
+      "error",
+      "Please enter a puzzle title before publishing",
+    );
+    return;
+  }
+
   uploadStatus.value = "Publishing...";
+  isPublishing.value = true;
   try {
     const puzzleObj = getPuzzleJSON();
+    const author = authorName.value.trim() || "Anonymous";
+    const description = puzzleDescription.value.trim() || "";
+
     let res;
     if (puzzleId.value != null) {
       res = await api.patch(`/puzzles/${puzzleId.value}`, {
-        author: "synthetic",
-        description: "Published from editor",
+        title,
+        author,
+        description,
         puzzleJson: puzzleObj,
-        published: true,
+        published: publishToggle.value,
       });
     } else {
       res = await api.post("/puzzles", {
-        title: "Untitled",
-        author: "synthetic",
-        description: "Published from editor",
+        title,
+        author,
+        description,
         puzzleJson: puzzleObj,
-        published: true,
+        published: publishToggle.value,
       });
       puzzleId.value = res.data.id;
     }
-    uploadStatus.value = "Publish successful!";
+    alertRef.value?.showAlert("success", "Puzzle published successfully!");
   } catch (e: any) {
-    uploadStatus.value =
-      "Publish failed: " +
-      (e?.response?.data?.details || e?.message || "Unknown error");
+    const errorMessage =
+      e?.response?.data?.details || e?.message || "Unknown error";
+    alertRef.value?.showAlert("error", `Publish failed: ${errorMessage}`);
   } finally {
     isPublishing.value = false;
   }
@@ -489,8 +580,36 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.editor-meta-panel {
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e0e0e0;
+}
+.editor-meta-label {
+  display: flex;
+  flex-direction: column;
+  font-size: 0.98rem;
+  color: #3a3a3a;
+  margin-bottom: 8px;
+}
+.editor-meta-input {
+  width: 100%;
+  box-sizing: border-box;
+  margin-top: 2px;
+  padding: 4px 8px;
+  border: 1px solid #d5daef;
+  border-radius: 4px;
+  font-size: 1rem;
+  resize: vertical;
+}
+.editor-meta-panel {
+  margin-bottom: 16px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e0e0e0;
+}
 .editor-page {
-  height: 100dvh;
+  height: 100%;
+  min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
   gap: 12px;
@@ -513,7 +632,7 @@ onMounted(() => {
   background: #fff;
   padding: 16px;
   box-sizing: border-box;
-  overflow: auto;
+  overflow: hidden;
   position: relative;
 }
 
@@ -612,10 +731,111 @@ onMounted(() => {
 
 .dimension-row {
   display: grid;
-  grid-template-columns: 48px 1fr;
+  grid-template-columns: 60px 1fr;
   align-items: center;
-  gap: 8px;
-  margin: 8px 0;
+  gap: 14px;
+  margin: 10px 0;
+}
+
+.author-title-vertical-row {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 10px 0;
+}
+.author-title-vertical-row label {
+  text-align: left;
+}
+.author-title-vertical-row input[type="text"] {
+  width: 100%;
+  margin-left: 0;
+  text-align: left;
+}
+.title-label {
+  font-weight: 500;
+}
+
+.publish-toggle-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin: 10px 0 0 0;
+  gap: 12px;
+}
+.publish-toggle-label-col {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+}
+.publish-toggle-label {
+  font-size: 1rem;
+  color: #333;
+  margin-bottom: 2px;
+}
+.publish-toggle-helper {
+  font-size: 0.92rem;
+  color: #666;
+  max-width: 260px;
+}
+.publish-toggle-switch-col {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 48px;
+}
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 42px;
+  height: 24px;
+}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: 0.4s;
+  border-radius: 24px;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: 0.4s;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+}
+.switch input:checked + .slider {
+  background-color: #4cd964;
+}
+.switch input:checked + .slider:before {
+  transform: translateX(18px);
+}
+
+.dimension-row label {
+  margin-right: 0;
+  white-space: nowrap;
+}
+
+.dimension-row input[type="text"],
+.dimension-row input[type="number"] {
+  margin-left: 0;
 }
 
 .dimension-row input {
