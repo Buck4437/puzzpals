@@ -9,14 +9,10 @@ jobs:
       VITE_API_BASE: ${{ secrets.VITE_API_BASE }}
       VITE_API_WS: ${{ secrets.VITE_API_WS }}
     steps:
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
         with:
           node-version: 24
-          cache: npm
-          cache-dependency-path: package-lock.json
-
-      - name: Install
-        run: npm ci
-
+      - run: npm ci
       - name: Deploy to GitHub Pages
         run: npm run deploy
