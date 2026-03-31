@@ -15,15 +15,12 @@
     "build:server": "cd puzzpals-server && npm run build",
     "postinstall": "npm run build:server",
     "build-all": "npm run build:server && npm run build:client",
-    "test": "npm run -w puzzpals-server test && npm run -w puzzpals-client-ts test",
-    "predeploy": "npm run build:client",
-    "deploy": "gh-pages -d puzzpals-client-ts/dist"
+    "test": "npm run -w puzzpals-server test && npm run -w puzzpals-client-ts test"
   },
   "devDependencies": {
     "@eslint/compat": "^2.0.3",
     "@eslint/js": "^9.39.4",
     "eslint-config-prettier": "^10.1.8",
-    "gh-pages": "^6.3.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.3.2",
     "prettier": "3.8.1",
