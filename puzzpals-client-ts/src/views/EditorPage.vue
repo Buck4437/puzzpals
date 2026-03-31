@@ -237,6 +237,7 @@ import PuzzleDescriptionModal from "../components/PuzzleDescriptionModal.vue";
 import { computed, ref, onMounted, watch, type Ref } from "vue";
 import api from "@/services/api";
 import { useRoute } from "vue-router";
+import { useUserStore } from "@/stores/user";
 import {
   applyEditMessage,
   getAnswerCheckList,
@@ -261,6 +262,7 @@ const controlsCollapsed = ref(false);
 const isPublishing = ref(false);
 const answerCheckInfoList = getAnswerCheckList();
 const customRulesInfoList = getRulesList();
+const userStore = useUserStore();
 
 // Alert/Toast notification component ref
 const alertRef = ref<InstanceType<typeof AlertNotification> | null>(null);
@@ -529,6 +531,13 @@ const downloadObjectAsJson = (exportObj: object, exportName: string) => {
 };
 
 async function publishPuzzle() {
+  if (!userStore.user) {
+    alertRef.value?.showAlert(
+      "error",
+      "Authentication required for publishing puzzles. Login to submit",
+    );
+    return;
+  }
   const title = puzzleTitle.value.trim();
   if (!title) {
     alertRef.value?.showAlert(
@@ -566,8 +575,13 @@ async function publishPuzzle() {
     }
     alertRef.value?.showAlert("success", "Puzzle published successfully!");
   } catch (e: any) {
-    const errorMessage =
-      e?.response?.data?.details || e?.message || "Unknown error";
+    let errorMessage;
+    errorMessage = e?.response?.data?.details || e?.message || "Unknown error";
+    if (e.response?.status === 400) {
+      errorMessage = "Invalid payload";
+    } else if (e.response?.status === 401) {
+      errorMessage = "Login required for publishing puzzles";
+    }
     alertRef.value?.showAlert("error", `Publish failed: ${errorMessage}`);
   } finally {
     isPublishing.value = false;
