@@ -4,7 +4,7 @@ import { google } from "googleapis";
 import { OAuth2Client } from "google-auth-library";
 import { readFileSync } from "fs";
 import env from "./config.js";
-import { upsertGoogleUser, getAllUsersDebug } from "./db.js";
+import { upsertGoogleUser } from "./db.js";
 
 const router = express.Router();
 
@@ -136,10 +136,10 @@ router.post("/logout", (req, res) => {
   });
 });
 
-router.get("/allUsersDebug", async (req: Request, res: Response) => {
-  // This is just for debugging purposes to see all users in the DB. Remove in production!
-  const users = await getAllUsersDebug();
-  res.json(users);
-});
+// router.get("/allUsersDebug", async (req: Request, res: Response) => {
+//   // This is just for debugging purposes to see all users in the DB. Remove in production!
+//   const users = await getAllUsersDebug();
+//   res.json(users);
+// });
 
 export default router;

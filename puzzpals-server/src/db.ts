@@ -74,11 +74,11 @@ export async function getUserById(id: number): Promise<User | null> {
   return result.rows[0] || null;
 }
 
-export async function getAllUsersDebug(): Promise<User[]> {
-  const sql = `SELECT * FROM "User" ORDER BY created_at DESC`;
-  const result = await pool.query(sql);
-  return result.rows;
-}
+// export async function getAllUsersDebug(): Promise<User[]> {
+//   const sql = `SELECT * FROM "User" ORDER BY created_at DESC`;
+//   const result = await pool.query(sql);
+//   return result.rows;
+// }
 
 // Puzzle DB functions
 export async function addPuzzle(
