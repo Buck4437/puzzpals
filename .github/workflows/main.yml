@@ -23,9 +23,10 @@ jobs:
           npm run build:client
   # Deployment job
   deploy:
-    - name: Deploy
-      uses: peaceiris/actions-gh-pages@v4
-      needs: build
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./public
+    steps:
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v4
+        needs: build
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./public
