@@ -1,6 +1,5 @@
 name: Build and Deploy to GitHub Pages
-on:
-  workflow_dispatch
+on: workflow_dispatch
 
 jobs:
   deploy:
@@ -10,8 +9,6 @@ jobs:
       VITE_API_BASE: ${{ secrets.VITE_API_BASE }}
       VITE_API_WS: ${{ secrets.VITE_API_WS }}
     steps:
-      - uses: actions/checkout@v4
-
       - uses: actions/setup-node@v4
         with:
           node-version: 24
@@ -19,9 +16,7 @@ jobs:
           cache-dependency-path: frontend/package-lock.json
 
       - name: Install
-        working-directory: ./
         run: npm ci
 
       - name: Deploy to GitHub Pages
-        working-directory: ./
         run: npm run deploy
