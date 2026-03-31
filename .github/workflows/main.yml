@@ -11,4 +11,4 @@ jobs:
     steps:
       - name: Deploy to GitHub Pages
         run: |
-          npx gh-pages -d dist -u "github-actions-bot <support+actions@github.com>"
+          npm run deploy
