@@ -11,8 +11,8 @@ export const useUserStore = defineStore("user", {
     async fetchUser() {
       this.loading = true;
       try {
-        const res = await api.get("/auth/me");
-        this.user = res.data.user;
+        const res = await api.get("/auth/session");
+        this.user = res.data.authenticated ? res.data.data : null;
       } catch {
         this.user = null;
       } finally {

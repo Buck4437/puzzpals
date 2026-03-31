@@ -112,17 +112,16 @@ declare module "express-session" {
   }
 }
 
-router.get("/me", async (req: Request, res: Response) => {
+router.get("/session", async (req: Request, res: Response) => {
   // Prevent browser caching for this endpoint
   res.setHeader(
     "Cache-Control",
     "no-store, no-cache, must-revalidate, proxy-revalidate",
   );
-  // Return session user info directly
   if (!req.session.user) {
-    return res.status(200).json({ user: null });
+    return res.status(200).json({ authenticated: false, data: null });
   }
-  res.status(200).json({ user: req.session.user });
+  res.status(200).json({ authenticated: true, data: req.session.user });
 });
 
 router.post("/logout", (req, res) => {

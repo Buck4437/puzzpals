@@ -40,7 +40,7 @@ const puzzleId = computed(() => Number(route.params.id));
 function getUserName(user: any): string | undefined {
   if (!user) return undefined;
   if (typeof user === "object") {
-    return user.name || user.email || user.guest_name;
+    return user.name || user.email;
   }
   return undefined;
 }
