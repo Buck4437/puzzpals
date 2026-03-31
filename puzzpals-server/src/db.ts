@@ -144,11 +144,12 @@ export async function updatePuzzle(
   return result.rows[0];
 }
 
-export async function getPuzzles(limit = 5) {
-  const safeLimit = limit <= 0 ? 5 : limit;
+export async function getPuzzles(limit = 10, offset = 0) {
+  const safeLimit = limit <= 0 ? 10 : limit;
+  const safeOffset = offset < 0 ? 0 : offset;
 
-  const sql = `SELECT * FROM Puzzle WHERE published = TRUE ORDER BY publish_date DESC LIMIT $1`;
-  const result = await pool.query(sql, [safeLimit]);
+  const sql = `SELECT * FROM Puzzle WHERE published = TRUE ORDER BY publish_date DESC LIMIT $1 OFFSET $2`;
+  const result = await pool.query(sql, [safeLimit, safeOffset]);
   return result.rows as Puzzle[];
 }
 

@@ -32,13 +32,22 @@ const router = express.Router();
 
 /*
  * Catalogue Fetch
- * - All published puzzles, sorted by newest first, with a limit parameter (default 5, max 100)
+ * - All published puzzles, sorted by newest first, with limit/offset params (default limit 10, max 100)
  * - Anyone can fetch, no auth required
  * - TODO: No solution data should be included in the response
  */
 
 router.get("/", async (req, res) => {
-  const limit = Number(req.query.limit);
+  const rawLimit = req.query.limit;
+  const rawOffset = req.query.offset;
+  const limit =
+    rawLimit === undefined || rawLimit === null || rawLimit === ""
+      ? 10
+      : Number(rawLimit);
+  const offset =
+    rawOffset === undefined || rawOffset === null || rawOffset === ""
+      ? 0
+      : Number(rawOffset);
   if (
     !Number.isFinite(limit) ||
     !Number.isInteger(limit) ||
@@ -48,8 +57,12 @@ router.get("/", async (req, res) => {
     res.status(400).json({ error: "Invalid limit param" });
     return;
   }
+  if (!Number.isFinite(offset) || !Number.isInteger(offset) || offset < 0) {
+    res.status(400).json({ error: "Invalid offset param" });
+    return;
+  }
   try {
-    const puzzles: Puzzle[] = await getPuzzles(limit);
+    const puzzles: Puzzle[] = await getPuzzles(limit, offset);
     res.json(puzzles);
   } catch {
     res.status(500).json({ error: "Failed to fetch puzzles" });
