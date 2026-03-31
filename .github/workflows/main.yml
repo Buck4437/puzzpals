@@ -25,9 +25,6 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    env:
-      VITE_API_BASE: ${{ secrets.VITE_API_BASE }}
-      VITE_API_WS: ${{ secrets.VITE_API_WS }}
     steps:
       - uses: actions/checkout@v6
       - name: Setup Pages
@@ -40,6 +37,9 @@ jobs:
         run: |
           npm ci
           npm run build:client
+        env:
+          VITE_API_BASE: ${{ secrets.VITE_API_BASE }}
+          VITE_API_WS: ${{ secrets.VITE_API_WS }}
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
