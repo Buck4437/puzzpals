@@ -650,7 +650,6 @@ onMounted(() => {
   gap: 10px;
   transition: opacity 0.2s ease;
 }
-
 .editor-sidebar.collapsed {
   opacity: 0;
   pointer-events: none;

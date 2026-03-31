@@ -47,12 +47,6 @@ app.use(
 
 app.use("/api/rooms", roomsRouter);
 app.use("/api/puzzles", puzzlesRouter);
-
-// const CLIENT_ID = process.env.GOOGLE_CLIENT_ID!;
-// const CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET!;
-// const REDIRECT_URI = "http://localhost:3000/auth/google/callback";
-
-// Use authentication router
 app.use("/api/auth", authRouter);
 
 export default app;
