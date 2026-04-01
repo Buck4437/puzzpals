@@ -52,7 +52,7 @@
   border-radius: 6px;
 }
 
-.modal-close:hover {
+.close-btn:hover {
   background: rgba(0, 0, 0, 0.06);
 }
 </style>

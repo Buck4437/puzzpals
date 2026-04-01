@@ -2,6 +2,7 @@ import express from "express";
 import type { Request, Response } from "express";
 import { google } from "googleapis";
 import { OAuth2Client } from "google-auth-library";
+import { randomBytes } from "crypto";
 import { readFileSync } from "fs";
 import env from "./config.js";
 import { upsertGoogleUser } from "./db.js";
@@ -36,16 +37,32 @@ router.get("/google/login", (req, res) => {
   const oauth2Client = getoAuth2Client();
   const returnUrl =
     typeof req.query.returnUrl === "string" ? req.query.returnUrl : "/";
+  const oauthState = randomBytes(32).toString("hex");
+  req.session.oauthState = oauthState;
+  req.session.oauthReturnUrl = returnUrl;
+
   const url = oauth2Client.generateAuthUrl({
     access_type: "offline",
     scope: SCOPES,
-    state: returnUrl,
+    state: oauthState,
   });
   res.redirect(url);
 });
 
 router.get("/google/callback", async (req: Request, res: Response) => {
-  const returnUrl = typeof req.query.state === "string" ? req.query.state : "/";
+  const returnUrl = req.session.oauthReturnUrl ?? "/";
+  const expectedState = req.session.oauthState;
+  const providedState =
+    typeof req.query.state === "string" ? req.query.state : "";
+
+  delete req.session.oauthState;
+  delete req.session.oauthReturnUrl;
+
+  if (!expectedState || !providedState || providedState !== expectedState) {
+    return res.redirect(
+      `${env.CLIENT_BASE_URL}${returnUrl}?authError=${encodeURIComponent("invalid_state")}`,
+    );
+  }
 
   // Google returns an error query param (for example access_denied) when user aborts sign-in.
   const oauthError =
@@ -101,6 +118,8 @@ import "express-session";
 
 declare module "express-session" {
   interface SessionData {
+    oauthState?: string;
+    oauthReturnUrl?: string;
     user?: {
       id: number;
       google_id?: string | undefined;

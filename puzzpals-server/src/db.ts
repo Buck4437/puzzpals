@@ -21,16 +21,6 @@ async function createTable() {
       token TEXT PRIMARY KEY UNIQUE,
       puzzle_data JSONB NOT NULL
     );
-    CREATE TABLE IF NOT EXISTS Puzzle (
-      id SERIAL PRIMARY KEY,
-      title TEXT NOT NULL,
-      author TEXT NOT NULL,
-      author_id INTEGER NOT NULL REFERENCES "User"(id),
-      description TEXT,
-      puzzle_json JSONB NOT NULL,
-      publish_date TIMESTAMP NOT NULL DEFAULT NOW(),
-      published BOOLEAN NOT NULL DEFAULT FALSE
-    );
     CREATE TABLE IF NOT EXISTS "User" (
       id SERIAL PRIMARY KEY,
       google_id TEXT UNIQUE,
@@ -41,6 +31,16 @@ async function createTable() {
       guest_name TEXT,
       created_at TIMESTAMP NOT NULL DEFAULT NOW(),
       last_login TIMESTAMP NOT NULL DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS Puzzle (
+      id SERIAL PRIMARY KEY,
+      title TEXT NOT NULL,
+      author TEXT NOT NULL,
+      author_id INTEGER NOT NULL REFERENCES "User"(id),
+      description TEXT,
+      puzzle_json JSONB NOT NULL,
+      publish_date TIMESTAMP NOT NULL DEFAULT NOW(),
+      published BOOLEAN NOT NULL DEFAULT FALSE
     );
   `);
 }

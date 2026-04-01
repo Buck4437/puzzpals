@@ -1,6 +1,6 @@
-import axios from "axios";
+import api from "./api";
 
 export async function fetchUserPuzzles() {
-  const res = await axios.get("/api/puzzles/user", { withCredentials: true });
+  const res = await api.get("/puzzles/user");
   return res.data;
 }

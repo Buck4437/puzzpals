@@ -1,4 +1,4 @@
-// User account frontend storage logic removed. No user info is kept in frontend state.
+// Pinia store for user session data; keeps minimal user info in frontend state.
 import { defineStore } from "pinia";
 import api from "@/services/api";
 

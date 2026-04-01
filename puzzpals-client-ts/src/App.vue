@@ -150,7 +150,7 @@ async function logout() {
 }
 
 function goLogin() {
-  router.push("/Login");
+  router.push("/login");
 }
 
 function goToHome() {

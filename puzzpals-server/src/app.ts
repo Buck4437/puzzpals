@@ -1,9 +1,9 @@
-// Extend express-session types to support userId
-declare module "express-session" {
-  interface SessionData {
-    userId?: number;
-  }
-}
+// // Extend express-session types to support userId
+// declare module "express-session" {
+//   interface SessionData {
+//     userId?: number;
+//   }
+// }
 import authRouter from "./auth.js";
 import session from "express-session";
 

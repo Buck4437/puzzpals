@@ -37,10 +37,10 @@ const loading = ref(true);
 
 const puzzleId = computed(() => Number(route.params.id));
 
-function getUserName(user: any): string | undefined {
+function getUserId(user: any): string | undefined {
   if (!user) return undefined;
   if (typeof user === "object") {
-    return user.name || user.email;
+    return user.id;
   }
   return undefined;
 }
@@ -49,7 +49,7 @@ const isOwner = computed(() => {
   return (
     puzzle.value &&
     userStore.user &&
-    puzzle.value.author === getUserName(userStore.user)
+    puzzle.value.author_id === getUserId(userStore.user)
   );
 });
 
@@ -79,8 +79,8 @@ async function openRoom() {
         headers: { "Content-Type": "application/json" },
       },
     );
-    if (res && res.data) {
-      router.push(`/room/${res.data}`);
+    if (res?.data?.token) {
+      router.push(`/room/${res.data.token}`);
     } else {
       alert("Failed to create room.");
     }

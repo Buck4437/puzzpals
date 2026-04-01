@@ -8,27 +8,8 @@ import {
 } from "../db.js";
 import type { Puzzle } from "../models/Puzzle.js";
 import { parsePuzzle } from "@puzzpals/puzzle-parser";
-// import { auth } from "google-auth-library";
 
 const router = express.Router();
-
-// function stripSolutionFromPuzzle(puzzle: Puzzle): Puzzle {
-//   if (!puzzle || typeof puzzle !== "object") {
-//     return puzzle;
-//   }
-//   const puzzleJson = puzzle.puzzle_json;
-//   if (!puzzleJson || typeof puzzleJson !== "object") {
-//     return puzzle;
-//   }
-//   const puzzleClone = structuredClone(puzzleJson)
-//   if (puzzleClone.solution) {
-//     delete puzzleClone.solution;
-//   }
-//   return {
-//     ...puzzle,
-//     puzzle_json: restPuzzleJson,
-//   };
-// }
 
 /*
  * Catalogue Fetch

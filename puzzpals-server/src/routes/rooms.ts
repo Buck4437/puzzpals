@@ -72,6 +72,15 @@ router.post("/create-from-id", async (req, res) => {
     if (!puzzle || !puzzle.puzzle_json) {
       return res.status(404).json({ error: "Puzzle not found" });
     }
+
+    // Allow room creation for published puzzles by anyone.
+    // For unpublished puzzles, only the author can create a room.
+    if (!puzzle.published) {
+      if (!req.session.user || puzzle.author_id !== req.session.user.id) {
+        return res.status(404).json({ error: "Puzzle not found" });
+      }
+    }
+
     const { parsePuzzle, createEmptyLayerData } =
       await import("@puzzpals/puzzle-parser");
     const parsedPuzzle = parsePuzzle(puzzle.puzzle_json);
@@ -86,7 +95,7 @@ router.post("/create-from-id", async (req, res) => {
         .json({ error: "Could not create room, please try again" });
     }
     createRoomInStore({ token: token, puzzle_data: gameData });
-    res.json(token);
+    res.json({ token: token });
   } catch (err) {
     console.log(
       "Error creating room from id:",
