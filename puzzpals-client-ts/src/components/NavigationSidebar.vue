@@ -26,17 +26,11 @@ defineProps<{
   flex-direction: column;
   overflow-y: auto;
 }
+
 .navigation-sidebar button {
   margin-bottom: 10px;
   padding: 10px;
-  background-color: #fff;
   border: 1px solid #ccc;
   border-radius: 4px;
-  cursor: pointer;
-  transition: background-color 0.2s;
-}
-
-.navigation-sidebar button:hover {
-  background-color: #e0e0e0;
 }
 </style>

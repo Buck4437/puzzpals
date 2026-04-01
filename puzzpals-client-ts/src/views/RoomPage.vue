@@ -19,23 +19,30 @@
         </div>
 
         <div class="info-pane">
-          <div v-if="enabledRulesInfo.length > 0">
-            <h3>Pre-defined rules</h3>
-            <ul>
-              <li v-for="rule in enabledRulesInfo" :key="rule.id">
-                <strong>{{ rule.name }}</strong
-                >: {{ rule.description }}
-              </li>
-            </ul>
-          </div>
-          <div v-if="answerCheckInfo.length > 0">
-            <h3>Answer checks</h3>
-            <ul>
-              <li v-for="check in answerCheckInfo" :key="check.type">
-                <strong>{{ check.name }}</strong
-                >: {{ check.description }}
-              </li>
-            </ul>
+          <div class="rule-pane">
+            <details class="panel" v-if="enabledRulesInfo.length > 0">
+              <summary>
+                Pre-defined rules <span>({{ enabledRulesInfo.length }})</span>
+              </summary>
+              <ul>
+                <li v-for="rule in enabledRulesInfo" :key="rule.id">
+                  <strong>{{ rule.name }}</strong
+                  >: {{ rule.description }}
+                </li>
+              </ul>
+            </details>
+
+            <details class="panel" v-if="answerCheckInfo.length > 0">
+              <summary>
+                Answer checks <span>({{ answerCheckInfo.length }})</span>
+              </summary>
+              <ul>
+                <li v-for="check in answerCheckInfo" :key="check.type">
+                  <strong>{{ check.name }}</strong
+                  >: {{ check.description }}
+                </li>
+              </ul>
+            </details>
           </div>
 
           <div class="chat-con">
@@ -333,14 +340,23 @@ input {
   overflow: auto;
 }
 
-.chat-con {
-  flex: 1 1;
+.rule-pane {
   background: #fff;
-  border: 1px solid #ececec;
   border-radius: 6px;
   padding: 8px;
-  box-sizing: border-box;
+  flex: 0 0 auto;
   display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.chat-con {
+  background: #fff;
+  border-radius: 6px;
+  padding: 8px;
+  display: flex;
+  flex: 1 1;
+  box-sizing: border-box;
   align-items: stretch;
   overflow: hidden;
 }

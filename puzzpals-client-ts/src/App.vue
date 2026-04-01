@@ -1,6 +1,6 @@
 <template>
   <header class="main-header" v-if="!isFullScreen">
-    <h1>Puzzpals</h1>
+    <h1 @click="goToHome">Puzzpals</h1>
     <div>
       <button class="create-room-btn" @click="openRoomDialog">
         Create Room
@@ -10,10 +10,11 @@
           <img
             :src="currentUser.picture"
             class="profile-icon"
+            ref="profileIconRef"
             @click="toggleDropdown"
             alt="User Icon"
           />
-          <div v-if="dropdownOpen" class="dropdown-menu">
+          <div v-if="dropdownOpen" ref="dropdownRef" class="dropdown-menu">
             <div>{{ currentUser.email }}</div>
             <button class="login-btn" @click="logout">Logout</button>
           </div>
@@ -57,7 +58,7 @@
 <script setup lang="ts">
 import "./assets/main.css";
 import "./assets/colors.css";
-import { computed, ref } from "vue";
+import { computed, ref, onMounted, onBeforeUnmount } from "vue";
 
 import { useRoute, useRouter } from "vue-router";
 import NavigationSidebar from "./components/NavigationSidebar.vue";
@@ -73,6 +74,8 @@ const currentUser = computed(
 
 const showCreateRoomDialog = ref(false);
 const dropdownOpen = ref(false);
+const profileIconRef = ref<HTMLElement | null>(null);
+const dropdownRef = ref<HTMLElement | null>(null);
 const baseRoutes = [
   {
     name: "Home",
@@ -107,6 +110,26 @@ function toggleDropdown() {
   dropdownOpen.value = !dropdownOpen.value;
 }
 
+function onDocumentClick(e: MouseEvent) {
+  const target = e.target as Node | null;
+  if (!dropdownOpen.value) return;
+  const clickedInsideDropdown =
+    !!dropdownRef.value && dropdownRef.value.contains(target as Node);
+  const clickedOnIcon =
+    !!profileIconRef.value && profileIconRef.value.contains(target as Node);
+  if (!clickedInsideDropdown && !clickedOnIcon) {
+    dropdownOpen.value = false;
+  }
+}
+
+onMounted(() => {
+  document.addEventListener("click", onDocumentClick);
+});
+
+onBeforeUnmount(() => {
+  document.removeEventListener("click", onDocumentClick);
+});
+
 async function logout() {
   await userStore.logout();
   dropdownOpen.value = false;
@@ -114,6 +137,10 @@ async function logout() {
 
 function goLogin() {
   router.push("/login");
+}
+
+function goToHome() {
+  router.push("/");
 }
 
 function openRoomDialog() {
@@ -127,6 +154,7 @@ h1 {
   margin: 0;
   cursor: pointer;
 }
+
 .app-shell {
   height: 100%;
   display: flex;
@@ -138,6 +166,7 @@ main {
   height: 100%;
   width: 100%;
 }
+
 .main-header {
   display: flex;
   justify-content: space-between;
@@ -152,31 +181,15 @@ main {
   align-items: center;
   gap: 8px;
 }
+
+.create-room-btn,
 .login-btn {
+  padding: 8px 16px;
+  font-size: 16px;
+  cursor: pointer;
   margin: 4px 0;
   margin-left: 8px;
-  padding: 8px 16px;
-  font-size: 16px;
-  cursor: pointer;
-  transition: box-shadow 0.2s;
-}
-.login-btn:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.create-room-btn {
-  padding: 8px 16px;
-  font-size: 16px;
-  cursor: pointer;
-  border: 1px solid #ccc;
-  background: #fff;
-  border-radius: 4px;
-  transition: box-shadow 0.2s;
-  vertical-align: middle;
-}
-
-.create-room-btn:hover {
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border: 1px solid var(--border-color);
 }
 
 .user-icon-dropdown {
