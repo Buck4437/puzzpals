@@ -22,7 +22,7 @@ import puzzlesRouter from "./routes/puzzles.js";
 const app = express();
 
 const corsOptions = {
-  origin: env.CLIENT_BASE_URL,
+  origin: env.CLIENT_ORIGIN,
   credentials: true,
 };
 app.use(cors(corsOptions));

@@ -59,6 +59,7 @@
 import "./assets/main.css";
 import "./assets/colors.css";
 import { computed, ref, onMounted, onBeforeUnmount } from "vue";
+import config from "./config";
 
 import { useRoute, useRouter } from "vue-router";
 import NavigationSidebar from "./components/NavigationSidebar.vue";
@@ -136,7 +137,16 @@ async function logout() {
 }
 
 function goLogin() {
-  router.push("/login");
+  const basePath = config.baseUrl.replace(/\/$/, "");
+  const routeReturnUrl = route.path === "/login" ? "/" : route.fullPath;
+  const returnUrl =
+    basePath && basePath !== "/"
+      ? `${basePath}${routeReturnUrl}`
+      : routeReturnUrl;
+  router.push({
+    path: "/login",
+    query: { returnUrl },
+  });
 }
 
 function goToHome() {

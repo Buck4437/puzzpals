@@ -26,7 +26,7 @@ const server = createServer(app);
 // Create Socket.IO server
 const io = new Server(server, {
   cors: {
-    origin: [env.CLIENT_BASE_URL],
+    origin: [env.CLIENT_ORIGIN],
   },
 });
 
