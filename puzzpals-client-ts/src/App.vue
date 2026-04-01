@@ -95,16 +95,12 @@ const dropdownOpen = ref(false);
 const leftNavCollapsed = ref(false);
 const baseRoutes = [
   {
-    name: "Home",
-    route: "/",
-  },
-  {
     name: "Editor",
     route: "/editor",
   },
   {
     name: "Catalog",
-    route: "/catalogue",
+    route: "/",
   },
 ];
 const navRoutes = computed(() => {
