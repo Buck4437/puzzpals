@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from "vue-router";
 
-import Home from "@/views/Home.vue";
 import NotFound from "@/views/NotFound.vue";
 import RoomPage from "@/views/RoomPage.vue";
 import config from "@/config";
@@ -12,7 +11,7 @@ const router = createRouter({
   routes: [
     {
       path: "/",
-      component: Home,
+      component: Catalogue,
     },
     {
       path: "/404",
@@ -27,10 +26,6 @@ const router = createRouter({
     {
       path: "/editor",
       component: EditorPage,
-    },
-    {
-      path: "/catalogue",
-      component: Catalogue,
     },
     {
       path: "/:pathMatch(.*)*",

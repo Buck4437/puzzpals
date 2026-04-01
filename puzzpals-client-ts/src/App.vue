@@ -44,16 +44,12 @@ const router = useRouter();
 const showCreateRoomDialog = ref(false);
 const routes = [
   {
-    name: "Home",
-    route: "/",
-  },
-  {
     name: "Editor",
     route: "/editor",
   },
   {
     name: "Catalog",
-    route: "/catalogue",
+    route: "/",
   },
 ];
 
