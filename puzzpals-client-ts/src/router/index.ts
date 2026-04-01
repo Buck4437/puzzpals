@@ -17,7 +17,6 @@ const router = createRouter({
     {
       path: "/404",
       component: NotFound,
-      meta: { fullScreen: true },
     },
     {
       path: "/room/:token",
