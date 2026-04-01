@@ -4,6 +4,7 @@ import { google } from "googleapis";
 import { CodeChallengeMethod, OAuth2Client } from "google-auth-library";
 import { createHash, randomBytes } from "crypto";
 import { readFileSync } from "fs";
+import { join } from "path";
 import env from "./config.js";
 import { upsertGoogleUser } from "./db.js";
 
@@ -24,26 +25,112 @@ function normalizeReturnUrl(returnUrl: string): string {
   return returnUrl;
 }
 
+interface GoogleCredentials {
+  web?: {
+    client_secret?: string;
+    client_id?: string;
+    redirect_uris?: string[];
+  };
+  installed?: {
+    client_secret?: string;
+    client_id?: string;
+    redirect_uris?: string[];
+  };
+}
+
+let cachedOAuthConfig: {
+  client_secret: string;
+  client_id: string;
+  redirect_uri: string;
+} | null = null;
+
+function loadOAuthConfigFromSplitEnv() {
+  const clientId = process.env.GOOGLE_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const redirectUri = process.env.GOOGLE_REDIRECT_URI;
+  const hasAny = Boolean(clientId || clientSecret || redirectUri);
+
+  if (!hasAny) {
+    return null;
+  }
+
+  if (!clientId || !clientSecret || !redirectUri) {
+    throw new Error(
+      "Partial Google OAuth split env vars detected. Set GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, and GOOGLE_REDIRECT_URI together.",
+    );
+  }
+
+  return {
+    client_id: clientId,
+    client_secret: clientSecret,
+    redirect_uri: redirectUri,
+  };
+}
+
+function parseCredentials(raw: string, source: string): GoogleCredentials {
+  try {
+    return JSON.parse(raw) as GoogleCredentials;
+  } catch {
+    throw new Error(
+      `Invalid Google OAuth credentials JSON from ${source}: failed to parse`,
+    );
+  }
+}
+
+function loadGoogleCredentials(): GoogleCredentials {
+  try {
+    return parseCredentials(
+      readFileSync(join(process.cwd(), "credentials.json"), "utf-8"),
+      "credentials.json",
+    );
+  } catch (err) {
+    throw new Error(
+      "Google OAuth credentials missing. Set GOOGLE_OAUTH_CREDENTIALS_JSON or provide credentials.json",
+      { cause: err },
+    );
+  }
+}
+
 function getoAuth2Client(): OAuth2Client {
-  const credentials = JSON.parse(readFileSync("credentials.json", "utf-8"));
-  const oauthConfig = credentials.web ?? credentials.installed;
+  if (!cachedOAuthConfig) {
+    const splitEnvConfig = loadOAuthConfigFromSplitEnv();
+    if (splitEnvConfig) {
+      cachedOAuthConfig = splitEnvConfig;
+    } else {
+      const credentials = loadGoogleCredentials();
+      const oauthConfig = credentials.web ?? credentials.installed;
+      if (!oauthConfig) {
+        throw new Error(
+          "Invalid Google OAuth credentials: missing web/installed config",
+        );
+      }
+      const { client_secret, client_id, redirect_uris } = oauthConfig;
+      if (
+        !client_secret ||
+        !client_id ||
+        !Array.isArray(redirect_uris) ||
+        !redirect_uris[0]
+      ) {
+        throw new Error(
+          "Invalid Google OAuth credentials: missing required client fields",
+        );
+      }
+      cachedOAuthConfig = {
+        client_secret,
+        client_id,
+        redirect_uri: redirect_uris[0],
+      };
+    }
+  }
+
+  const oauthConfig = cachedOAuthConfig;
   if (!oauthConfig) {
-    throw new Error(
-      "Invalid OAuth credentials file: missing web/installed config",
-    );
+    throw new Error("Google OAuth credentials could not be loaded");
   }
-  const { client_secret, client_id, redirect_uris } = oauthConfig;
-  if (
-    !client_secret ||
-    !client_id ||
-    !Array.isArray(redirect_uris) ||
-    !redirect_uris[0]
-  ) {
-    throw new Error(
-      "Invalid OAuth credentials file: missing required client fields",
-    );
-  }
-  return new google.auth.OAuth2(client_id, client_secret, redirect_uris[0]);
+
+  const { client_secret, client_id, redirect_uri } = oauthConfig;
+
+  return new google.auth.OAuth2(client_id, client_secret, redirect_uri);
 }
 
 const SCOPES = ["profile", "email"];
