@@ -28,33 +28,15 @@
     class="main-page"
     :class="{
       'main-page-fullscreen': isFullScreen,
-      'main-page-left-nav-collapsed': shouldCollapseLeftNav,
     }"
   >
     <!-- Side Bar -->
-    <div
-      v-if="!isFullScreen"
-      class="left-nav-shell"
-      :class="{ collapsed: shouldCollapseLeftNav }"
-    >
+    <div v-if="!isFullScreen" class="left-nav-shell">
       <NavigationSidebar
         :routes="navRoutes"
         @route-selected="handleRouteSelected"
       />
     </div>
-
-    <button
-      v-if="!isFullScreen && isEditorPage"
-      class="floating-left-nav-handle"
-      :class="{ collapsed: shouldCollapseLeftNav }"
-      type="button"
-      @click="leftNavCollapsed = !leftNavCollapsed"
-      :aria-label="
-        shouldCollapseLeftNav ? 'Show left navigation' : 'Hide left navigation'
-      "
-    >
-      {{ shouldCollapseLeftNav ? "▶" : "◀" }}
-    </button>
 
     <div
       class="content-area"
@@ -92,15 +74,14 @@ const currentUser = computed(
 
 const showCreateRoomDialog = ref(false);
 const dropdownOpen = ref(false);
-const leftNavCollapsed = ref(false);
 const baseRoutes = [
+  {
+    name: "Home",
+    route: "/",
+  },
   {
     name: "Editor",
     route: "/editor",
-  },
-  {
-    name: "Catalog",
-    route: "/",
   },
 ];
 const navRoutes = computed(() => {
@@ -119,18 +100,6 @@ const navRoutes = computed(() => {
 
 const isFullScreen = computed(() => route.meta.fullScreen === true);
 const isEditorPage = computed(() => route.path === "/editor");
-const shouldCollapseLeftNav = computed(
-  () => isEditorPage.value && leftNavCollapsed.value,
-);
-
-watch(
-  () => route.path,
-  (path) => {
-    if (path !== "/editor") {
-      leftNavCollapsed.value = false;
-    }
-  },
-);
 
 function handleRouteSelected(route: string) {
   router.push(route);
@@ -221,6 +190,7 @@ main {
   display: inline-block;
   margin-left: 8px;
 }
+
 .profile-icon {
   width: 40px;
   height: 40px;
@@ -228,6 +198,7 @@ main {
   cursor: pointer;
   display: block;
 }
+
 .dropdown-menu {
   position: absolute;
   right: 0;
@@ -239,6 +210,7 @@ main {
   z-index: 100;
   padding: 8px;
 }
+
 .main-page {
   display: flex;
   flex: 1;
@@ -248,8 +220,8 @@ main {
 }
 
 .left-nav-shell {
-  width: 300px;
-  flex: 0 0 300px;
+  width: 200px;
+  flex: 0 0 200px;
   min-width: 0;
   overflow: hidden;
   transition:
@@ -258,35 +230,6 @@ main {
     opacity 0.2s ease;
 }
 
-.left-nav-shell.collapsed {
-  width: 0;
-  flex-basis: 0;
-  opacity: 0;
-}
-
-.floating-left-nav-handle {
-  position: absolute;
-  left: 308px;
-  top: 50%;
-  transform: translateY(-50%);
-  height: 200px;
-  padding: 12px 10px;
-  border-radius: 4px;
-  color: #1f2a4d;
-  cursor: pointer;
-  z-index: 110;
-  opacity: 0.12;
-  transition: opacity 0.2s ease;
-}
-
-.floating-left-nav-handle.collapsed {
-  left: 8px;
-}
-
-.floating-left-nav-handle:hover,
-.floating-left-nav-handle:focus-visible {
-  opacity: 0.9;
-}
 .content-area {
   flex: 1;
   padding: 20px;

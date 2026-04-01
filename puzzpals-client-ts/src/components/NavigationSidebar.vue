@@ -18,11 +18,9 @@ defineProps<{
 
 <style scoped>
 .navigation-sidebar {
-  width: 300px;
-  flex: 0 0 300px;
   height: 100%;
   background-color: #f0f0f0;
-  padding: 20px;
+  padding: 8px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
