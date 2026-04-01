@@ -36,12 +36,29 @@ app.use(helmet());
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 app.use(serveStatic(join(__dirname, "../public")));
+
+const isProduction = process.env.NODE_ENV === "production";
+const sessionSecret = process.env.SESSION_SECRET;
+
+if (isProduction && !sessionSecret) {
+  throw new Error("SESSION_SECRET must be set in production");
+}
+
+if (isProduction) {
+  app.set("trust proxy", 1);
+}
+
 app.use(
   session({
-    secret: process.env.SESSION_SECRET || "your-session-secret",
+    secret: sessionSecret || "dev-only-session-secret",
     resave: false,
     saveUninitialized: false,
-    cookie: { secure: false }, // set to true if using HTTPS
+    cookie: {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: "lax",
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+    },
   }),
 );
 
