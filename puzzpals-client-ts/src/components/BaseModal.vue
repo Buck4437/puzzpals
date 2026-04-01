@@ -1,7 +1,14 @@
 <template>
   <div class="modal-overlay" @click.self="$emit('close')">
     <div class="modal-content" role="dialog" aria-modal="true">
-      <div class="close-btn" aria-label="Close" @click="$emit('close')">×</div>
+      <button
+        type="button"
+        class="close-btn"
+        aria-label="Close"
+        @click="$emit('close')"
+      >
+        ×
+      </button>
       <slot> Your content goes here </slot>
     </div>
   </div>
