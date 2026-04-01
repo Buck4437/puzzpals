@@ -10,13 +10,12 @@
 
       <div class="content">
         <div class="puzzle-pane">
-          <div class="left-inner">
-            <PuzzleArea
-              :grid="gameData.puzzle"
-              :player-solution="gameData.playerSolution"
-              @edit-message="onGridEdited"
-            ></PuzzleArea>
-          </div>
+          <PuzzleArea
+            class="puzzle-area"
+            :grid="gameData.puzzle"
+            :player-solution="gameData.playerSolution"
+            @edit-message="onGridEdited"
+          />
         </div>
 
         <div class="info-pane">
@@ -308,6 +307,11 @@ input {
   padding: 12px;
   box-sizing: border-box;
   overflow: auto;
+}
+
+.puzzle-area {
+  width: 100%;
+  height: 100%;
 }
 
 .info-pane {

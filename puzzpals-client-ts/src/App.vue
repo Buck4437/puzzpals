@@ -1,5 +1,5 @@
 <template>
-  <header class="main-header" v-if="$route.meta.hideHeader !== true">
+  <header class="main-header" v-if="!isFullScreen">
     <h1>Puzzpals</h1>
     <div>
       <button class="create-room-btn" @click="openRoomDialog">
@@ -42,7 +42,6 @@
       class="content-area"
       :class="{
         'content-area-fullscreen': isFullScreen,
-        'content-area-editor': isEditorPage,
       }"
     >
       <RouterView />
@@ -58,7 +57,7 @@
 <script setup lang="ts">
 import "./assets/main.css";
 import "./assets/colors.css";
-import { computed, ref, watch } from "vue";
+import { computed, ref } from "vue";
 
 import { useRoute, useRouter } from "vue-router";
 import NavigationSidebar from "./components/NavigationSidebar.vue";
@@ -98,8 +97,7 @@ const navRoutes = computed(() => {
   ];
 });
 
-const isFullScreen = computed(() => route.meta.fullScreen === true);
-const isEditorPage = computed(() => route.path === "/editor");
+const isFullScreen = computed(() => route.meta.isFullScreen === true);
 
 function handleRouteSelected(route: string) {
   router.push(route);
@@ -116,10 +114,6 @@ async function logout() {
 
 function goLogin() {
   router.push("/login");
-}
-
-function goToHome() {
-  router.push("/");
 }
 
 function openRoomDialog() {
@@ -237,8 +231,7 @@ main {
   overflow-y: auto;
 }
 
-.content-area-editor {
+.content-area-fullscreen {
   padding: 0;
-  overflow: hidden;
 }
 </style>

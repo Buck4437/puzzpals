@@ -250,11 +250,6 @@ function isWithinGridBounds(coord: [number, number]): boolean {
   return r >= 0 && r <= props.gridSize[0] && c >= 0 && c <= props.gridSize[1];
 }
 
-function isWithinCenterCellBounds(coord: [number, number]): boolean {
-  const [r, c] = coord;
-  return r >= 0 && r < props.gridSize[0] && c >= 0 && c < props.gridSize[1];
-}
-
 function isWithinSnapRadius(
   coord: [number, number],
   target: [number, number],
@@ -306,10 +301,11 @@ function handlePointerMove(event: MouseEvent) {
     lastCornerCell = null;
     emit("centerCellHover", null);
     return;
+  } else {
+    emit("centerCellHover", toCenterCell(coord));
   }
 
-  if (isWithinCenterCellBounds(coord)) {
-    emit("centerCellHover", toCenterCell(coord));
+  if (isWithinGridBounds(coord)) {
   } else {
     emit("centerCellHover", null);
   }
@@ -322,7 +318,7 @@ function handlePointerMove(event: MouseEvent) {
   const cornerCell = toCornerCell(coord);
   const snapRadius = 0.5;
   const nearCenter =
-    isWithinCenterCellBounds(coord) &&
+    isWithinGridBounds(coord) &&
     isWithinSnapRadius(coord, centerCell, snapRadius);
   const nearCorner = isWithinSnapRadius(coord, cornerCell, snapRadius);
 

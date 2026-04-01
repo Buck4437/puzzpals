@@ -23,7 +23,7 @@ const router = createRouter({
       path: "/room/:token",
       component: RoomPage,
       props: true,
-      meta: { hideHeader: true },
+      meta: { isFullScreen: true },
     },
     { path: "/editor", component: EditorPage },
     {
@@ -32,7 +32,7 @@ const router = createRouter({
       props: true,
     },
     { path: "/my-puzzles", component: MyPuzzles },
-    { path: "/login", component: Login, meta: { hideHeader: false } },
+    { path: "/login", component: Login },
     {
       path: "/:pathMatch(.*)*",
       redirect: "/404",
