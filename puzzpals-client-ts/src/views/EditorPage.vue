@@ -153,7 +153,7 @@
 </template>
 
 <script setup lang="ts">
-import SetterEditorComponent from "../components/SetterEditorComponent.vue";
+import SetterEditorComponent from "@/components/SetterEditorComponent.vue";
 import BaseModal from "@/components/BaseModal.vue";
 
 import { computed, ref, watch, type Ref } from "vue";

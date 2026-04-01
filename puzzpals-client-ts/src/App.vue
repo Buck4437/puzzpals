@@ -37,8 +37,8 @@ import "./assets/main.css";
 import "./assets/colors.css";
 import { ref } from "vue";
 import { useRouter } from "vue-router";
-import NavigationSidebar from "./components/NavigationSidebar.vue";
-import CreateRoomDialog from "./components/CreateRoomModal.vue";
+import NavigationSidebar from "@/components/NavigationSidebar.vue";
+import CreateRoomDialog from "@/components/CreateRoomModal.vue";
 
 const router = useRouter();
 const showCreateRoomDialog = ref(false);

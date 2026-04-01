@@ -28,7 +28,7 @@
 <script setup lang="ts">
 import { computed, ref } from "vue";
 
-import BaseEditorComponent from "./BaseEditorComponent.vue";
+import BaseEditorComponent from "@/components/BaseEditorComponent.vue";
 import type {
   RulesType,
   EditMessage,

@@ -23,7 +23,7 @@
 <script setup lang="ts">
 import { ref, nextTick } from "vue";
 import type { ChatMessage } from "@/models/ChatState";
-import ChatBubble from "./ChatBubble.vue";
+import ChatBubble from "@/components/ChatBubble.vue";
 
 const props = defineProps<{
   chatState: { messages: ChatMessage[] };
