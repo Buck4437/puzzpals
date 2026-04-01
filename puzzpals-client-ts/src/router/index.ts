@@ -4,14 +4,14 @@ import NotFound from "@/views/NotFound.vue";
 import RoomPage from "@/views/RoomPage.vue";
 import config from "@/config";
 import EditorPage from "@/views/EditorPage.vue";
-import Catalogue from "@/views/Catalogue.vue";
+import CataloguePage from "@/views/CataloguePage.vue";
 
 const router = createRouter({
   history: createWebHistory(config.baseUrl),
   routes: [
     {
       path: "/",
-      component: Catalogue,
+      component: CataloguePage,
     },
     {
       path: "/404",

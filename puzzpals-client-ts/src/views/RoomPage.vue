@@ -50,7 +50,7 @@
           </div>
 
           <div class="chat-con">
-            <Chat
+            <ChatRoom
               :chat-state="chatState"
               :userID="userID"
               @newMessage="onChatSubmit"
@@ -103,7 +103,7 @@ import socket from "@/socket";
 import PuzzleArea from "@/components/PuzzleArea.vue";
 import BaseModal from "@/components/BaseModal.vue";
 
-import Chat from "@/components/Chat.vue";
+import ChatRoom from "@/components/ChatRoom.vue";
 import type ChatState from "@/models/ChatState";
 import {
   applyEditMessage,
@@ -121,7 +121,7 @@ const gameData: Ref<GameData | null> = ref(null);
 let hasWon = false;
 
 const chatState: Ref<ChatState> = ref({ messages: [] });
-const chatComponent = ref<InstanceType<typeof Chat> | null>(null);
+const chatComponent = ref<InstanceType<typeof ChatRoom> | null>(null);
 const showRoomDetails = ref(false);
 
 const userID = ref<string | null>(null);

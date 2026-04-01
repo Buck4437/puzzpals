@@ -50,7 +50,7 @@ async function fetchPuzzles() {
   try {
     const { data } = await api.get("/puzzles", { params: { limit: 5 } });
     puzzles.value = data;
-  } catch (e) {
+  } catch {
     puzzles.value = [];
   } finally {
     loading.value = false;

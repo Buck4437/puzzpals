@@ -201,10 +201,10 @@ const editableLayerIndex = computed(() => props.editableLayerIndex ?? 0);
 
 const MAX_UNDO = 300;
 
-type UndoRedoStackEntry = {
+interface UndoRedoStackEntry {
   undoMessage: EditMessage;
   redoMessage: EditMessage;
-};
+}
 
 const emptyLayer: LayerData = {
   lineObjects: {},
@@ -503,7 +503,7 @@ function syncTextInputFromGrid() {
 }
 
 let cellStrokeMode: "draw" | "erase" | null = null;
-let visitedCells: Set<CoordinateKey> = new Set();
+let visitedCells = new Set<CoordinateKey>();
 let lastLineCenter: Coordinate | null = null;
 let lastEdgeCorner: Coordinate | null = null;
 let lineStrokeMode: "draw" | "erase" | null = null;
@@ -593,7 +593,7 @@ const moveCursorBy = (dr: number, dc: number) => {
   const numCols = grid.value.size[1];
 
   // Start from current cursor or top-left cell
-  let base: Coordinate = cursor.value ? cursor.value : [0.5, 0.5];
+  const base: Coordinate = cursor.value ? cursor.value : [0.5, 0.5];
 
   const [r, c] = base;
   const [newR, newC] = [r + dr, c + dc];

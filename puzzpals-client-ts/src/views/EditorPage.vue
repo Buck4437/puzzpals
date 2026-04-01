@@ -423,7 +423,7 @@ async function publishPuzzle() {
       puzzleJson: puzzleObj,
     });
     uploadStatus.value = "Publish successful!";
-  } catch (e: any) {
+  } catch {
     uploadStatus.value = "Publish failed. Please try again later.";
   } finally {
     isPublishing.value = false;
