@@ -17,6 +17,7 @@ const returnUrl =
   typeof route.query.returnUrl === "string" ? route.query.returnUrl : "/";
 
 function loginWithGoogle() {
+  sessionStorage.setItem("pendingAuthLogin", "1");
   window.location.href = `${config.apiBase}/auth/google/login?returnUrl=${encodeURIComponent(returnUrl)}`;
 }
 </script>

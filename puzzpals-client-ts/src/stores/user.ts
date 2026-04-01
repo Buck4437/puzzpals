@@ -18,7 +18,6 @@ export const useUserStore = defineStore("user", {
       } finally {
         this.loading = false;
       }
-      localStorage.setItem("authChanged", Date.now().toString());
     },
     async logout() {
       await api.post("/auth/logout");

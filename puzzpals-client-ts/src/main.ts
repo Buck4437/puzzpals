@@ -2,21 +2,33 @@ import { createApp } from "vue";
 import App from "./App.vue";
 import router from "./router";
 import { createPinia } from "pinia";
+import { useUserStore } from "./stores/user";
+
 const app = createApp(App);
 const pinia = createPinia();
 
 app.use(pinia);
 app.use(router);
 
-// All userStore logic removed. No session sync or user state in frontend.
+const userStore = useUserStore(pinia);
 
-app.mount("#app");
+async function bootstrap() {
+  await userStore.fetchUser();
 
-// import { useUserStore } from "./stores/user";
+  if (sessionStorage.getItem("pendingAuthLogin") === "1") {
+    sessionStorage.removeItem("pendingAuthLogin");
+    if (userStore.user) {
+      localStorage.setItem("authChanged", Date.now().toString());
+    }
+  }
 
-// window.addEventListener("storage", (event) => {
-//   if (event.key === "authChanged") {
-//     const userStore = useUserStore();
-//     userStore.fetchUser();
-//   }
-// });
+  window.addEventListener("storage", (event) => {
+    if (event.key === "authChanged") {
+      userStore.fetchUser();
+    }
+  });
+
+  app.mount("#app");
+}
+
+bootstrap();
