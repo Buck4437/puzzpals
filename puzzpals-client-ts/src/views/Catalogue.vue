@@ -1,35 +1,29 @@
 <template>
   <div class="catalogue">
     <h1>Puzzle Catalogue</h1>
-    <div v-if="loading">Loading puzzles...</div>
+    <div v-if="initialLoading">Loading puzzles...</div>
     <div v-else>
-      <div v-for="puzzle in puzzles" :key="puzzle.id" class="puzzle-card">
-        <h2>{{ puzzle.description || "Untitled Puzzle" }}</h2>
-        <p><strong>Author:</strong> {{ puzzle.author }}</p>
-        <p>
-          <strong>Date:</strong>
-          {{
-            puzzle.publish_date
-              ? new Date(puzzle.publish_date).toLocaleString()
-              : "Unknown"
-          }}
-        </p>
-        <div v-if="puzzle.puzzle_json">
-          <GridSVG
-            :size="240"
-            :grid-size="puzzle.puzzle_json.size"
-            :layers="[puzzle.puzzle_json.problem]"
-          />
-        </div>
-      </div>
+      <PuzzleCard
+        v-for="puzzle in puzzles"
+        :key="puzzle.id"
+        :puzzle="puzzle"
+        :clickable="true"
+        @click="goToDetail"
+      />
       <div v-if="puzzles.length === 0">No puzzles found.</div>
+      <div v-if="loadingMore" class="loading-more">Loading more puzzles...</div>
+      <div
+        ref="loadMoreSentinel"
+        class="load-more-sentinel"
+        aria-hidden="true"
+      ></div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import GridSVG from "@/components/editor/GridSVG.vue";
+import { ref, onMounted, onBeforeUnmount } from "vue";
+import PuzzleCard from "@/components/PuzzleCard.vue";
 import api from "@/services/api";
 import type { Grid } from "@puzzpals/puzzle-models";
 
@@ -43,21 +37,66 @@ interface Puzzle {
 }
 
 const puzzles = ref<Puzzle[]>([]);
-const loading = ref(true);
+const PAGE_SIZE = 10;
+const offset = ref(0);
+const hasMore = ref(true);
+const initialLoading = ref(true);
+const loadingMore = ref(false);
+const loadMoreSentinel = ref<HTMLElement | null>(null);
+let observer: IntersectionObserver | null = null;
 
-async function fetchPuzzles() {
-  loading.value = true;
+async function fetchNextBatch() {
+  if (loadingMore.value || !hasMore.value) {
+    return;
+  }
+
+  loadingMore.value = true;
   try {
-    const { data } = await api.get("/puzzles", { params: { limit: 5 } });
-    puzzles.value = data;
+    const { data } = await api.get("/puzzles", {
+      params: { limit: PAGE_SIZE, offset: offset.value },
+    });
+    const batch = Array.isArray(data) ? data : [];
+    puzzles.value.push(...batch);
+    offset.value += batch.length;
+    if (batch.length < PAGE_SIZE) {
+      hasMore.value = false;
+    }
   } catch (e) {
-    puzzles.value = [];
+    hasMore.value = false;
   } finally {
-    loading.value = false;
+    loadingMore.value = false;
+    initialLoading.value = false;
   }
 }
 
-onMounted(fetchPuzzles);
+onMounted(async () => {
+  await fetchNextBatch();
+  observer = new IntersectionObserver(
+    (entries) => {
+      if (entries.some((entry) => entry.isIntersecting)) {
+        fetchNextBatch();
+      }
+    },
+    { root: null, rootMargin: "120px", threshold: 0 },
+  );
+  if (loadMoreSentinel.value) {
+    observer.observe(loadMoreSentinel.value);
+  }
+});
+
+onBeforeUnmount(() => {
+  if (observer && loadMoreSentinel.value) {
+    observer.unobserve(loadMoreSentinel.value);
+  }
+  observer?.disconnect();
+  observer = null;
+});
+
+import { useRouter } from "vue-router";
+const router = useRouter();
+function goToDetail(id: number) {
+  router.push(`/puzzle/${id}`);
+}
 </script>
 
 <style scoped>
@@ -65,11 +104,13 @@ onMounted(fetchPuzzles);
   max-width: 800px;
   margin: 0 auto;
 }
-.puzzle-card {
-  border: 1px solid #ccc;
-  padding: 1em;
-  margin-bottom: 1em;
-  border-radius: 8px;
-  background: #fafafa;
+
+.loading-more {
+  margin-top: 12px;
+  text-align: center;
+}
+
+.load-more-sentinel {
+  height: 1px;
 }
 </style>
