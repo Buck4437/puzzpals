@@ -8,7 +8,7 @@
   </div>
 </template>
 <script setup lang="ts">
-import PlayerEditorComponent from "./PlayerEditorComponent.vue";
+import PlayerEditorComponent from "@/components/PlayerEditorComponent.vue";
 import {
   type EditMessage,
   type Grid,
