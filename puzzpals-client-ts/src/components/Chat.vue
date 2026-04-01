@@ -23,7 +23,7 @@
 <script setup lang="ts">
 import { ref, nextTick } from "vue";
 import type { ChatMessage } from "@/models/ChatState";
-import ChatBubble from "./ChatBubble.vue";
+import ChatBubble from "@/components/ChatBubble.vue";
 
 const props = defineProps<{
   chatState: { messages: ChatMessage[] };
@@ -57,8 +57,7 @@ function scrollToBottom() {
 .chat-container {
   border: 1px solid #ccc;
   border-radius: 8px;
-  width: 320px;
-  max-width: 100%;
+  width: 100%;
   display: flex;
   flex-direction: column;
   background: #fff;
@@ -82,15 +81,21 @@ function scrollToBottom() {
 }
 
 .chat-input input {
-  flex: 1 1 auto;
+  flex: 4 4 auto;
   padding: 6px 8px;
   border-radius: 4px;
+  min-height: 36px;
+  min-width: 100px;
   border: 1px solid #ccc;
+  text-align: left;
 }
 
 .chat-input button {
+  flex: 1 1 auto;
   padding: 6px 12px;
   border-radius: 4px;
+  min-height: 36px;
+  min-width: 50px;
   border: none;
   background: #26cda9;
   color: #fff;

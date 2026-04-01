@@ -1,62 +1,162 @@
 <template>
-  <SetterEditorComponent
-    :grid="grid"
-    :show-rules-layer="showRulesLayerPreview"
-    @edit-problem-message="onEditProblemMessage"
-    @edit-solution-message="onEditSolutionMessage"
-    @resize-grid="onResizeGrid"
-  />
+  <div class="editor-page" :class="{ 'controls-collapsed': controlsCollapsed }">
+    <section class="editor-canvas">
+      <SetterEditorComponent
+        :grid="grid"
+        :show-rules-layer="showRulesLayerPreview"
+        @edit-problem-message="onEditProblemMessage"
+        @edit-solution-message="onEditSolutionMessage"
+      />
 
-  <div style="margin-top: 2em">
-    <h2>Editor options</h2>
-    <h2>Export puzzle</h2>
-    <button @click="exportPuzzle">Export current puzzle</button>
-    <br />
+      <button
+        class="floating-controls-handle"
+        :class="{ collapsed: controlsCollapsed }"
+        type="button"
+        @click="controlsCollapsed = !controlsCollapsed"
+      >
+        {{ !controlsCollapsed ? "▶" : "◀" }}
+      </button>
 
-    Preview rendering of enabled rules
-    <input type="checkbox" v-model="showRulesLayerPreview" />
+      <button
+        class="floating-controls-handle-bottom"
+        v-show="controlsCollapsed"
+        :class="{ collapsed: controlsCollapsed }"
+        type="button"
+        @click="controlsCollapsed = !controlsCollapsed"
+      >
+        Show editor controls
+      </button>
+    </section>
 
-    <br />
+    <aside class="editor-sidebar" :class="{ collapsed: controlsCollapsed }">
+      <h2 class="sidebar-title">Editor Controls</h2>
 
-    Pre-defined rules
-    <ul>
-      <li v-for="rule in customRulesInfoList" :key="rule.id">
-        <input
-          type="checkbox"
-          :value="rule.id"
-          v-model="customRulesInput[rule.id]"
-          @change="updateGridRules"
-        />
-        <strong>{{ rule.name }}</strong
-        >: {{ rule.description }}
-      </li>
-    </ul>
+      <div class="action-con">
+        <button @click="exportPuzzle">Export puzzle</button>
+        <button :disabled="isPublishing" @click="publishPuzzle">
+          {{ isPublishing ? "Publishing..." : "Publish puzzle" }}
+        </button>
+      </div>
 
-    <br />
+      <section class="panel" aria-labelledby="dimension-heading">
+        <h3 id="dimension-heading" class="panel-title">Grid dimensions</h3>
+        <p class="helper-text compact">
+          Current: {{ grid.size[0] }} rows x {{ grid.size[1] }} cols
+        </p>
+        <div class="dimension-row">
+          <label for="editor-row-input">Rows</label>
+          <input
+            id="editor-row-input"
+            type="number"
+            v-model.number="inputRowCount"
+            min="1"
+            max="100"
+          />
+        </div>
+        <div class="dimension-row">
+          <label for="editor-col-input">Cols</label>
+          <input
+            id="editor-col-input"
+            type="number"
+            v-model.number="inputColCount"
+            min="1"
+            max="100"
+          />
+        </div>
+        <button class="secondary-button" @click="setDimensions">
+          Apply size
+        </button>
+      </section>
 
-    Answer-checking (enabling this will include the solution in the exported
-    puzzle)
-    <ul>
-      <li v-for="type in answerCheckInfoList" :key="type.type">
-        <input
-          type="checkbox"
-          :value="type.type"
-          v-model="typesToCheckInput[type.type]"
-        />
-        <strong>{{ type.name }}</strong
-        >: {{ type.description }}
-      </li>
-    </ul>
-    <h2>Publish Puzzle</h2>
-    <button @click="publishPuzzle">Publish current puzzle</button>
-    <div v-if="uploadStatus">{{ uploadStatus }}</div>
+      <section class="panel action-panel">
+        <div>
+          <h3 class="panel-title">Pre-defined rules</h3>
+          <p class="helper-text compact">{{ enabledRulesCount }} enabled</p>
+        </div>
+        <button class="secondary-button" @click="showRulesModal = true">
+          Configure
+        </button>
+      </section>
+
+      <section class="panel action-panel">
+        <div>
+          <h3 class="panel-title">Answer checking</h3>
+          <p class="helper-text compact">
+            {{ selectedTypesToCheck.length }} selected
+          </p>
+        </div>
+        <button class="secondary-button" @click="showAnswerCheckModal = true">
+          Configure
+        </button>
+      </section>
+
+      <details class="panel">
+        <summary>View options</summary>
+        <label class="checkbox-row">
+          <input type="checkbox" v-model="showRulesLayerPreview" />
+          Preview rendering of enabled rules
+        </label>
+      </details>
+    </aside>
   </div>
+
+  <BaseModal v-if="showPublishModal" @close="showPublishModal = false">
+    <h3>Publish status</h3>
+    <p>{{ uploadStatus }}</p>
+  </BaseModal>
+
+  <BaseModal v-if="showRulesModal" @close="showRulesModal = false">
+    <h3>Pre-defined rules</h3>
+    <p class="helper-text no-top-margin">
+      These rules add additional visual display to the puzzle according to the
+      constraints.
+    </p>
+    <ul class="settings-list">
+      <li v-for="rule in customRulesInfoList" :key="rule.id">
+        <label class="checkbox-row">
+          <input
+            type="checkbox"
+            :value="rule.id"
+            v-model="customRulesInput[rule.id]"
+            @change="updateGridRules"
+          />
+          <span
+            ><strong>{{ rule.name }}</strong
+            >: {{ rule.description }}</span
+          >
+        </label>
+      </li>
+    </ul>
+  </BaseModal>
+
+  <BaseModal v-if="showAnswerCheckModal" @close="showAnswerCheckModal = false">
+    <h3>Answer checking</h3>
+    <p class="helper-text no-top-margin">
+      Enabling checks includes solution data in exports and publishing.
+    </p>
+    <ul class="settings-list">
+      <li v-for="type in answerCheckInfoList" :key="type.type">
+        <label class="checkbox-row">
+          <input
+            type="checkbox"
+            :value="type.type"
+            v-model="typesToCheckInput[type.type]"
+          />
+          <span
+            ><strong>{{ type.name }}</strong
+            >: {{ type.description }}</span
+          >
+        </label>
+      </li>
+    </ul>
+  </BaseModal>
 </template>
 
 <script setup lang="ts">
-import SetterEditorComponent from "../components/SetterEditorComponent.vue";
+import SetterEditorComponent from "@/components/SetterEditorComponent.vue";
+import BaseModal from "@/components/BaseModal.vue";
 
-import { computed, ref } from "vue";
+import { computed, ref, watch, type Ref } from "vue";
 import api from "@/services/api";
 import {
   applyEditMessage,
@@ -73,6 +173,11 @@ import {
 } from "@puzzpals/puzzle-models";
 
 const uploadStatus = ref("");
+const showPublishModal = ref(false);
+const showRulesModal = ref(false);
+const showAnswerCheckModal = ref(false);
+const controlsCollapsed = ref(false);
+const isPublishing = ref(false);
 const answerCheckInfoList = getAnswerCheckList();
 const customRulesInfoList = getRulesList();
 
@@ -171,6 +276,8 @@ const grid = ref<Grid>({
 });
 
 const showRulesLayerPreview = ref(true);
+const inputRowCount: Ref<string | number> = ref(grid.value.size[0]);
+const inputColCount: Ref<string | number> = ref(grid.value.size[1]);
 
 const selectedTypesToCheck = computed<TypeToCheck[]>(() => {
   return answerCheckInfoList
@@ -180,6 +287,11 @@ const selectedTypesToCheck = computed<TypeToCheck[]>(() => {
 
 const includeSolution = computed(() => {
   return selectedTypesToCheck.value.length > 0;
+});
+
+const enabledRulesCount = computed(() => {
+  return customRulesInfoList.filter((rule) => customRulesInput.value[rule.id])
+    .length;
 });
 
 function updateGridRules() {
@@ -232,6 +344,36 @@ function onResizeGrid(size: [number, number]) {
   };
 }
 
+function setDimensions() {
+  const rows = Number(inputRowCount.value);
+  const cols = Number(inputColCount.value);
+
+  if (
+    !Number.isFinite(rows) ||
+    !Number.isFinite(cols) ||
+    !Number.isInteger(rows) ||
+    !Number.isInteger(cols) ||
+    rows < 1 ||
+    cols < 1 ||
+    rows > 100 ||
+    cols > 100
+  ) {
+    alert("Please enter valid positive integers for dimensions (1-100).");
+    return;
+  }
+
+  onResizeGrid([rows, cols]);
+}
+
+watch(
+  () => grid.value.size,
+  ([rows, cols]) => {
+    inputRowCount.value = rows;
+    inputColCount.value = cols;
+  },
+  { immediate: true },
+);
+
 const getPuzzleJSON = () => {
   const puzzleObj = JSON.parse(JSON.stringify(grid.value));
   if (!includeSolution.value) {
@@ -267,7 +409,10 @@ const downloadObjectAsJson = (exportObj: object, exportName: string) => {
 };
 
 async function publishPuzzle() {
+  isPublishing.value = true;
   uploadStatus.value = "Publishing...";
+  showPublishModal.value = true;
+
   try {
     const puzzleObj = getPuzzleJSON();
 
@@ -279,9 +424,210 @@ async function publishPuzzle() {
     });
     uploadStatus.value = "Publish successful!";
   } catch (e: any) {
-    uploadStatus.value =
-      "Publish failed: " +
-      (e?.response?.data?.details || e?.message || "Unknown error");
+    uploadStatus.value = "Publish failed. Please try again later.";
+  } finally {
+    isPublishing.value = false;
   }
 }
 </script>
+
+<style scoped>
+.editor-page {
+  height: 100dvh;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 340px);
+  gap: 12px;
+  box-sizing: border-box;
+  overflow: hidden;
+  position: relative;
+}
+
+.editor-page.controls-collapsed {
+  grid-template-columns: minmax(0, 1fr) 0;
+}
+
+.editor-canvas {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid #e7e7e7;
+  border-radius: 8px;
+  background: #fff;
+  padding: 16px;
+  box-sizing: border-box;
+  overflow: auto;
+  position: relative;
+}
+
+.editor-sidebar {
+  min-width: 0;
+  min-height: 0;
+  border: 1px solid #e7e7e7;
+  border-radius: 8px;
+  background: #fff;
+  padding: 12px;
+  box-sizing: border-box;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  transition: opacity 0.2s ease;
+}
+
+.editor-sidebar.collapsed {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.sidebar-title {
+  margin: 0;
+  font-size: 1.15rem;
+}
+
+.collapse-button {
+  border: 1px solid #d5daef;
+  background: #f2f5ff;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.floating-controls-handle,
+.floating-controls-handle-bottom {
+  position: absolute;
+  border-radius: 4px;
+  color: #1f2a4d;
+  cursor: pointer;
+  z-index: 100;
+}
+
+.floating-controls-handle {
+  right: 8px;
+  top: 50%;
+  height: 200px;
+  transform: translateY(-50%);
+  padding: 12px 10px;
+}
+
+.floating-controls-handle-bottom {
+  bottom: 8px;
+  left: 50%;
+  width: 200px;
+  transform: translateX(-50%);
+  padding: 10px 12px;
+  display: none;
+}
+
+.action-con {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+}
+
+.panel {
+  border: 1px solid #e4e6ef;
+  border-radius: 8px;
+  padding: 10px;
+  background: #fbfcff;
+}
+
+.panel-title {
+  margin: 0;
+  font-size: 0.98rem;
+}
+
+.action-panel {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.secondary-button {
+  border: 1px solid #d5daef;
+  background: #f2f5ff;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+}
+
+.dimension-row {
+  display: grid;
+  grid-template-columns: 48px 1fr;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+}
+
+.dimension-row input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.panel summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.settings-list {
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.helper-text {
+  margin: 8px 0 0;
+  color: #555;
+}
+
+.helper-text.no-top-margin {
+  margin-top: 0;
+}
+
+.helper-text.compact {
+  margin-top: 4px;
+  margin-bottom: 0;
+}
+
+.count {
+  font-weight: 500;
+  color: #5f5f5f;
+}
+
+h3 {
+  margin-top: 0;
+  margin-bottom: 12px;
+}
+
+@media (max-width: 980px) {
+  .editor-page {
+    grid-template-columns: 1fr;
+    height: auto;
+    min-height: 100dvh;
+    overflow: auto;
+  }
+
+  .editor-canvas {
+    min-height: 60dvh;
+  }
+
+  .floating-controls-handle {
+    display: none;
+  }
+
+  .floating-controls-handle-bottom {
+    display: block;
+  }
+}
+</style>
