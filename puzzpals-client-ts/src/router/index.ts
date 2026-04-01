@@ -25,14 +25,23 @@ const router = createRouter({
       props: true,
       meta: { isFullScreen: true },
     },
-    { path: "/editor", component: EditorPage },
+    {
+      path: "/editor",
+      component: EditorPage,
+    },
     {
       path: "/puzzle/:id",
       component: () => import("@/views/PuzzleDetail.vue"),
       props: true,
     },
-    { path: "/my-puzzles", component: MyPuzzles },
-    { path: "/login", component: Login },
+    {
+      path: "/my-puzzles",
+      component: MyPuzzles,
+    },
+    {
+      path: "/login",
+      component: Login,
+    },
     {
       path: "/:pathMatch(.*)*",
       redirect: "/404",

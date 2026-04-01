@@ -4,7 +4,6 @@
     <button class="google-btn" @click="loginWithGoogle">
       Login with Google
     </button>
-    <!-- Guest login removed -->
   </div>
 </template>
 

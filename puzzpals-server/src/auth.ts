@@ -10,6 +10,18 @@ import { upsertGoogleUser } from "./db.js";
 
 const router = express.Router();
 
+function regenerateSession(req: Request): Promise<void> {
+  return new Promise((resolve, reject) => {
+    req.session.regenerate((err) => {
+      if (err) {
+        reject(err);
+        return;
+      }
+      resolve();
+    });
+  });
+}
+
 function toBase64Url(input: Buffer): string {
   return input
     .toString("base64")
@@ -218,6 +230,9 @@ router.get("/google/callback", async (req: Request, res: Response) => {
       userInfo.data.picture || "",
     );
 
+    // Rotate session ID after successful authentication to prevent fixation.
+    await regenerateSession(req);
+
     req.session.user = {
       id: dbUser.id,
       google_id: dbUser.google_id,
@@ -267,7 +282,12 @@ router.get("/session", async (req: Request, res: Response) => {
 
 router.post("/logout", (req, res) => {
   req.session.destroy(() => {
-    res.clearCookie("connect.sid");
+    const isProduction = process.env.NODE_ENV === "production";
+    res.clearCookie("connect.sid", {
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: "lax",
+    });
     // Prevent browser caching after logout
     res.setHeader(
       "Cache-Control",

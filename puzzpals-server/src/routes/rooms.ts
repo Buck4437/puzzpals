@@ -72,7 +72,6 @@ router.post("/create-from-id", async (req, res) => {
     if (!puzzle || !puzzle.puzzle_json) {
       return res.status(404).json({ error: "Puzzle not found" });
     }
-
     // Allow room creation for published puzzles by anyone.
     // For unpublished puzzles, only the author can create a room.
     if (!puzzle.published) {
