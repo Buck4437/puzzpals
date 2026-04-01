@@ -219,18 +219,8 @@
 </template>
 
 <script setup lang="ts">
-// Author, title, description, and publish toggle for editor controls
-const authorName = ref("");
-const puzzleTitle = ref("");
-const puzzleDescription = ref("");
-const publishToggle = ref(false);
-const showDescriptionModal = ref(false);
-
-function onDescriptionSave(description: string) {
-  puzzleDescription.value = description;
-}
-import SetterEditorComponent from "../components/SetterEditorComponent.vue";
-import BaseModal from "../components/BaseModal.vue";
+import SetterEditorComponent from "@/components/SetterEditorComponent.vue";
+import BaseModal from "@/components/BaseModal.vue";
 import AlertNotification from "../components/AlertNotification.vue";
 import PuzzleDescriptionModal from "../components/PuzzleDescriptionModal.vue";
 
@@ -251,6 +241,17 @@ import {
   type SolutionData,
   type TypeToCheck,
 } from "@puzzpals/puzzle-models";
+
+// Author, title, description, and publish toggle for editor controls
+const authorName = ref("");
+const puzzleTitle = ref("");
+const puzzleDescription = ref("");
+const publishToggle = ref(false);
+const showDescriptionModal = ref(false);
+
+function onDescriptionSave(description: string) {
+  puzzleDescription.value = description;
+}
 
 const uploadStatus = ref("");
 const puzzleId = ref<number | null>(null);

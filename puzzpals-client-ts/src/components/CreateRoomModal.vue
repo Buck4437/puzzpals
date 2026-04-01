@@ -30,7 +30,7 @@
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import api from "@/services/api";
-import BaseModal from "./BaseModal.vue";
+import BaseModal from "@/components/BaseModal.vue";
 
 const router = useRouter();
 const emit = defineEmits(["close", "upload-success"]);
