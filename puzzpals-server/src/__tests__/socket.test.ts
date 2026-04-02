@@ -12,6 +12,8 @@ vi.mock("../pool.js");
 
 const gameData: GameData = {
   puzzle: {
+    title: "Untitled Puzzle",
+    description: "",
     size: [1, 1],
     problem: {
       lineObjects: {},

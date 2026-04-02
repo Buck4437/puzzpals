@@ -1,6 +1,6 @@
-import type { Grid } from "@puzzpals/puzzle-models";
+import type { PuzzleData } from "@puzzpals/puzzle-models";
 
-import type { Puzzle } from "./models/Puzzle.js";
+import type { UploadedPuzzle } from "./models/UploadedPuzzle.js";
 import type { Room } from "./models/Room.js";
 import pool from "./pool.js";
 
@@ -34,10 +34,8 @@ async function createTable() {
     );
     CREATE TABLE IF NOT EXISTS Puzzle (
       id SERIAL PRIMARY KEY,
-      title TEXT NOT NULL,
       author TEXT NOT NULL,
       author_id INTEGER NOT NULL REFERENCES "User"(id),
-      description TEXT,
       puzzle_json JSONB NOT NULL,
       publish_date TIMESTAMP NOT NULL DEFAULT NOW(),
       published BOOLEAN NOT NULL DEFAULT FALSE
@@ -82,51 +80,37 @@ export async function getUserById(id: number): Promise<User | null> {
 
 // Puzzle DB functions
 export async function addPuzzle(
-  title: string,
   author: string,
   author_id: number,
-  description: string,
-  puzzleJson: Grid,
+  puzzleJson: PuzzleData,
   published = false,
 ) {
-  const sql = `INSERT INTO Puzzle (title, author, author_id, description, puzzle_json, published)
-               VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`;
+  const sql = `INSERT INTO Puzzle (author, author_id, puzzle_json, published)
+               VALUES ($1, $2, $3, $4) RETURNING *`;
   const result = await pool.query(sql, [
-    title,
     author,
     author_id,
-    description,
     puzzleJson,
     published,
   ]);
-  return result.rows[0] as Puzzle;
+  return result.rows[0] as UploadedPuzzle;
 }
 
 // Only author can update their puzzle: Author-check implemented here
 export async function updatePuzzle(
   id: number,
   author_id: number,
-  title?: string,
   author?: string,
-  description?: string,
-  puzzleJson?: Grid,
+  puzzleJson?: PuzzleData,
   published?: boolean,
 ) {
   // Only allow updating fields that are present
   const set: string[] = [];
   const values: unknown[] = [];
   let idx = 1;
-  if (title !== undefined) {
-    set.push(`title = $${idx++}`);
-    values.push(title);
-  }
   if (author !== undefined) {
     set.push(`author = $${idx++}`);
     values.push(author);
-  }
-  if (description !== undefined) {
-    set.push(`description = $${idx++}`);
-    values.push(description);
   }
   if (puzzleJson !== undefined) {
     set.push(`puzzle_json = $${idx++}`);
@@ -141,7 +125,7 @@ export async function updatePuzzle(
   const sql = `UPDATE Puzzle SET ${set.join(", ")} WHERE id = $${idx} AND author_id = $${idx + 1} RETURNING *`;
   values.push(id, author_id);
   const result = await pool.query(sql, values);
-  return result.rows[0];
+  return result.rows[0] as UploadedPuzzle;
 }
 
 export async function getPuzzles(limit = 10, offset = 0) {
@@ -150,13 +134,13 @@ export async function getPuzzles(limit = 10, offset = 0) {
 
   const sql = `SELECT * FROM Puzzle WHERE published = TRUE ORDER BY publish_date DESC LIMIT $1 OFFSET $2`;
   const result = await pool.query(sql, [safeLimit, safeOffset]);
-  return result.rows as Puzzle[];
+  return result.rows as UploadedPuzzle[];
 }
 
 export async function getPuzzleById(id: number) {
   const sql = `SELECT * FROM Puzzle WHERE id = $1`;
   const result = await pool.query(sql, [id]);
-  const row = result.rows[0] as Puzzle | undefined;
+  const row = result.rows[0] as UploadedPuzzle | undefined;
   return row ?? null;
 }
 

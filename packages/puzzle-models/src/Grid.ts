@@ -200,7 +200,9 @@ export interface OptionsObject {
   rules: RulesType[];
 }
 
-export interface Grid {
+export interface PuzzleData {
+  title: string;
+  description: string;
   size: [number, number];
   problem: LayerData;
   solution?: SolutionData;
@@ -208,6 +210,6 @@ export interface Grid {
 }
 
 export interface GameData {
-  puzzle: Grid;
+  puzzle: PuzzleData;
   playerSolution: LayerData;
 }

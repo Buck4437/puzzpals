@@ -9,7 +9,7 @@
 import PlayerEditorComponent from "@/components/PlayerEditorComponent.vue";
 import {
   type EditMessage,
-  type Grid,
+  type PuzzleData,
   type LayerData,
 } from "@puzzpals/puzzle-models";
 
@@ -18,7 +18,7 @@ const emit = defineEmits<{
 }>();
 
 const props = defineProps<{
-  grid: Grid;
+  grid: PuzzleData;
   playerSolution: LayerData;
 }>();
 </script>

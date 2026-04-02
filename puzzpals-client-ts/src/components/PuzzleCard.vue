@@ -13,12 +13,12 @@
     </div>
     <div class="puzzle-card-right">
       <div class="puzzle-card-top-row">
-        <h2>{{ puzzle.title || "Untitled Puzzle" }}</h2>
+        <h2>{{ puzzle.puzzle_json?.title || "Untitled Puzzle" }}</h2>
         <span class="puzzle-id">#{{ puzzle.id }}</span>
       </div>
 
       <p class="puzzle-description">
-        {{ puzzle.description || "No description provided." }}
+        {{ puzzle.puzzle_json?.description || "No description provided." }}
       </p>
 
       <p v-if="showStatus">
@@ -39,15 +39,13 @@
 </template>
 
 <script setup lang="ts">
-import type { Grid } from "@puzzpals/puzzle-models";
+import type { PuzzleData } from "@puzzpals/puzzle-models";
 import GridSVG from "@/components/editor/GridSVG.vue";
 
 interface PuzzleCardData {
   id: number;
-  title?: string;
   author: string;
-  description?: string;
-  puzzle_json: Grid;
+  puzzle_json: PuzzleData;
   publish_date?: string | Date;
   published?: boolean;
 }

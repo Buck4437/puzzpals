@@ -11,14 +11,18 @@
 import { computed } from "vue";
 
 import BaseEditorComponent from "@/components/BaseEditorComponent.vue";
-import type { EditMessage, Grid, LayerData } from "@puzzpals/puzzle-models";
+import type {
+  EditMessage,
+  PuzzleData,
+  LayerData,
+} from "@puzzpals/puzzle-models";
 import {
   getEnabledCustomRulesLayers,
   getEnabledRulesList,
 } from "@puzzpals/puzzle-models";
 
 const props = defineProps<{
-  grid: Grid;
+  grid: PuzzleData;
   playerSolution: LayerData;
 }>();
 

@@ -33,10 +33,10 @@
               <select v-model="selectedSurfaceColor">
                 <option
                   v-for="color in surfaceColorTable"
-                  :key="color"
-                  :value="color"
+                  :key="color.value"
+                  :value="color.value"
                 >
-                  {{ color }}
+                  {{ color.name }}
                 </option>
               </select>
             </label>
@@ -48,10 +48,10 @@
             <select v-model="selectedLineColor">
               <option
                 v-for="color in lineColorTable"
-                :key="color"
-                :value="color"
+                :key="color.value"
+                :value="color.value"
               >
-                {{ color }}
+                {{ color.name }}
               </option>
             </select>
           </label>
@@ -74,10 +74,10 @@
             <select v-model="selectedLineColor">
               <option
                 v-for="color in lineColorTable"
-                :key="color"
-                :value="color"
+                :key="color.value"
+                :value="color.value"
               >
-                {{ color }}
+                {{ color.name }}
               </option>
             </select>
           </label>
@@ -101,10 +101,10 @@
               <option value="auto">Auto</option>
               <option
                 v-for="color in textColorTable"
-                :key="color"
-                :value="color"
+                :key="color.value"
+                :value="color.value"
               >
-                {{ color }}
+                {{ color.name }}
               </option>
             </select>
           </label>
@@ -212,7 +212,7 @@ import {
   type LineObject,
   type TextObject,
   type EditMessage,
-  type Grid,
+  type PuzzleData,
   type LayerData,
   CoordinateToKey,
   PairCoordinateToKey,
@@ -221,7 +221,7 @@ import {
 } from "@puzzpals/puzzle-models";
 
 const props = defineProps<{
-  grid: Grid;
+  grid: PuzzleData;
   renderedLayerList: LayerData[];
   editableLayerIndex?: number;
 }>();
@@ -364,36 +364,36 @@ interface Tool {
 }
 
 const surfaceColorTable = [
-  "black",
-  "lightgray",
-  "darkgray",
-  "blue",
-  "green",
-  "red",
-  "yellow",
-  "orange",
-  "purple",
+  { name: "Black", value: "black" },
+  { name: "Light Gray", value: "lightgray" },
+  { name: "Dark Gray", value: "darkgray" },
+  { name: "Blue", value: "blue" },
+  { name: "Green", value: "green" },
+  { name: "Red", value: "red" },
+  { name: "Yellow", value: "yellow" },
+  { name: "Orange", value: "orange" },
+  { name: "Purple", value: "purple" },
 ];
 
 const lineColorTable = [
-  "green",
-  "black",
-  "blue",
-  "red",
-  "yellow",
-  "orange",
-  "purple",
+  { name: "Green", value: "green" },
+  { name: "Black", value: "black" },
+  { name: "Blue", value: "blue" },
+  { name: "Red", value: "red" },
+  { name: "Yellow", value: "yellow" },
+  { name: "Orange", value: "orange" },
+  { name: "Purple", value: "purple" },
 ];
 
 const textColorTable = [
-  "green",
-  "blue",
-  "black",
-  "white",
-  "red",
-  "yellow",
-  "orange",
-  "purple",
+  { name: "Green", value: "green" },
+  { name: "Blue", value: "blue" },
+  { name: "Black", value: "black" },
+  { name: "White", value: "white" },
+  { name: "Red", value: "red" },
+  { name: "Yellow", value: "yellow" },
+  { name: "Orange", value: "orange" },
+  { name: "Purple", value: "purple" },
 ];
 
 const lineThicknessOptions = [
@@ -413,8 +413,10 @@ const lineThicknessOptions = [
 
 const currentToolId = ref(0);
 const currentSubtoolId = ref(0);
-const selectedSurfaceColor = ref<string>(surfaceColorTable[0] ?? "black");
-const selectedLineColor = ref<string>(lineColorTable[0] ?? "black");
+const selectedSurfaceColor = ref<string>(
+  surfaceColorTable[0]?.value ?? "black",
+);
+const selectedLineColor = ref<string>(lineColorTable[0]?.value ?? "black");
 const selectedLineThickness = ref<number>(
   (lineThicknessOptions[0] ?? { value: 3 }).value,
 );

@@ -17,6 +17,8 @@ vi.mock("vue-router", () => ({ useRouter }));
 describe("RoomPage", () => {
   const gameData: GameData = {
     puzzle: {
+      title: "Untitled Puzzle",
+      description: "",
       size: [1, 1],
       problem: {
         lineObjects: {},
