@@ -1,4 +1,3 @@
-# example netlify.toml
 [build]
   command = "npm --workspace puzzpals-client-ts run build"
   functions = "netlify/functions"
