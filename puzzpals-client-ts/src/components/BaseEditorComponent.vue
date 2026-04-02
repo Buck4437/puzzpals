@@ -14,7 +14,7 @@
       </div>
 
       <div class="tool-panel">
-        <div class="subtool-row">
+        <div class="subtool-row" :class="{ hidden: subtools.length <= 0 }">
           Subtool:
           <button
             v-for="(tool, i) in subtools"
@@ -1026,6 +1026,10 @@ watch(canvasZoom, (value) => {
   gap: 8px;
   align-items: center;
   height: 45px;
+}
+
+.subtool-row.hidden {
+  visibility: hidden;
 }
 
 .tool-group {

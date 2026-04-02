@@ -35,9 +35,9 @@
       <h2 class="sidebar-title">Editor Controls</h2>
 
       <div class="action-con">
-        <button @click="importPuzzle">Import puzzle</button>
-        <button @click="exportPuzzle">Export puzzle</button>
-        <button @click="showPublishModal = true">Publish puzzle</button>
+        <button @click="showPublishModal = true">
+          Import / Export / Publish Puzzle
+        </button>
       </div>
       <input
         ref="importInputRef"
@@ -117,8 +117,11 @@
     :published="publishToggle"
     :isPublishing="isPublishing"
     :statusText="uploadStatus"
+    :isLoggedIn="!!userStore.user"
     @close="showPublishModal = false"
     @publish="publishPuzzle"
+    @import-puzzle="importPuzzle"
+    @export-puzzle="exportPuzzle"
     @update-title="puzzleTitle = $event"
     @update-author="authorName = $event"
     @update-description="puzzleDescription = $event"
@@ -695,18 +698,19 @@ onMounted(() => {
 
 .floating-controls-handle {
   right: 8px;
-  top: 50%;
-  height: 200px;
-  transform: translateY(-50%);
+  top: 8px;
+  height: 100px;
   padding: 12px 10px;
+  border: 2px solid rgba(0, 0, 0, 0.08);
 }
 
 .floating-controls-handle-bottom {
-  bottom: 8px;
+  bottom: 16px;
   left: 50%;
   width: 200px;
   transform: translateX(-50%);
   padding: 10px 12px;
+  border: 2px solid rgba(0, 0, 0, 0.08);
   display: none;
 }
 

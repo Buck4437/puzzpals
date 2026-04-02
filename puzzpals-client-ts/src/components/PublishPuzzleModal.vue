@@ -1,6 +1,6 @@
 <template>
   <BaseModal v-if="isOpen" @close="emit('close')">
-    <h3>Publish puzzle</h3>
+    <h3>Puzzle Information</h3>
 
     <div class="publish-form">
       <label>
@@ -10,16 +10,6 @@
           type="text"
           placeholder="Enter puzzle title"
           @input="onTitleInput"
-        />
-      </label>
-
-      <label>
-        Author
-        <input
-          :value="author"
-          type="text"
-          placeholder="Enter optional nickname"
-          @input="onAuthorInput"
         />
       </label>
 
@@ -41,8 +31,43 @@
         @save="onSaveDescription"
       />
 
+      <div class="import-export-action">
+        <button
+          type="button"
+          class="secondary-button"
+          @click="emit('importPuzzle')"
+        >
+          Import Puzzle
+        </button>
+        <button
+          type="button"
+          class="secondary-button"
+          @click="emit('exportPuzzle')"
+        >
+          Export Puzzle
+        </button>
+      </div>
+    </div>
+
+    <h3>Publish puzzle</h3>
+
+    <p v-if="!isLoggedIn" class="status-text">
+      You must log in to publish puzzle.
+    </p>
+
+    <div class="publish-form">
+      <label>
+        Author
+        <input
+          :value="author"
+          type="text"
+          placeholder="Enter optional nickname"
+          @input="onAuthorInput"
+        />
+      </label>
+
       <label class="publish-toggle-row" for="publish-toggle-modal">
-        <div>
+        <div class="public-text">
           <span class="publish-toggle-title">Public</span>
           <p class="publish-toggle-helper">
             If enabled, your puzzle will be visible to everyone in the
@@ -63,10 +88,11 @@
       <p v-if="statusText" class="status-text">{{ statusText }}</p>
 
       <div class="actions">
-        <button type="button" class="secondary-button" @click="emit('close')">
-          Cancel
-        </button>
-        <button type="button" :disabled="isPublishing" @click="emitPublish">
+        <button
+          type="button"
+          :disabled="isPublishing || !isLoggedIn"
+          @click="emitPublish"
+        >
           {{ isPublishing ? "Publishing..." : "Publish" }}
         </button>
       </div>
@@ -88,11 +114,14 @@ const props = defineProps<{
   published: boolean;
   isPublishing: boolean;
   statusText: string;
+  isLoggedIn: boolean;
 }>();
 
 const emit = defineEmits<{
   close: [];
   publish: [];
+  importPuzzle: [];
+  exportPuzzle: [];
   updateTitle: [value: string];
   updateAuthor: [value: string];
   updateDescription: [value: string];
@@ -133,6 +162,15 @@ function emitPublish() {
 </script>
 
 <style scoped>
+input {
+  height: 24px;
+}
+
+.publish-form .import-export-action {
+  display: flex;
+  gap: 8px;
+}
+
 .publish-form {
   display: flex;
   flex-direction: column;
@@ -151,12 +189,20 @@ function emitPublish() {
   justify-content: space-between;
 }
 
-.publish-toggle-row {
+label.publish-toggle-row {
   display: flex;
-  align-items: flex-start;
+  flex-direction: row;
+  align-items: center;
   justify-content: space-between;
   gap: 10px;
   cursor: pointer;
+}
+
+.public-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 0 0 80%;
 }
 
 .publish-toggle-title {
@@ -170,7 +216,6 @@ function emitPublish() {
 }
 
 .status-text {
-  margin: 2px 0;
   color: #444;
 }
 
@@ -190,7 +235,10 @@ function emitPublish() {
 
 .switch {
   position: relative;
-  display: inline-block;
+  display: inline-flex;
+  justify-content: flex-end;
+  align-items: center;
+  flex: 0 0 auto;
   width: 42px;
   height: 24px;
 }
