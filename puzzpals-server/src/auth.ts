@@ -307,7 +307,7 @@ router.post("/logout", (req, res) => {
     res.clearCookie("connect.sid", {
       httpOnly: true,
       secure: isProduction,
-      sameSite: "lax",
+      sameSite: isProduction ? "none" : "lax",
     });
     // Prevent browser caching after logout
     res.setHeader(
