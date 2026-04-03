@@ -184,6 +184,7 @@ const props = defineProps<{
 const emit = defineEmits<{
   centerCellClick: [cell: [number, number]];
   centerCellEnter: [cell: [number, number]];
+  centerCellHover: [cell: [number, number] | null];
   cornerCellClick: [corner: [number, number]];
   cornerCellEnter: [corner: [number, number]];
   mouseRelease: [];
@@ -244,6 +245,11 @@ function sameCoordinate(a: [number, number], b: [number, number]): boolean {
   return a[0] === b[0] && a[1] === b[1];
 }
 
+function isWithinGridBounds(coord: [number, number]): boolean {
+  const [r, c] = coord;
+  return r >= 0 && r <= props.gridSize[0] && c >= 0 && c <= props.gridSize[1];
+}
+
 function isWithinSnapRadius(
   coord: [number, number],
   target: [number, number],
@@ -255,8 +261,15 @@ function isWithinSnapRadius(
 }
 
 function handleMouseDown(event: MouseEvent) {
-  isDragging = true;
   const coord = getGridCoordinatesFromEvent(event);
+  if (!isWithinGridBounds(coord)) {
+    isDragging = false;
+    lastCenterCell = null;
+    lastCornerCell = null;
+    return;
+  }
+
+  isDragging = true;
   const centerCell = toCenterCell(coord);
   const cornerCell = toCornerCell(coord);
 
@@ -278,16 +291,35 @@ function handleMouseLeave() {
   isDragging = false;
   lastCenterCell = null;
   lastCornerCell = null;
+  emit("centerCellHover", null);
 }
 
 function handlePointerMove(event: MouseEvent) {
-  if (!isDragging) return;
-
   const coord = getGridCoordinatesFromEvent(event);
+  if (!isWithinGridBounds(coord)) {
+    lastCenterCell = null;
+    lastCornerCell = null;
+    emit("centerCellHover", null);
+    return;
+  } else {
+    emit("centerCellHover", toCenterCell(coord));
+  }
+
+  if (isWithinGridBounds(coord)) {
+  } else {
+    emit("centerCellHover", null);
+  }
+
+  if (!isDragging) {
+    return;
+  }
+
   const centerCell = toCenterCell(coord);
   const cornerCell = toCornerCell(coord);
   const snapRadius = 0.5;
-  const nearCenter = isWithinSnapRadius(coord, centerCell, snapRadius);
+  const nearCenter =
+    isWithinGridBounds(coord) &&
+    isWithinSnapRadius(coord, centerCell, snapRadius);
   const nearCorner = isWithinSnapRadius(coord, cornerCell, snapRadius);
 
   if (nearCenter) {

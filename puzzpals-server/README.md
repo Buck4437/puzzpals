@@ -1,5 +1,26 @@
 # Server
 
+## Google OAuth credentials
+
+Do not commit your Google OAuth credentials file to source control.
+
+The server supports two credential sources, in this order:
+
+1. Env vars: `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, `GOOGLE_REDIRECT_URI` (recommended)
+2. `credentials.json` file in the project root (local development fallback)
+
+For Heroku, prefer split config vars:
+
+```bash
+heroku config:set GOOGLE_CLIENT_ID='...'
+heroku config:set GOOGLE_CLIENT_SECRET='...'
+heroku config:set GOOGLE_REDIRECT_URI='https://your-app.herokuapp.com/api/auth/google/callback'
+```
+
+About `redirect_uris` arrays: they are not redundant. Google client credentials often include multiple allowed callback URLs (for example localhost dev and production). The OAuth client still uses a single callback per running environment, so this server resolves to one URI at runtime (`GOOGLE_REDIRECT_URI` in split mode, or the first entry from `redirect_uris` in JSON/file mode).
+
+Keep `credentials.json` local-only. This repository's `.gitignore` already excludes it.
+
 > Note: Parts of this document describe planned or in-progress refactors of the server. Some details (such as API response shapes and puzzle schemas) may not exactly match the current implementation.
 
 ## Types

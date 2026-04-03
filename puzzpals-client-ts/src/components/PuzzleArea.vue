@@ -1,11 +1,9 @@
 <template>
-  <div>
-    <PlayerEditorComponent
-      :grid="props.grid"
-      :player-solution="props.playerSolution"
-      @edit-message="emit('edit-message', $event)"
-    />
-  </div>
+  <PlayerEditorComponent
+    :grid="props.grid"
+    :player-solution="props.playerSolution"
+    @edit-message="emit('edit-message', $event)"
+  />
 </template>
 <script setup lang="ts">
 import PlayerEditorComponent from "@/components/PlayerEditorComponent.vue";

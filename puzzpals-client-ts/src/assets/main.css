@@ -3,7 +3,7 @@ html {
   padding: 0;
   font-weight: normal;
   height: 100%;
-  font-family: Arial, sans-serif;
+  font-family: "Montserrat", Arial, sans-serif;
   background-color: rgb(231, 231, 231);
 }
 
@@ -23,19 +23,22 @@ body {
 
 button,
 .button {
-  background: #fff;
-  border: 1px solid #ccc;
+  font-family: "Montserrat", Arial, sans-serif;
+  background-color: #f8f9fa;
+  color: #222;
+  border: none;
   border-radius: 4px;
   font-size: 1rem;
-  padding: 8px 16px;
+  padding: 10px 22px;
   cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
   transition:
-    background-color 0.25s,
-    color 0.25s;
+    background 0.2s,
+    color 0.2s;
+  outline: none;
 }
 
-button:hover,
-.button:hover {
+button:hover {
   background-color: var(--hover);
 }
 
@@ -45,9 +48,16 @@ button:disabled,
   cursor: default;
 }
 
-input {
+input,
+select,
+textarea {
+  font-family: "Montserrat", Arial, sans-serif;
   font-size: 1rem;
   border: 2px solid rgb(169, 169, 169);
   border-radius: 4px;
   text-align: center;
+}
+
+input[type="range"] {
+  font-family: "Montserrat", Arial, sans-serif;
 }

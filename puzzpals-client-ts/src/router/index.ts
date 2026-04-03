@@ -1,9 +1,11 @@
 import { createRouter, createWebHistory } from "vue-router";
 
+import Login from "@/views/Login.vue";
 import NotFound from "@/views/NotFound.vue";
 import RoomPage from "@/views/RoomPage.vue";
 import config from "@/config";
 import EditorPage from "@/views/EditorPage.vue";
+import MyPuzzles from "@/views/MyPuzzles.vue";
 import CataloguePage from "@/views/CataloguePage.vue";
 
 const router = createRouter({
@@ -21,11 +23,24 @@ const router = createRouter({
       path: "/room/:token",
       component: RoomPage,
       props: true,
-      meta: { fullScreen: true },
+      meta: { isFullScreen: true },
     },
     {
       path: "/editor",
       component: EditorPage,
+    },
+    {
+      path: "/puzzle/:id",
+      component: () => import("@/views/PuzzleDetail.vue"),
+      props: true,
+    },
+    {
+      path: "/my-puzzles",
+      component: MyPuzzles,
+    },
+    {
+      path: "/login",
+      component: Login,
     },
     {
       path: "/:pathMatch(.*)*",

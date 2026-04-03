@@ -17,63 +17,163 @@ async function initDb() {
 
 async function createTable() {
   await pool.query(`
-    CREATE TABLE IF NOT EXISTS Room (
+    CREATE TABLE IF NOT EXISTS room (
       token TEXT PRIMARY KEY UNIQUE,
       puzzle_data JSONB NOT NULL
     );
-    CREATE TABLE IF NOT EXISTS Puzzle (
+    CREATE TABLE IF NOT EXISTS user_data (
+      id SERIAL PRIMARY KEY,
+      google_id TEXT UNIQUE,
+      email TEXT,
+      name TEXT,
+      picture TEXT,
+      is_guest BOOLEAN NOT NULL DEFAULT FALSE,
+      guest_name TEXT,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW(),
+      last_login TIMESTAMP NOT NULL DEFAULT NOW()
+    );
+    CREATE TABLE IF NOT EXISTS puzzle (
       id SERIAL PRIMARY KEY,
       title TEXT NOT NULL,
       author TEXT NOT NULL,
+      author_id INTEGER NOT NULL REFERENCES user_data(id),
       description TEXT,
       puzzle_json JSONB NOT NULL,
-      publish_date TIMESTAMP NOT NULL DEFAULT NOW()
+      publish_date TIMESTAMP NOT NULL DEFAULT NOW(),
+      published BOOLEAN NOT NULL DEFAULT FALSE
     );
   `);
 }
+
+// User DB functions
+import type { User } from "./models/User.js";
+
+export async function upsertGoogleUser(
+  google_id: string,
+  email: string,
+  name: string,
+  picture: string,
+): Promise<User> {
+  const sql = `INSERT INTO user_data (google_id, email, name, picture, is_guest, last_login)
+    VALUES ($1, $2, $3, $4, FALSE, NOW())
+    ON CONFLICT (google_id) DO UPDATE SET email = EXCLUDED.email, name = EXCLUDED.name, picture = EXCLUDED.picture, last_login = NOW()
+    RETURNING *`;
+  const result = await pool.query(sql, [google_id, email, name, picture]);
+  return result.rows[0];
+}
+
+export async function createGuestUser(guest_name: string): Promise<User> {
+  const sql = `INSERT INTO user_data (is_guest, guest_name, last_login) VALUES (TRUE, $1, NOW()) RETURNING *`;
+  const result = await pool.query(sql, [guest_name]);
+  return result.rows[0];
+}
+
+export async function getUserById(id: number): Promise<User | null> {
+  const sql = `SELECT * FROM user_data WHERE id = $1`;
+  const result = await pool.query(sql, [id]);
+  return result.rows[0] || null;
+}
+
+// export async function getAllUsersDebug(): Promise<User[]> {
+//   const sql = `SELECT * FROM user_data ORDER BY created_at DESC`;
+//   const result = await pool.query(sql);
+//   return result.rows;
+// }
 
 // Puzzle DB functions
 export async function addPuzzle(
   title: string,
   author: string,
+  author_id: number,
   description: string,
   puzzleJson: Grid,
+  published = false,
 ) {
-  const sql = `INSERT INTO Puzzle (title, author, description, puzzle_json, publish_date) 
-               VALUES ($1, $2, $3, $4, $5) RETURNING *`;
+  const sql = `INSERT INTO puzzle (title, author, author_id, description, puzzle_json, published)
+               VALUES ($1, $2, $3, $4, $5, $6) RETURNING *`;
   const result = await pool.query(sql, [
     title,
     author,
+    author_id,
     description,
     puzzleJson,
-    new Date(),
+    published,
   ]);
   return result.rows[0] as Puzzle;
 }
 
-export async function getPuzzles(limit = 5) {
-  const safeLimit = limit <= 0 ? 5 : limit;
+// Only author can update their puzzle: Author-check implemented here
+export async function updatePuzzle(
+  id: number,
+  author_id: number,
+  title?: string,
+  author?: string,
+  description?: string,
+  puzzleJson?: Grid,
+  published?: boolean,
+) {
+  // Only allow updating fields that are present
+  const set: string[] = [];
+  const values: unknown[] = [];
+  let idx = 1;
+  if (title !== undefined) {
+    set.push(`title = $${idx++}`);
+    values.push(title);
+  }
+  if (author !== undefined) {
+    set.push(`author = $${idx++}`);
+    values.push(author);
+  }
+  if (description !== undefined) {
+    set.push(`description = $${idx++}`);
+    values.push(description);
+  }
+  if (puzzleJson !== undefined) {
+    set.push(`puzzle_json = $${idx++}`);
+    values.push(puzzleJson);
+  }
+  if (published !== undefined) {
+    set.push(`published = $${idx++}`);
+    values.push(published);
+  }
+  if (!set.length) throw new Error("No fields to update");
+  // Only allow update if author_id matches
+  const sql = `UPDATE puzzle SET ${set.join(", ")} WHERE id = $${idx} AND author_id = $${idx + 1} RETURNING *`;
+  values.push(id, author_id);
+  const result = await pool.query(sql, values);
+  return result.rows[0];
+}
 
-  const sql = `SELECT * FROM Puzzle ORDER BY publish_date DESC LIMIT $1`;
-  const result = await pool.query(sql, [safeLimit]);
+export async function getPuzzles(limit = 10, offset = 0) {
+  const safeLimit = limit <= 0 ? 10 : limit;
+  const safeOffset = offset < 0 ? 0 : offset;
+
+  const sql = `SELECT * FROM puzzle WHERE published = TRUE ORDER BY publish_date DESC LIMIT $1 OFFSET $2`;
+  const result = await pool.query(sql, [safeLimit, safeOffset]);
   return result.rows as Puzzle[];
 }
 
 export async function getPuzzleById(id: number) {
-  const sql = `SELECT * FROM Puzzle WHERE id = $1`;
+  const sql = `SELECT * FROM puzzle WHERE id = $1`;
   const result = await pool.query(sql, [id]);
   const row = result.rows[0] as Puzzle | undefined;
   return row ?? null;
 }
 
+export async function getUserPuzzles(userId: number) {
+  const sql = `SELECT * FROM puzzle WHERE author_id = $1 ORDER BY publish_date DESC`;
+  const result = await pool.query(sql, [userId]);
+  return result.rows;
+}
+
 async function upsertRoom(room: Room) {
-  const sql = `INSERT INTO Room (token, puzzle_data) VALUES ($1, $2)
+  const sql = `INSERT INTO room (token, puzzle_data) VALUES ($1, $2)
                ON CONFLICT (token) DO UPDATE SET puzzle_data = EXCLUDED.puzzle_data`;
   await pool.query(sql, [room.token, room.puzzle_data]);
 }
 
 async function fetchRoom(token: string) {
-  const sql = "SELECT * FROM Room WHERE token = $1";
+  const sql = "SELECT * FROM room WHERE token = $1";
   const result = await pool.query(sql, [token]);
   const row = result.rows[0] as Room | undefined;
   return row ?? null;
