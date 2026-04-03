@@ -114,7 +114,7 @@ function loadGoogleCredentials(): GoogleCredentials {
     );
   } catch (err) {
     throw new Error(
-      "Google OAuth credentials missing. Set GOOGLE_OAUTH_CREDENTIALS_JSON or provide credentials.json",
+      "Google OAuth credentials missing. Set environment variables or provide credentials.json",
       { cause: err },
     );
   }
