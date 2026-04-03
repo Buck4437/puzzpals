@@ -23,7 +23,7 @@
 
 <script setup lang="ts">
 import { ref, watch } from "vue";
-import BaseModal from "./BaseModal.vue";
+import BaseModal from "@/components/BaseModal.vue";
 
 const props = defineProps<{
   isOpen: boolean;

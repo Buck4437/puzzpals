@@ -59,13 +59,13 @@
 import "./assets/main.css";
 import "./assets/colors.css";
 import { computed, ref, onMounted, onBeforeUnmount } from "vue";
-import config from "./config";
+import config from "@/config";
 
 import { useRoute, useRouter } from "vue-router";
-import NavigationSidebar from "./components/NavigationSidebar.vue";
-import CreateRoomDialog from "./components/CreateRoomModal.vue";
+import NavigationSidebar from "@/components/NavigationSidebar.vue";
+import CreateRoomDialog from "@/components/CreateRoomModal.vue";
 
-import { useUserStore } from "./stores/user";
+import { useUserStore } from "@/stores/user";
 const userStore = useUserStore();
 const router = useRouter();
 const route = useRoute();
