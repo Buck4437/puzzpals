@@ -12,8 +12,12 @@ import config from "@/config";
 import { useRoute } from "vue-router";
 
 const route = useRoute();
+const basePath = config.baseUrl.replace(/\/$/, "");
+const fallbackReturnUrl = basePath && basePath !== "/" ? basePath : "/";
 const returnUrl =
-  typeof route.query.returnUrl === "string" ? route.query.returnUrl : "/";
+  typeof route.query.returnUrl === "string"
+    ? route.query.returnUrl
+    : fallbackReturnUrl;
 
 function loginWithGoogle() {
   sessionStorage.setItem("pendingAuthLogin", "1");

@@ -4,7 +4,6 @@
 //     userId?: number;
 //   }
 // }
-import authRouter from "./auth.js";
 import session from "express-session";
 
 import cookieParser from "cookie-parser";
@@ -18,11 +17,12 @@ import { fileURLToPath } from "url";
 import env from "./config.js";
 import roomsRouter from "./routes/rooms.js";
 import puzzlesRouter from "./routes/puzzles.js";
+import authRouter from "./routes/auth.js";
 
 const app = express();
 
 const corsOptions = {
-  origin: env.CLIENT_BASE_URL,
+  origin: env.CLIENT_ORIGIN,
   credentials: true,
 };
 app.use(cors(corsOptions));
@@ -56,7 +56,7 @@ app.use(
     cookie: {
       httpOnly: true,
       secure: isProduction,
-      sameSite: "lax",
+      sameSite: isProduction ? "none" : "lax",
       maxAge: 1000 * 60 * 60 * 24 * 7,
     },
   }),
