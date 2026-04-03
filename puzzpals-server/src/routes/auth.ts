@@ -5,8 +5,8 @@ import { CodeChallengeMethod, OAuth2Client } from "google-auth-library";
 import { createHash, randomBytes } from "crypto";
 import { readFileSync } from "fs";
 import { join } from "path";
-import env from "./config.js";
-import { upsertGoogleUser } from "./db.js";
+import env from "../config.js";
+import { upsertGoogleUser } from "../db.js";
 
 const router = express.Router();
 
