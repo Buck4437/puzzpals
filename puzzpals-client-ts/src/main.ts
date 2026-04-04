@@ -16,7 +16,7 @@ const userStore = useUserStore(pinia);
 async function bootstrap() {
   await userStore.fetchUser();
 
-  // Firefox uses login tickets as cookies don't work for third-party websites
+  // Firefox requires the use of login tickets as cookies don't work for third-party websites
   const currentUrl = new URL(window.location.href);
   const loginTicket = currentUrl.searchParams.get("loginTicket");
   if (!userStore.user && loginTicket) {
