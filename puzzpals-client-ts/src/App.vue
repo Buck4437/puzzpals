@@ -1,30 +1,31 @@
 <template>
-  <header class="main-header" v-if="!isFullScreen">
-    <h1 @click="goToHome">Puzzpals</h1>
-    <div>
-      <button class="create-room-btn" @click="openRoomDialog">
-        Create Room
-      </button>
-      <nav class="user-icon-dropdown">
-        <div v-if="currentUser">
-          <img
-            :src="currentUser.picture"
-            class="profile-icon"
-            ref="profileIconRef"
-            @click="toggleDropdown"
-            alt="User Icon"
-          />
-          <div v-if="dropdownOpen" ref="dropdownRef" class="dropdown-menu">
-            <div>{{ currentUser.email }}</div>
-            <button class="login-btn" @click="logout">Logout</button>
+  <TopBar v-if="!isFullScreen" @title-click="goToHome">
+    <template #right>
+      <div class="main-header-actions">
+        <button class="create-room-btn" @click="openRoomDialog">
+          Create Room
+        </button>
+        <nav class="user-icon-dropdown">
+          <div v-if="currentUser">
+            <img
+              :src="currentUser.picture"
+              class="profile-icon"
+              ref="profileIconRef"
+              @click="toggleDropdown"
+              alt="User Icon"
+            />
+            <div v-if="dropdownOpen" ref="dropdownRef" class="dropdown-menu">
+              <div>{{ currentUser.email }}</div>
+              <button class="login-btn" @click="logout">Logout</button>
+            </div>
           </div>
-        </div>
-        <div v-else>
-          <button class="login-btn" @click="goLogin">Login</button>
-        </div>
-      </nav>
-    </div>
-  </header>
+          <div v-else>
+            <button class="login-btn" @click="goLogin">Login</button>
+          </div>
+        </nav>
+      </div>
+    </template>
+  </TopBar>
   <main
     class="main-page"
     :class="{
@@ -64,6 +65,7 @@ import config from "@/config";
 import { useRoute, useRouter } from "vue-router";
 import NavigationSidebar from "@/components/NavigationSidebar.vue";
 import CreateRoomDialog from "@/components/CreateRoomModal.vue";
+import TopBar from "@/components/TopBar.vue";
 
 import { useUserStore } from "@/stores/user";
 const userStore = useUserStore();
@@ -159,12 +161,6 @@ function openRoomDialog() {
 </script>
 
 <style scoped>
-h1 {
-  font-size: 24px;
-  margin: 0;
-  cursor: pointer;
-}
-
 .app-shell {
   height: 100%;
   display: flex;
@@ -177,16 +173,7 @@ main {
   width: 100%;
 }
 
-.main-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 8px 16px;
-  background: #f8f8f8;
-  border-bottom: 1px solid #e0e0e0;
-}
-
-.main-header > div {
+.main-header-actions {
   display: flex;
   align-items: center;
   gap: 8px;

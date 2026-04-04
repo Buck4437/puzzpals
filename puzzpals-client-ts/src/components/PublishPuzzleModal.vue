@@ -18,7 +18,7 @@
         <textarea
           :value="description"
           rows="5"
-          placeholder="Enter puzzle description"
+          placeholder="Enter puzzle description (you can also describe additional rules here)"
           @input="onDescriptionInput"
         ></textarea>
       </label>

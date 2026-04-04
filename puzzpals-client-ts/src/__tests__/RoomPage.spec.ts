@@ -71,21 +71,6 @@ describe("RoomPage", () => {
     expect(pushMock).toHaveBeenCalledWith("/404");
   });
 
-  it("leaves room when button pressed", async () => {
-    const wrapper = mount(RoomPage, { props: { token: token } });
-    await flushPromises();
-
-    socket.call("room:initialize", gameData, user);
-    await nextTick();
-
-    // Click leave room button
-    wrapper.get("button").trigger("click");
-    await flushPromises();
-
-    // Server receives request to leave room
-    expect(socket.disconnect).toHaveBeenCalledOnce();
-  });
-
   it("leaves room when leaving page", async () => {
     const wrapper = mount(RoomPage, { props: { token: token } });
     await flushPromises();

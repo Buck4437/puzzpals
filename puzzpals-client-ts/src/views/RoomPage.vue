@@ -2,11 +2,16 @@
   <div v-if="!gameData" class="joining-text">Joining room {{ token }}...</div>
   <div v-else>
     <div class="solving-page">
-      <header class="top-bar">
-        <h1>Puzzpals</h1>
-        <span class="room-id">Room ID: {{ token }}</span>
-        <button @click="leaveRoom">Leave</button>
-      </header>
+      <TopBar v-if="!isFullScreen" @title-click="goToHome">
+        <template #middle>
+          <div class="room-id">Room ID: {{ props.token }}</div>
+        </template>
+        <template #right>
+          <div class="header-actions">
+            <button @click="showPuzzleInfoModal = true">Puzzle Info</button>
+          </div>
+        </template>
+      </TopBar>
 
       <div class="content">
         <div class="puzzle-pane">
@@ -57,6 +62,15 @@
       </div>
     </div>
   </div>
+
+  <BaseModal
+    v-if="showPuzzleInfoModal && gameData"
+    @close="showPuzzleInfoModal = false"
+  >
+    <h3>Title: {{ gameData.puzzle.title || "Untitled Puzzle" }}</h3>
+    <h4>Description</h4>
+    <p>{{ gameData.puzzle.description || "No description provided." }}</p>
+  </BaseModal>
 </template>
 
 <script setup lang="ts">
@@ -74,6 +88,8 @@ import { useRouter } from "vue-router";
 import api from "@/services/api";
 import socket from "@/socket";
 import PuzzleArea from "@/components/PuzzleArea.vue";
+import BaseModal from "@/components/BaseModal.vue";
+import TopBar from "@/components/TopBar.vue";
 
 import Chat from "@/components/Chat.vue";
 import type ChatState from "@/models/ChatState";
@@ -91,6 +107,7 @@ const router = useRouter();
 
 const gameData: Ref<GameData | null> = ref(null);
 let hasWon = false;
+const showPuzzleInfoModal = ref(false);
 
 const chatState: Ref<ChatState> = ref({ messages: [] });
 const chatComponent = ref<InstanceType<typeof Chat> | null>(null);
@@ -136,7 +153,7 @@ async function joinRoom() {
   socket.emit("room:join", props.token);
 }
 
-async function leaveRoom() {
+function goToHome() {
   socket.disconnect();
   router.push("/");
 }
@@ -190,6 +207,7 @@ function onChatSubmit(text: string) {
 function initiateSocket() {
   socket.on("room:initialize", (data: GameData, id: string) => {
     hasWon = false;
+    showPuzzleInfoModal.value = false;
     gameData.value = data;
     userID.value = id;
 
@@ -274,26 +292,15 @@ input {
   flex-direction: column;
 }
 
-.top-bar {
-  background: linear-gradient(90deg, #26cda9, #2b8de2);
-  color: #fff;
-  padding: 12px 16px;
-  height: 48px;
-  display: flex;
-  align-items: center;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-  justify-content: space-between;
-  position: relative;
+.room-id {
+  font-size: 0.95rem;
+  color: #304868;
 }
 
-.room-id {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  white-space: nowrap;
-  text-align: center;
-  pointer-events: none;
+.header-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .content {
