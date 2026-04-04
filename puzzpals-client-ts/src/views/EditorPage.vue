@@ -198,7 +198,7 @@
   <BaseModal v-if="showAnswerCheckModal" @close="showAnswerCheckModal = false">
     <h3>Answer checking</h3>
     <p class="helper-text no-top-margin">
-      Enabling checks includes solution data in exports and publishing.
+      Enables automatic answer checking for the selected types of objects.
     </p>
     <ul class="settings-list">
       <li v-for="type in answerCheckInfoList" :key="type.type">
@@ -499,9 +499,7 @@ watch(
 
 const getPuzzleJSON = () => {
   const puzzleObj = JSON.parse(JSON.stringify(grid.value));
-  if (!includeSolution.value) {
-    delete puzzleObj.solution;
-  } else if (puzzleObj.solution) {
+  if (puzzleObj.solution) {
     puzzleObj.solution.typeToCheck = [...selectedTypesToCheck.value];
   }
 
