@@ -2,7 +2,7 @@
   <div v-if="!gameData" class="joining-text">Joining room {{ token }}...</div>
   <div v-else>
     <div class="solving-page">
-      <TopBar v-if="!isFullScreen" @title-click="goToHome">
+      <TopBar @title-click="goToHome">
         <template #middle>
           <div class="room-id">Room ID: {{ props.token }}</div>
         </template>
