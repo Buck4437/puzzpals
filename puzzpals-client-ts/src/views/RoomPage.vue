@@ -76,6 +76,10 @@
     </template>
     <p v-else>No answer checks defined for this puzzle.</p>
   </BaseModal>
+  <BaseModal v-if="showSolvedModal" @close="showSolvedModal = false">
+    <h3>Puzzle solved!</h3>
+    <button class="win-modal-btn" @click="showSolvedModal = false">Yay!</button>
+  </BaseModal>
 </template>
 
 <script setup lang="ts">
@@ -113,6 +117,7 @@ const router = useRouter();
 const gameData: Ref<GameData | null> = ref(null);
 let hasWon = false;
 const showPuzzleInfoModal = ref(false);
+const showSolvedModal = ref(false);
 
 const chatState: Ref<ChatState> = ref({ messages: [] });
 const chatComponent = ref<InstanceType<typeof Chat> | null>(null);
@@ -191,9 +196,7 @@ function checkWinCondition() {
     if (win) {
       hasWon = true;
       nextTick(() => {
-        setTimeout(() => {
-          alert("Win");
-        }, 0);
+        showSolvedModal.value = true;
       });
     }
   }
@@ -213,6 +216,7 @@ function initiateSocket() {
   socket.on("room:initialize", (data: GameData, id: string) => {
     hasWon = false;
     showPuzzleInfoModal.value = false;
+    showSolvedModal.value = false;
     gameData.value = data;
     userID.value = id;
 
@@ -380,5 +384,15 @@ input {
   box-sizing: border-box;
   align-items: stretch;
   overflow: hidden;
+}
+
+.win-modal-btn {
+  background-color: rgb(158, 247, 244);
+  padding: 8px 16px;
+  font-size: 1rem;
+}
+
+.win-modal-btn:hover {
+  background-color: rgb(138, 219, 216);
 }
 </style>

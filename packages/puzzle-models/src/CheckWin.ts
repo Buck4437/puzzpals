@@ -68,6 +68,11 @@ export function hasWon(
   playerSolution: LayerData,
   solution: SolutionData,
 ): boolean {
+  // If no answer-check rules are enabled, the puzzle should never auto-win.
+  if (solution.typeToCheck.length === 0) {
+    return false;
+  }
+
   for (const type of solution.typeToCheck) {
     switch (type) {
       case "lineObjectsExact":

@@ -51,6 +51,7 @@ if (isProduction) {
 app.use(
   session({
     secret: sessionSecret || "dev-only-session-secret",
+    proxy: isProduction,
     resave: false,
     saveUninitialized: false,
     cookie: {
