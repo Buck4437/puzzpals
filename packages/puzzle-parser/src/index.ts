@@ -1,6 +1,6 @@
 import {
-  type Grid,
   type LayerData,
+  type PuzzleData,
   type RulesType,
   type SolutionData,
   type TypeToCheck,
@@ -38,8 +38,10 @@ function createEmptySolutionData(): SolutionData {
   };
 }
 
-function createEmptyGrid(): Grid {
+function createEmptyGrid(): PuzzleData {
   return {
+    title: "Untitled Puzzle",
+    description: "",
     size: [0, 0],
     problem: createEmptyLayerData(),
     options: {
@@ -52,7 +54,7 @@ function isPlainObject(value: unknown): value is PlainObject {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-function isValidSize(value: unknown): value is Grid["size"] {
+function isValidSize(value: unknown): value is PuzzleData["size"] {
   return (
     Array.isArray(value) &&
     value.length === 2 &&
@@ -97,7 +99,9 @@ function updateTypeToCheck(value: unknown): SolutionData["typeToCheck"] {
   return Array.from(new Set(updated));
 }
 
-function sanitizeRulesTypeArray(value: unknown): Grid["options"]["rules"] {
+function sanitizeRulesTypeArray(
+  value: unknown,
+): PuzzleData["options"]["rules"] {
   if (!Array.isArray(value)) {
     return [];
   }
@@ -152,19 +156,34 @@ function buildValidObject<T>(obj: unknown, defaultObj: T): T {
   return result as T;
 }
 
-function parsePuzzle(input: unknown): Grid {
+function parsePuzzle(input: unknown): PuzzleData {
   if (!isPlainObject(input)) {
     throw new Error("Puzzle data must be an object");
   }
 
   const defaultPuzzle = createEmptyGrid();
-  for (const key of Object.keys(defaultPuzzle)) {
+  const requiredKeys: (keyof PuzzleData)[] = ["size", "problem", "options"];
+  for (const key of requiredKeys) {
     if (!(key in input)) {
       throw new Error(`Missing key: ${key}`);
     }
   }
 
   const puzzle = buildValidObject(input, defaultPuzzle);
+  if ("title" in input && typeof input.title !== "string") {
+    throw new Error("Puzzle title must be a string");
+  }
+  if ("description" in input && typeof input.description !== "string") {
+    throw new Error("Puzzle description must be a string");
+  }
+
+  puzzle.title =
+    typeof input.title === "string" && input.title.trim().length > 0
+      ? input.title.trim()
+      : "Untitled Puzzle";
+  puzzle.description =
+    typeof input.description === "string" ? input.description : "";
+
   if (!isValidSize(input.size)) {
     throw new Error("Puzzle size must be a tuple of two positive numbers");
   }

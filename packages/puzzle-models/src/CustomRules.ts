@@ -1,6 +1,6 @@
 import {
   CoordinateToKey,
-  type Grid,
+  type PuzzleData,
   type LayerData,
   type RulesType,
 } from "./Grid.js";
@@ -13,7 +13,10 @@ const ADJACENT_DIRECTIONS: [number, number][] = [
   [-1, 0], // Up
 ];
 
-function calculateAkariRulesLayer(grid: Grid, playerSolution: LayerData) {
+function calculateAkariRulesLayer(
+  puzzle: PuzzleData,
+  playerSolution: LayerData,
+) {
   const rulesLayer: LayerData = {
     lineObjects: {},
     surfaceObjects: {},
@@ -22,7 +25,7 @@ function calculateAkariRulesLayer(grid: Grid, playerSolution: LayerData) {
   };
 
   // Fetch all walls from the problem layer
-  const walls = Object.values(grid.problem.surfaceObjects).filter(
+  const walls = Object.values(puzzle.problem.surfaceObjects).filter(
     (surfaceObject) => surfaceObject.color === "black",
   );
 
@@ -47,9 +50,9 @@ function calculateAkariRulesLayer(grid: Grid, playerSolution: LayerData) {
 
       while (
         currentLocation[0] >= 0 &&
-        currentLocation[0] < grid.size[0] &&
+        currentLocation[0] < puzzle.size[0] &&
         currentLocation[1] >= 0 &&
-        currentLocation[1] < grid.size[1]
+        currentLocation[1] < puzzle.size[1]
       ) {
         const wallAtCurrentLocation = walls.find(
           (wall) =>
@@ -81,7 +84,10 @@ export interface RuleObject {
   id: RulesType;
   name: string;
   description: string;
-  calculateRulesLayer: (grid: Grid, playerSolution: LayerData) => LayerData;
+  calculateRulesLayer: (
+    puzzle: PuzzleData,
+    playerSolution: LayerData,
+  ) => LayerData;
 }
 
 export const CUSTOM_RULES_LIST: Record<RulesType, RuleObject> = {
@@ -97,16 +103,16 @@ export function getRulesList(): RuleObject[] {
   return Object.values(CUSTOM_RULES_LIST);
 }
 
-export function getEnabledRulesList(grid: Grid): RuleObject[] {
-  return grid.options.rules.map((ruleId) => CUSTOM_RULES_LIST[ruleId]);
+export function getEnabledRulesList(puzzle: PuzzleData): RuleObject[] {
+  return puzzle.options.rules.map((ruleId) => CUSTOM_RULES_LIST[ruleId]);
 }
 
 export function getEnabledCustomRulesLayers(
-  grid: Grid,
+  puzzle: PuzzleData,
   playerSolution: LayerData,
 ): LayerData[] {
-  const rulesLayers = getEnabledRulesList(grid).map((rule) =>
-    rule.calculateRulesLayer(grid, playerSolution),
+  const rulesLayers = getEnabledRulesList(puzzle).map((rule) =>
+    rule.calculateRulesLayer(puzzle, playerSolution),
   );
 
   return rulesLayers;

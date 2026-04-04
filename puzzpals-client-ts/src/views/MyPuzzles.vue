@@ -21,16 +21,14 @@ import { ref, onMounted, watch } from "vue";
 import PuzzleCard from "@/components/PuzzleCard.vue";
 import api from "@/services/api";
 import { useRoute, useRouter } from "vue-router";
-import type { Grid } from "@puzzpals/puzzle-models";
+import type { PuzzleData } from "@puzzpals/puzzle-models";
 const route = useRoute();
 const router = useRouter();
 
 interface Puzzle {
   id: number;
-  title?: string;
   author: string;
-  description?: string;
-  puzzle_json: Grid;
+  puzzle_json: PuzzleData;
   publish_date?: string;
   published?: boolean;
 }

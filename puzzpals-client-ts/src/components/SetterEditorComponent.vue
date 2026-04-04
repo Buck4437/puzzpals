@@ -32,7 +32,7 @@ import BaseEditorComponent from "@/components/BaseEditorComponent.vue";
 import type {
   RulesType,
   EditMessage,
-  Grid,
+  PuzzleData,
   LayerData,
   SolutionData,
 } from "@puzzpals/puzzle-models";
@@ -44,7 +44,7 @@ import {
 type SelectedLayer = "problem" | "solution";
 
 const props = defineProps<{
-  grid: Grid;
+  grid: PuzzleData;
   showRulesLayer?: boolean;
 }>();
 

@@ -25,14 +25,12 @@
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import PuzzleCard from "@/components/PuzzleCard.vue";
 import api from "@/services/api";
-import type { Grid } from "@puzzpals/puzzle-models";
+import type { PuzzleData } from "@puzzpals/puzzle-models";
 
 interface Puzzle {
   id: number;
-  title: string;
   author: string;
-  description: string;
-  puzzle_json: Grid;
+  puzzle_json: PuzzleData;
   publish_date: Date;
 }
 
