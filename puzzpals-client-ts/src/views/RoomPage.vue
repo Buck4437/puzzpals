@@ -28,7 +28,7 @@
         <div class="info-pane">
           <div class="rule-pane">
             <h3>{{ gameData.puzzle.title || "Untitled Puzzle" }}</h3>
-            <p class="rule-description">
+            <p class="rule-description" style="white-space: pre-line">
               {{ gameData.puzzle.description || "No description provided." }}
             </p>
           </div>
@@ -359,7 +359,7 @@ input {
   padding: 8px;
   flex: 0 0 auto;
   gap: 12px;
-  overflow: scroll;
+  overflow: auto;
 }
 
 .rule-pane h3 {

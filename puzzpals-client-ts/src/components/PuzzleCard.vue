@@ -132,6 +132,7 @@ function handleClick() {
 
 .puzzle-description {
   margin: 0.55rem 0 0.75rem;
+  white-space: pre-line;
 }
 
 @media (max-width: 700px) {

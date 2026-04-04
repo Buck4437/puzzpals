@@ -2,7 +2,7 @@
   <div v-if="loading">Loading puzzle...</div>
   <div v-else-if="puzzle">
     <h1>{{ puzzle.puzzle_json?.title || "Untitled Puzzle" }}</h1>
-    <p>
+    <p style="white-space: pre-line">
       <strong>Description:</strong>
       {{ puzzle.puzzle_json?.description || "" }}
     </p>
