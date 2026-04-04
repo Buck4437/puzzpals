@@ -51,11 +51,12 @@ if (isProduction) {
 app.use(
   session({
     secret: sessionSecret || "dev-only-session-secret",
+    proxy: isProduction,
     resave: false,
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: isProduction,
+      secure: isProduction ? "auto" : false,
       sameSite: isProduction ? "none" : "lax",
       maxAge: 1000 * 60 * 60 * 24 * 7,
     },
