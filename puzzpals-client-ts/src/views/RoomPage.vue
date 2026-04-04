@@ -8,7 +8,9 @@
         </template>
         <template #right>
           <div class="header-actions">
-            <button @click="showPuzzleInfoModal = true">Puzzle Info</button>
+            <button @click="showPuzzleInfoModal = true">
+              Pre-defined rules / Answer check info
+            </button>
           </div>
         </template>
       </TopBar>
@@ -25,29 +27,10 @@
 
         <div class="info-pane">
           <div class="rule-pane">
-            <details class="panel" v-if="enabledRulesInfo.length > 0">
-              <summary>
-                Pre-defined rules <span>({{ enabledRulesInfo.length }})</span>
-              </summary>
-              <ul>
-                <li v-for="rule in enabledRulesInfo" :key="rule.id">
-                  <strong>{{ rule.name }}</strong
-                  >: {{ rule.description }}
-                </li>
-              </ul>
-            </details>
-
-            <details class="panel" v-if="answerCheckInfo.length > 0">
-              <summary>
-                Answer checks <span>({{ answerCheckInfo.length }})</span>
-              </summary>
-              <ul>
-                <li v-for="check in answerCheckInfo" :key="check.type">
-                  <strong>{{ check.name }}</strong
-                  >: {{ check.description }}
-                </li>
-              </ul>
-            </details>
+            <h3>{{ gameData.puzzle.title || "Untitled Puzzle" }}</h3>
+            <p>
+              {{ gameData.puzzle.description || "No description provided." }}
+            </p>
           </div>
 
           <div class="chat-con">
@@ -67,9 +50,31 @@
     v-if="showPuzzleInfoModal && gameData"
     @close="showPuzzleInfoModal = false"
   >
-    <h3>Title: {{ gameData.puzzle.title || "Untitled Puzzle" }}</h3>
-    <h4>Description</h4>
-    <p>{{ gameData.puzzle.description || "No description provided." }}</p>
+    <template v-if="enabledRulesInfo.length > 0">
+      <p v-if="enabledRulesInfo.length > 0">
+        Pre-defined rules ({{ enabledRulesInfo.length }})
+      </p>
+      <ul>
+        <li v-for="rule in enabledRulesInfo" :key="rule.id">
+          <strong>{{ rule.name }}</strong
+          >: {{ rule.description }}
+        </li>
+      </ul>
+    </template>
+    <p v-else>No pre-defined rules enabled for this puzzle.</p>
+
+    <template v-if="answerCheckInfo.length > 0">
+      <p v-if="answerCheckInfo.length > 0">
+        Answer checks <span>({{ answerCheckInfo.length }})</span>
+      </p>
+      <ul>
+        <li v-for="check in answerCheckInfo" :key="check.type">
+          <strong>{{ check.name }}</strong
+          >: {{ check.description }}
+        </li>
+      </ul>
+    </template>
+    <p v-else>No answer checks defined for this puzzle.</p>
   </BaseModal>
 </template>
 
@@ -350,11 +355,19 @@ input {
 .rule-pane {
   background: #fff;
   border-radius: 6px;
+  max-height: 30%;
   padding: 8px;
   flex: 0 0 auto;
-  display: flex;
-  flex-direction: column;
   gap: 12px;
+  overflow: scroll;
+}
+
+.rule-pane h3 {
+  margin: 0;
+}
+
+.rule-pane p {
+  margin-bottom: 0;
 }
 
 .chat-con {
