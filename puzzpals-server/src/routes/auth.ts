@@ -2,13 +2,27 @@ import express from "express";
 import type { Request, Response } from "express";
 import { google } from "googleapis";
 import { CodeChallengeMethod, OAuth2Client } from "google-auth-library";
-import { createHash, randomBytes } from "crypto";
+import { createHash, createHmac, randomBytes, timingSafeEqual } from "crypto";
 import { readFileSync } from "fs";
 import { join } from "path";
 import env from "../config.js";
 import { upsertGoogleUser } from "../db.js";
 
 const router = express.Router();
+
+interface SessionUser {
+  id: number;
+  google_id?: string | undefined;
+  is_guest: boolean;
+  email?: string | undefined;
+  name?: string | undefined;
+  picture?: string | undefined;
+}
+
+interface LoginTicketPayload {
+  exp: number;
+  user: SessionUser;
+}
 
 function regenerateSession(req: Request): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -28,6 +42,12 @@ function toBase64Url(input: Buffer): string {
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=+$/g, "");
+}
+
+function fromBase64Url(input: string): Buffer {
+  const base64 = input.replace(/-/g, "+").replace(/_/g, "/");
+  const padding = (4 - (base64.length % 4)) % 4;
+  return Buffer.from(`${base64}${"=".repeat(padding)}`, "base64");
 }
 
 function normalizeReturnUrl(returnUrl: string): string {
@@ -52,6 +72,75 @@ function buildClientRedirectUrl(returnUrl: string): string {
   }
 
   return `${env.CLIENT_BASE_URL}${normalizedReturnUrl}`;
+}
+
+function appendQueryParam(
+  urlString: string,
+  key: string,
+  value: string,
+): string {
+  const url = new URL(urlString);
+  url.searchParams.set(key, value);
+  return url.toString();
+}
+
+function getSessionSigningSecret(): string {
+  return process.env.SESSION_SECRET || "dev-only-session-secret";
+}
+
+function createLoginTicket(user: SessionUser): string {
+  const payload: LoginTicketPayload = {
+    exp: Date.now() + 1000 * 60 * 2,
+    user,
+  };
+  const encodedPayload = toBase64Url(
+    Buffer.from(JSON.stringify(payload), "utf-8"),
+  );
+  const signature = toBase64Url(
+    createHmac("sha256", getSessionSigningSecret())
+      .update(encodedPayload)
+      .digest(),
+  );
+  return `${encodedPayload}.${signature}`;
+}
+
+function parseLoginTicket(ticket: string): SessionUser | null {
+  const [encodedPayload, providedSignature, ...rest] = ticket.split(".");
+  if (!encodedPayload || !providedSignature || rest.length > 0) {
+    return null;
+  }
+
+  const expectedSignature = toBase64Url(
+    createHmac("sha256", getSessionSigningSecret())
+      .update(encodedPayload)
+      .digest(),
+  );
+
+  const providedSigBuffer = Buffer.from(providedSignature, "utf-8");
+  const expectedSigBuffer = Buffer.from(expectedSignature, "utf-8");
+  if (providedSigBuffer.length !== expectedSigBuffer.length) {
+    return null;
+  }
+  if (!timingSafeEqual(providedSigBuffer, expectedSigBuffer)) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(
+      fromBase64Url(encodedPayload).toString("utf-8"),
+    ) as LoginTicketPayload;
+
+    if (!parsed || typeof parsed.exp !== "number" || parsed.exp < Date.now()) {
+      return null;
+    }
+    if (!parsed.user || typeof parsed.user.id !== "number") {
+      return null;
+    }
+
+    return parsed.user;
+  } catch {
+    return null;
+  }
 }
 
 interface GoogleCredentials {
@@ -253,7 +342,7 @@ router.get("/google/callback", async (req: Request, res: Response) => {
     // Rotate session ID after successful authentication to prevent fixation.
     await regenerateSession(req);
 
-    req.session.user = {
+    const sessionUser: SessionUser = {
       id: dbUser.id,
       google_id: dbUser.google_id,
       is_guest: false,
@@ -261,7 +350,18 @@ router.get("/google/callback", async (req: Request, res: Response) => {
       name: dbUser.name,
       picture: dbUser.picture,
     };
-    return res.redirect(buildClientRedirectUrl(returnUrl));
+
+    req.session.user = sessionUser;
+
+    // Firefox and other browsers may partition third-party cookies.
+    // A short-lived signed ticket lets the SPA finalize session setup via XHR.
+    const redirectUrl = appendQueryParam(
+      buildClientRedirectUrl(returnUrl),
+      "loginTicket",
+      createLoginTicket(sessionUser),
+    );
+
+    return res.redirect(redirectUrl);
   } catch (err) {
     console.error("Google OAuth callback failed:", err);
     const redirectUrl = buildClientRedirectUrl(returnUrl);
@@ -270,24 +370,6 @@ router.get("/google/callback", async (req: Request, res: Response) => {
     );
   }
 });
-
-import "express-session";
-
-declare module "express-session" {
-  interface SessionData {
-    oauthState?: string;
-    oauthReturnUrl?: string;
-    oauthCodeVerifier?: string;
-    user?: {
-      id: number;
-      google_id?: string | undefined;
-      is_guest: boolean;
-      email?: string | undefined;
-      name?: string | undefined;
-      picture?: string | undefined;
-    };
-  }
-}
 
 router.get("/session", async (req: Request, res: Response) => {
   // Prevent browser caching for this endpoint
@@ -299,6 +381,21 @@ router.get("/session", async (req: Request, res: Response) => {
     return res.status(200).json({ authenticated: false, data: null });
   }
   res.status(200).json({ authenticated: true, data: req.session.user });
+});
+
+router.post("/ticket/exchange", async (req: Request, res: Response) => {
+  const ticket = typeof req.body?.ticket === "string" ? req.body.ticket : "";
+  const sessionUser = parseLoginTicket(ticket);
+
+  if (!sessionUser) {
+    return res
+      .status(400)
+      .json({ success: false, error: "invalid_or_expired_ticket" });
+  }
+
+  await regenerateSession(req);
+  req.session.user = sessionUser;
+  return res.status(200).json({ success: true });
 });
 
 router.post("/logout", (req, res) => {
@@ -317,6 +414,17 @@ router.post("/logout", (req, res) => {
     res.json({ success: true });
   });
 });
+
+import "express-session";
+
+declare module "express-session" {
+  interface SessionData {
+    oauthState?: string;
+    oauthReturnUrl?: string;
+    oauthCodeVerifier?: string;
+    user?: SessionUser;
+  }
+}
 
 // router.get("/allUsersDebug", async (req: Request, res: Response) => {
 //   // This is just for debugging purposes to see all users in the DB. Remove in production!
