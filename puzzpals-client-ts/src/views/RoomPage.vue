@@ -28,7 +28,7 @@
         <div class="info-pane">
           <div class="rule-pane">
             <h3>{{ gameData.puzzle.title || "Untitled Puzzle" }}</h3>
-            <p>
+            <p class="rule-description">
               {{ gameData.puzzle.description || "No description provided." }}
             </p>
           </div>
@@ -368,6 +368,7 @@ input {
 
 .rule-pane p {
   margin-bottom: 0;
+  word-break: break-word;
 }
 
 .chat-con {
