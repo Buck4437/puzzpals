@@ -4,7 +4,6 @@
 //     userId?: number;
 //   }
 // }
-import authRouter from "./auth.js";
 import session from "express-session";
 
 import cookieParser from "cookie-parser";
@@ -18,6 +17,7 @@ import { fileURLToPath } from "url";
 import env from "./config.js";
 import roomsRouter from "./routes/rooms.js";
 import puzzlesRouter from "./routes/puzzles.js";
+import authRouter from "./routes/auth.js";
 
 const app = express();
 

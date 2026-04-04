@@ -5,8 +5,8 @@ import { CodeChallengeMethod, OAuth2Client } from "google-auth-library";
 import { createHash, createHmac, randomBytes, timingSafeEqual } from "crypto";
 import { readFileSync } from "fs";
 import { join } from "path";
-import env from "./config.js";
-import { upsertGoogleUser } from "./db.js";
+import env from "../config.js";
+import { upsertGoogleUser } from "../db.js";
 
 const router = express.Router();
 
@@ -203,7 +203,7 @@ function loadGoogleCredentials(): GoogleCredentials {
     );
   } catch (err) {
     throw new Error(
-      "Google OAuth credentials missing. Set GOOGLE_OAUTH_CREDENTIALS_JSON or provide credentials.json",
+      "Google OAuth credentials missing. Set environment variables or provide credentials.json",
       { cause: err },
     );
   }
