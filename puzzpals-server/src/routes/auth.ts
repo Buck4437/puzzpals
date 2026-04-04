@@ -5,8 +5,8 @@ import { CodeChallengeMethod, OAuth2Client } from "google-auth-library";
 import { createHash, randomBytes } from "crypto";
 import { readFileSync } from "fs";
 import { join } from "path";
-import env from "./config.js";
-import { upsertGoogleUser } from "./db.js";
+import env from "../config.js";
+import { upsertGoogleUser } from "../db.js";
 
 const router = express.Router();
 
@@ -35,6 +35,23 @@ function normalizeReturnUrl(returnUrl: string): string {
     return "/";
   }
   return returnUrl;
+}
+
+function buildClientRedirectUrl(returnUrl: string): string {
+  const normalizedReturnUrl = normalizeReturnUrl(returnUrl);
+  const clientBase = new URL(env.CLIENT_BASE_URL);
+  const basePath = clientBase.pathname.replace(/\/$/, "");
+
+  if (
+    basePath &&
+    basePath !== "/" &&
+    (normalizedReturnUrl === basePath ||
+      normalizedReturnUrl.startsWith(`${basePath}/`))
+  ) {
+    return `${clientBase.origin}${normalizedReturnUrl}`;
+  }
+
+  return `${env.CLIENT_BASE_URL}${normalizedReturnUrl}`;
 }
 
 interface GoogleCredentials {
@@ -97,7 +114,7 @@ function loadGoogleCredentials(): GoogleCredentials {
     );
   } catch (err) {
     throw new Error(
-      "Google OAuth credentials missing. Set GOOGLE_OAUTH_CREDENTIALS_JSON or provide credentials.json",
+      "Google OAuth credentials missing. Set environment variables or provide credentials.json",
       { cause: err },
     );
   }
@@ -189,8 +206,9 @@ router.get("/google/callback", async (req: Request, res: Response) => {
     providedState !== expectedState ||
     !codeVerifier
   ) {
+    const redirectUrl = buildClientRedirectUrl(returnUrl);
     return res.redirect(
-      `${env.CLIENT_BASE_URL}${returnUrl}?authError=${encodeURIComponent("invalid_state")}`,
+      `${redirectUrl}?authError=${encodeURIComponent("invalid_state")}`,
     );
   }
 
@@ -198,15 +216,17 @@ router.get("/google/callback", async (req: Request, res: Response) => {
   const oauthError =
     typeof req.query.error === "string" ? req.query.error : null;
   if (oauthError) {
+    const redirectUrl = buildClientRedirectUrl(returnUrl);
     return res.redirect(
-      `${env.CLIENT_BASE_URL}${returnUrl}?authError=${encodeURIComponent(oauthError)}`,
+      `${redirectUrl}?authError=${encodeURIComponent(oauthError)}`,
     );
   }
 
   const code = typeof req.query.code === "string" ? req.query.code : "";
   if (!code) {
+    const redirectUrl = buildClientRedirectUrl(returnUrl);
     return res.redirect(
-      `${env.CLIENT_BASE_URL}${returnUrl}?authError=${encodeURIComponent("missing_code")}`,
+      `${redirectUrl}?authError=${encodeURIComponent("missing_code")}`,
     );
   }
 
@@ -241,11 +261,12 @@ router.get("/google/callback", async (req: Request, res: Response) => {
       name: dbUser.name,
       picture: dbUser.picture,
     };
-    return res.redirect(`${env.CLIENT_BASE_URL}${returnUrl}`);
+    return res.redirect(buildClientRedirectUrl(returnUrl));
   } catch (err) {
     console.error("Google OAuth callback failed:", err);
+    const redirectUrl = buildClientRedirectUrl(returnUrl);
     return res.redirect(
-      `${env.CLIENT_BASE_URL}${returnUrl}?authError=${encodeURIComponent("oauth_callback_failed")}`,
+      `${redirectUrl}?authError=${encodeURIComponent("oauth_callback_failed")}`,
     );
   }
 });
@@ -286,7 +307,7 @@ router.post("/logout", (req, res) => {
     res.clearCookie("connect.sid", {
       httpOnly: true,
       secure: isProduction,
-      sameSite: "lax",
+      sameSite: isProduction ? "none" : "lax",
     });
     // Prevent browser caching after logout
     res.setHeader(
