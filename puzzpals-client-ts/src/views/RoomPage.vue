@@ -60,7 +60,7 @@
 
   <BaseModal v-if="showSolvedModal" @close="showSolvedModal = false">
     <h3>Puzzle solved!</h3>
-    <button class="win-model-btn" @click="showSolvedModal = false">Yay!</button>
+    <button class="win-modal-btn" @click="showSolvedModal = false">Yay!</button>
   </BaseModal>
 </template>
 
@@ -367,13 +367,13 @@ input {
   overflow: hidden;
 }
 
-.win-model-btn {
+.win-modal-btn {
   background-color: rgb(158, 247, 244);
   padding: 8px 16px;
   font-size: 1rem;
 }
 
-.win-model-btn:hover {
+.win-modal-btn:hover {
   background-color: rgb(138, 219, 216);
 }
 </style>
