@@ -199,7 +199,6 @@ main {
   cursor: pointer;
   margin: 4px 0;
   margin-left: 8px;
-  border: 1px solid var(--border-color);
 }
 
 .user-icon-dropdown {

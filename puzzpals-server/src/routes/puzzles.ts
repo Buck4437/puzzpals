@@ -86,11 +86,6 @@ router.post("/", async (req, res) => {
   } catch {
     return res.status(400).json({ error: "Invalid puzzleJson" });
   }
-  if (parsedPuzzle.title.trim().length === 0) {
-    return res
-      .status(400)
-      .json({ error: "Puzzle title is required in puzzleJson.title" });
-  }
   try {
     const savedPuzzle = await addPuzzle(
       payload.author,
@@ -137,11 +132,6 @@ router.patch("/:id", async (req, res) => {
     parsedPuzzle = parsePuzzle(payload.puzzleJson);
   } catch {
     return res.status(400).json({ error: "Invalid puzzleJson" });
-  }
-  if (parsedPuzzle.title.trim().length === 0) {
-    return res
-      .status(400)
-      .json({ error: "Puzzle title is required in puzzleJson.title" });
   }
   try {
     const updated = await updatePuzzle(

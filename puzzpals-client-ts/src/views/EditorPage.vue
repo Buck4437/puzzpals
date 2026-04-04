@@ -35,8 +35,9 @@
       <h2 class="sidebar-title">Editor Controls</h2>
 
       <div class="action-con">
+        <button @click="importPuzzle">Import Puzzle</button>
         <button @click="showPublishModal = true">
-          Import / Export / Publish Puzzle
+          Export / Publish Puzzle
         </button>
       </div>
       <input
@@ -120,7 +121,6 @@
     :isLoggedIn="!!userStore.user"
     @close="showPublishModal = false"
     @publish="publishPuzzle"
-    @import-puzzle="importPuzzle"
     @export-puzzle="exportPuzzle"
     @update-title="puzzleTitle = $event"
     @update-author="authorName = $event"
@@ -176,10 +176,10 @@
 </template>
 
 <script setup lang="ts">
-import SetterEditorComponent from "@/components/SetterEditorComponent.vue";
-import BaseModal from "@/components/BaseModal.vue";
+import SetterEditorComponent from "../components/SetterEditorComponent.vue";
+import BaseModal from "../components/BaseModal.vue";
 import AlertNotification from "../components/AlertNotification.vue";
-import PublishPuzzleModal from "@/components/PublishPuzzleModal.vue";
+import PublishPuzzleModal from "../components/PublishPuzzleModal.vue";
 
 import { computed, ref, onMounted, watch, type Ref } from "vue";
 import api from "@/services/api";

@@ -13,37 +13,18 @@
         />
       </label>
 
-      <div class="publish-description-row">
-        <span>Description</span>
-        <button
-          type="button"
-          class="secondary-button"
-          @click="showDescription = true"
-        >
-          Edit
-        </button>
-      </div>
-
-      <PuzzleDescriptionModal
-        :isOpen="showDescription"
-        :description="description"
-        @close="showDescription = false"
-        @save="onSaveDescription"
-      />
+      <label>
+        Description
+        <textarea
+          :value="description"
+          rows="5"
+          placeholder="Enter puzzle description"
+          @input="onDescriptionInput"
+        ></textarea>
+      </label>
 
       <div class="import-export-action">
-        <button
-          type="button"
-          class="secondary-button"
-          @click="emit('importPuzzle')"
-        >
-          Import Puzzle
-        </button>
-        <button
-          type="button"
-          class="secondary-button"
-          @click="emit('exportPuzzle')"
-        >
+        <button type="button" @click="emit('exportPuzzle')">
           Export Puzzle
         </button>
       </div>
@@ -101,10 +82,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from "vue";
-
 import BaseModal from "@/components/BaseModal.vue";
-import PuzzleDescriptionModal from "@/components/PuzzleDescriptionModal.vue";
 
 const props = defineProps<{
   isOpen: boolean;
@@ -120,15 +98,12 @@ const props = defineProps<{
 const emit = defineEmits<{
   close: [];
   publish: [];
-  importPuzzle: [];
   exportPuzzle: [];
   updateTitle: [value: string];
   updateAuthor: [value: string];
   updateDescription: [value: string];
   updatePublished: [value: boolean];
 }>();
-
-const showDescription = ref(false);
 
 function onTitleInput(event: Event) {
   const target = event.target;
@@ -144,16 +119,18 @@ function onAuthorInput(event: Event) {
   }
 }
 
+function onDescriptionInput(event: Event) {
+  const target = event.target;
+  if (target instanceof HTMLTextAreaElement) {
+    emit("updateDescription", target.value);
+  }
+}
+
 function onPublishedInput(event: Event) {
   const target = event.target;
   if (target instanceof HTMLInputElement) {
     emit("updatePublished", target.checked);
   }
-}
-
-function onSaveDescription(value: string) {
-  emit("updateDescription", value);
-  showDescription.value = false;
 }
 
 function emitPublish() {
@@ -166,9 +143,20 @@ input {
   height: 24px;
 }
 
+textarea {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 120px;
+  padding: 6px 8px;
+  border: 1px solid #d5daef;
+  border-radius: 4px;
+  resize: vertical;
+}
+
 .publish-form .import-export-action {
   display: flex;
   gap: 8px;
+  justify-content: flex-end;
 }
 
 .publish-form {
@@ -181,12 +169,6 @@ input {
   display: flex;
   flex-direction: column;
   gap: 4px;
-}
-
-.publish-description-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
 }
 
 label.publish-toggle-row {
