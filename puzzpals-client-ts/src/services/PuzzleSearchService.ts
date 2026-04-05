@@ -22,7 +22,13 @@ export interface SearchParams {
   sort_dir?: string;
 }
 
+// For user puzzle search only
+export interface UserPuzzleSearchParams extends SearchParams {
+  published?: boolean;
+}
+
 export const PUZZLE_PAGE_SIZE = 15;
+export const MY_PUZZLES_PAGE_SIZE = 30;
 
 export function getSearchParams(
   search: Partial<SearchParams>,
@@ -48,6 +54,19 @@ export async function fetchPuzzles(params: SearchParams): Promise<Puzzle[]> {
   return Array.isArray(data) ? data : [];
 }
 
+export async function fetchUserPuzzles(
+  params?: UserPuzzleSearchParams,
+): Promise<Puzzle[]> {
+  const res = await api.get("/puzzles/user", { params });
+  if (Array.isArray(res.data)) {
+    return res.data;
+  }
+  if (Array.isArray(res.data?.puzzles)) {
+    return res.data.puzzles;
+  }
+  return [];
+}
+
 export function validateSearchParams(
   search: Partial<SearchParams>,
   maxDate: string,
@@ -70,6 +89,25 @@ export function validateSearchParams(
     if (end.getTime() - start.getTime() > 3 * msInMonth) {
       return "Date range cannot exceed 3 months when all fields are empty.";
     }
+  }
+  return null;
+}
+
+export function validateMySearchParams(
+  search: Partial<SearchParams>,
+  maxDate: string,
+): string | null {
+  // const start = new Date(search.date_start ?? "");
+  // const end = new Date(search.date_end ?? "");
+
+  if ((search.date_start ?? "") > (search.date_end ?? "")) {
+    return "Start date cannot be after end date.";
+  }
+  if (
+    (search.date_end ?? "") > maxDate ||
+    (search.date_start ?? "") > maxDate
+  ) {
+    return "Dates cannot be in the future.";
   }
   return null;
 }
