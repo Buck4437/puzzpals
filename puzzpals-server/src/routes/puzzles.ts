@@ -6,7 +6,7 @@ import {
   getUserPuzzles,
   updatePuzzle,
 } from "../db.js";
-import type { Puzzle } from "../models/Puzzle.js";
+import type { UploadedPuzzle } from "../models/UploadedPuzzle.js";
 import { parsePuzzle } from "@puzzpals/puzzle-parser";
 
 const router = express.Router();
@@ -43,7 +43,7 @@ router.get("/", async (req, res) => {
     return;
   }
   try {
-    const puzzles: Puzzle[] = await getPuzzles(limit, offset);
+    const puzzles: UploadedPuzzle[] = await getPuzzles(limit, offset);
     res.json(puzzles);
   } catch {
     res.status(500).json({ error: "Failed to fetch puzzles" });
@@ -71,12 +71,8 @@ router.post("/", async (req, res) => {
     !(
       typeof payload === "object" &&
       payload !== null &&
-      "title" in payload &&
-      typeof payload.title === "string" &&
       "author" in payload &&
       typeof payload.author === "string" &&
-      "description" in payload &&
-      typeof payload.description === "string" &&
       "published" in payload &&
       typeof payload.published === "boolean" &&
       "puzzleJson" in payload
@@ -92,10 +88,8 @@ router.post("/", async (req, res) => {
   }
   try {
     const savedPuzzle = await addPuzzle(
-      payload.title,
       payload.author,
       author_id,
-      payload.description,
       parsedPuzzle,
       payload.published,
     );
@@ -124,12 +118,8 @@ router.patch("/:id", async (req, res) => {
     !(
       typeof payload === "object" &&
       payload !== null &&
-      "title" in payload &&
-      typeof payload.title === "string" &&
       "author" in payload &&
       typeof payload.author === "string" &&
-      "description" in payload &&
-      typeof payload.description === "string" &&
       "published" in payload &&
       typeof payload.published === "boolean" &&
       "puzzleJson" in payload
@@ -147,9 +137,7 @@ router.patch("/:id", async (req, res) => {
     const updated = await updatePuzzle(
       id,
       author_id,
-      payload.title,
       payload.author,
-      payload.description,
       parsedPuzzle,
       payload.published,
     );
@@ -204,7 +192,7 @@ router.get("/:id", async (req, res) => {
     return res.status(400).json({ error: "Invalid puzzle id" });
   }
   try {
-    const puzzle: Puzzle | null = await getPuzzleById(id);
+    const puzzle: UploadedPuzzle | null = await getPuzzleById(id);
     if (!puzzle) {
       return res.status(404).json({ error: "Puzzle not found" });
     }
@@ -243,7 +231,7 @@ router.get("/:id/edit", async (req, res) => {
     return res.status(400).json({ error: "Invalid puzzle id" });
   }
   try {
-    const puzzle: Puzzle | null = await getPuzzleById(id);
+    const puzzle: UploadedPuzzle | null = await getPuzzleById(id);
     if (!puzzle) {
       return res.status(404).json({ error: "Puzzle not found" });
     }

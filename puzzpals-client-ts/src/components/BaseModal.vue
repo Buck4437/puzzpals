@@ -28,7 +28,7 @@
 }
 
 .modal-content {
-  width: 480px;
+  min-width: min(480px, 75%);
   max-width: 92%;
   min-height: 140px;
   background: #fff;

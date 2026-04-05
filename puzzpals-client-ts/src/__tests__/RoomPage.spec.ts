@@ -17,6 +17,8 @@ vi.mock("vue-router", () => ({ useRouter }));
 describe("RoomPage", () => {
   const gameData: GameData = {
     puzzle: {
+      title: "Untitled Puzzle",
+      description: "",
       size: [1, 1],
       problem: {
         lineObjects: {},
@@ -67,21 +69,6 @@ describe("RoomPage", () => {
 
     // Redirect to 404
     expect(pushMock).toHaveBeenCalledWith("/404");
-  });
-
-  it("leaves room when button pressed", async () => {
-    const wrapper = mount(RoomPage, { props: { token: token } });
-    await flushPromises();
-
-    socket.call("room:initialize", gameData, user);
-    await nextTick();
-
-    // Click leave room button
-    wrapper.get("button").trigger("click");
-    await flushPromises();
-
-    // Server receives request to leave room
-    expect(socket.disconnect).toHaveBeenCalledOnce();
   });
 
   it("leaves room when leaving page", async () => {

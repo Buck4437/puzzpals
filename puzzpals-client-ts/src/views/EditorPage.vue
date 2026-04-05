@@ -34,75 +34,19 @@
     <aside class="editor-sidebar" :class="{ collapsed: controlsCollapsed }">
       <h2 class="sidebar-title">Editor Controls</h2>
 
-      <section class="panel editor-meta-panel">
-        <div class="dimension-row author-title-vertical-row">
-          <label for="editor-title-input" class="title-label">Title</label>
-          <input
-            id="editor-title-input"
-            v-model="puzzleTitle"
-            type="text"
-            class="editor-meta-input"
-            placeholder="Enter puzzle title"
-          />
-          <label for="editor-author-input">Author</label>
-          <input
-            id="editor-author-input"
-            v-model="authorName"
-            type="text"
-            class="editor-meta-input"
-            placeholder="Enter optional nickname"
-          />
-        </div>
-        <div
-          class="editor-meta-label"
-          style="
-            flex-direction: row;
-            align-items: center;
-            justify-content: space-between;
-            display: flex;
-            gap: 8px;
-          "
-        >
-          <span>Puzzle Description</span>
-          <button class="secondary-button" @click="showDescriptionModal = true">
-            Edit
-          </button>
-        </div>
-        <PuzzleDescriptionModal
-          :isOpen="showDescriptionModal"
-          :description="puzzleDescription"
-          @close="showDescriptionModal = false"
-          @save="onDescriptionSave"
-        />
-        <div class="publish-toggle-row">
-          <div class="publish-toggle-label-col">
-            <label class="publish-toggle-label" for="publish-toggle"
-              >Public</label
-            >
-            <div class="publish-toggle-helper">
-              If enabled, your puzzle will be visible to everyone in the
-              catalogue. If disabled, only you can access it.
-            </div>
-          </div>
-          <div class="publish-toggle-switch-col">
-            <label class="switch">
-              <input
-                id="publish-toggle"
-                type="checkbox"
-                v-model="publishToggle"
-              />
-              <span class="slider"></span>
-            </label>
-          </div>
-        </div>
-      </section>
-
       <div class="action-con">
-        <button @click="exportPuzzle">Export puzzle</button>
-        <button :disabled="isPublishing" @click="publishPuzzle">
-          {{ isPublishing ? "Publishing..." : "Publish puzzle" }}
+        <button @click="importPuzzle">Import Puzzle</button>
+        <button @click="showPublishModal = true">
+          Export / Publish Puzzle
         </button>
       </div>
+      <input
+        ref="importInputRef"
+        type="file"
+        class="hidden-import-input"
+        accept=".json"
+        @change="onImportInputChange"
+      />
 
       <section class="panel" aria-labelledby="dimension-heading">
         <h3 id="dimension-heading" class="panel-title">Grid dimensions</h3>
@@ -166,10 +110,23 @@
     </aside>
   </div>
 
-  <BaseModal v-if="showPublishModal" @close="showPublishModal = false">
-    <h3>Publish status</h3>
-    <p>{{ uploadStatus }}</p>
-  </BaseModal>
+  <PublishPuzzleModal
+    :isOpen="showPublishModal"
+    :title="puzzleTitle"
+    :author="authorName"
+    :description="puzzleDescription"
+    :published="publishToggle"
+    :isPublishing="isPublishing"
+    :statusText="uploadStatus"
+    :isLoggedIn="!!userStore.user"
+    @close="showPublishModal = false"
+    @publish="publishPuzzle"
+    @export-puzzle="exportPuzzle"
+    @update-title="puzzleTitle = $event"
+    @update-author="authorName = $event"
+    @update-description="puzzleDescription = $event"
+    @update-published="publishToggle = $event"
+  />
 
   <BaseModal v-if="showRulesModal" @close="showRulesModal = false">
     <h3>Pre-defined rules</h3>
@@ -198,7 +155,7 @@
   <BaseModal v-if="showAnswerCheckModal" @close="showAnswerCheckModal = false">
     <h3>Answer checking</h3>
     <p class="helper-text no-top-margin">
-      Enabling checks includes solution data in exports and publishing.
+      Enables automatic answer checking for the selected types of objects.
     </p>
     <ul class="settings-list">
       <li v-for="type in answerCheckInfoList" :key="type.type">
@@ -219,10 +176,10 @@
 </template>
 
 <script setup lang="ts">
-import SetterEditorComponent from "@/components/SetterEditorComponent.vue";
-import BaseModal from "@/components/BaseModal.vue";
+import SetterEditorComponent from "../components/SetterEditorComponent.vue";
+import BaseModal from "../components/BaseModal.vue";
 import AlertNotification from "../components/AlertNotification.vue";
-import PuzzleDescriptionModal from "../components/PuzzleDescriptionModal.vue";
+import PublishPuzzleModal from "../components/PublishPuzzleModal.vue";
 
 import { computed, ref, onMounted, watch, type Ref } from "vue";
 import api from "@/services/api";
@@ -235,23 +192,19 @@ import {
   KeyToCoordinate,
   KeyToPairCoordinate,
   type EditMessage,
-  type Grid,
   type LayerData,
+  type PuzzleData,
   type RulesType,
   type SolutionData,
   type TypeToCheck,
 } from "@puzzpals/puzzle-models";
+import { parsePuzzle } from "@puzzpals/puzzle-parser";
 
 // Author, title, description, and publish toggle for editor controls
 const authorName = ref("");
 const puzzleTitle = ref("");
 const puzzleDescription = ref("");
 const publishToggle = ref(false);
-const showDescriptionModal = ref(false);
-
-function onDescriptionSave(description: string) {
-  puzzleDescription.value = description;
-}
 
 const uploadStatus = ref("");
 const puzzleId = ref<number | null>(null);
@@ -264,9 +217,57 @@ const isPublishing = ref(false);
 const answerCheckInfoList = getAnswerCheckList();
 const customRulesInfoList = getRulesList();
 const userStore = useUserStore();
+const importInputRef = ref<HTMLInputElement | null>(null);
 
 // Alert/Toast notification component ref
 const alertRef = ref<InstanceType<typeof AlertNotification> | null>(null);
+
+function importPuzzle() {
+  importInputRef.value?.click();
+}
+
+async function onImportInputChange(event: Event) {
+  const target = event.target;
+  if (!(target instanceof HTMLInputElement)) {
+    return;
+  }
+
+  const file = target.files?.[0] ?? null;
+  target.value = "";
+  if (file === null) {
+    return;
+  }
+
+  try {
+    const fileContent = await file.text();
+    const puzzleJson = JSON.parse(fileContent) as unknown;
+    const parsedPuzzle = parsePuzzle(puzzleJson) as PuzzleData;
+
+    grid.value = parsedPuzzle;
+    puzzleTitle.value = parsedPuzzle.title;
+    puzzleDescription.value = parsedPuzzle.description;
+
+    customRulesInfoList.forEach((rule) => {
+      customRulesInput.value[rule.id] = parsedPuzzle.options.rules.includes(
+        rule.id,
+      );
+    });
+
+    answerCheckInfoList.forEach((type) => {
+      typesToCheckInput.value[type.type] =
+        parsedPuzzle.solution?.typeToCheck.includes(type.type) ?? false;
+    });
+
+    puzzleId.value = null;
+    publishToggle.value = false;
+
+    alertRef.value?.showAlert("success", "Puzzle JSON imported successfully.");
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Failed to import puzzle JSON.";
+    alertRef.value?.showAlert("error", message);
+  }
+}
 
 const typesToCheckInput = ref<Record<TypeToCheck, boolean>>({
   lineObjectsExact: false,
@@ -353,7 +354,9 @@ function clipLayerData(
   };
 }
 
-const grid = ref<Grid>({
+const grid = ref<PuzzleData>({
+  title: "Untitled Puzzle",
+  description: "",
   size: [10, 10],
   problem: createEmptyLayerData(),
   solution: createEmptySolutionData(),
@@ -367,28 +370,29 @@ async function fetchUploadedPuzzle() {
   if (idParam && typeof idParam === "string" && /^[0-9]+$/.test(idParam)) {
     try {
       const res = await api.get(`/puzzles/${idParam}/edit`);
-      if (res.data) {
-        if (res.data.puzzle_json) {
-          grid.value = res.data.puzzle_json;
+      if (res.data && res.data.puzzle_json) {
+        const puzzleData = res.data.puzzle_json as PuzzleData;
+        grid.value = puzzleData;
 
-          // Set pre-defined rules
-          if (grid.value.options?.rules) {
-            customRulesInfoList.forEach((rule) => {
-              customRulesInput.value[rule.id] =
-                grid.value.options.rules.includes(rule.id);
-            });
-          }
-
-          // Set answer checking rules
-          if (grid.value.solution?.typeToCheck) {
-            grid.value.solution.typeToCheck.forEach((type) => {
-              typesToCheckInput.value[type] = true;
-            });
-          }
+        // Set pre-defined rules
+        if (grid.value.options?.rules) {
+          customRulesInfoList.forEach((rule) => {
+            customRulesInput.value[rule.id] = grid.value.options.rules.includes(
+              rule.id,
+            );
+          });
         }
+
+        // Set answer checking rules
+        if (grid.value.solution?.typeToCheck) {
+          grid.value.solution.typeToCheck.forEach((type) => {
+            typesToCheckInput.value[type] = true;
+          });
+        }
+
         puzzleId.value = Number(idParam);
-        puzzleTitle.value = res.data.title || "";
-        puzzleDescription.value = res.data.description || "";
+        puzzleTitle.value = puzzleData.title || "";
+        puzzleDescription.value = puzzleData.description || "";
         authorName.value = res.data.author || "";
         publishToggle.value = res.data.published || false;
       }
@@ -498,12 +502,14 @@ watch(
 );
 
 const getPuzzleJSON = () => {
-  const puzzleObj = JSON.parse(JSON.stringify(grid.value));
-  if (!includeSolution.value) {
-    delete puzzleObj.solution;
-  } else if (puzzleObj.solution) {
+  const puzzleObj = JSON.parse(JSON.stringify(grid.value)) as PuzzleData;
+  if (puzzleObj.solution) {
     puzzleObj.solution.typeToCheck = [...selectedTypesToCheck.value];
+  } else {
   }
+
+  puzzleObj.title = puzzleTitle.value.trim() || "Untitled Puzzle";
+  puzzleObj.description = puzzleDescription.value;
 
   puzzleObj.options = {
     ...puzzleObj.options,
@@ -553,28 +559,24 @@ async function publishPuzzle() {
   try {
     const puzzleObj = getPuzzleJSON();
     const author = authorName.value.trim() || "Anonymous";
-    const description = puzzleDescription.value.trim() || "";
 
     let res;
     if (puzzleId.value != null) {
       res = await api.patch(`/puzzles/${puzzleId.value}`, {
-        title,
         author,
-        description,
         puzzleJson: puzzleObj,
         published: publishToggle.value,
       });
     } else {
       res = await api.post("/puzzles", {
-        title,
         author,
-        description,
         puzzleJson: puzzleObj,
         published: publishToggle.value,
       });
       puzzleId.value = res.data.id;
     }
     alertRef.value?.showAlert("success", "Puzzle published successfully!");
+    showPublishModal.value = false;
   } catch (e: any) {
     let errorMessage;
     errorMessage = e?.response?.data?.details || e?.message || "Unknown error";
@@ -695,18 +697,19 @@ onMounted(() => {
 
 .floating-controls-handle {
   right: 8px;
-  top: 50%;
-  height: 200px;
-  transform: translateY(-50%);
+  top: 8px;
+  height: 100px;
   padding: 12px 10px;
+  border: 2px solid rgba(0, 0, 0, 0.08);
 }
 
 .floating-controls-handle-bottom {
-  bottom: 8px;
+  bottom: 16px;
   left: 50%;
   width: 200px;
   transform: translateX(-50%);
   padding: 10px 12px;
+  border: 2px solid rgba(0, 0, 0, 0.08);
   display: none;
 }
 
@@ -714,6 +717,10 @@ onMounted(() => {
   display: grid;
   grid-template-columns: 1fr;
   gap: 8px;
+}
+
+.hidden-import-input {
+  display: none;
 }
 
 .panel {
