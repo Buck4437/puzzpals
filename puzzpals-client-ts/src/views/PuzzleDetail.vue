@@ -31,6 +31,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user";
 import api from "@/services/api";
 import GridSVG from "@/components/editor/GridSVG.vue";
+import { formatDate } from "@/util";
 
 const route = useRoute();
 const router = useRouter();
@@ -58,7 +59,7 @@ const isOwner = computed(() => {
 
 const formattedDate = computed(() => {
   if (!puzzle.value?.publish_date) return "Unknown";
-  return new Date(puzzle.value.publish_date).toLocaleString();
+  return formatDate(new Date(puzzle.value.publish_date));
 });
 
 async function fetchPuzzle() {
