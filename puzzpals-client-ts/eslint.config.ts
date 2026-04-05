@@ -1,11 +1,8 @@
-import { globalIgnores } from "eslint/config";
 import {
   defineConfigWithVueTs,
   vueTsConfigs,
 } from "@vue/eslint-config-typescript";
 import pluginVue from "eslint-plugin-vue";
-import pluginVitest from "@vitest/eslint-plugin";
-import pluginOxlint from "eslint-plugin-oxlint";
 
 import puzzpalsConfig from "../eslint.config";
 
@@ -14,26 +11,17 @@ import puzzpalsConfig from "../eslint.config";
 // configureVueProject({ scriptLangs: ['ts', 'tsx'] })
 // More info at https://github.com/vuejs/eslint-config-typescript/#advanced-setup
 
-export default defineConfigWithVueTs({
-  languageOptions: {
-    parserOptions: {
-      projectService: true,
-      tsconfigRootDir: import.meta.dirname,
+export default defineConfigWithVueTs(
+  puzzpalsConfig,
+  pluginVue.configs["flat/essential"],
+  vueTsConfigs.recommended,
+  {
+    languageOptions: {
+      parserOptions: {
+        parser: "@typescript-eslint/parser",
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
     },
   },
-  extends: [
-    puzzpalsConfig,
-    {
-      name: "app/files-to-lint",
-      files: ["**/*.{vue,ts,mts,tsx}"],
-    },
-    globalIgnores(["**/dist/**", "**/dist-ssr/**", "**/coverage/**"]),
-    ...pluginVue.configs["flat/essential"],
-    vueTsConfigs.recommended,
-    {
-      ...pluginVitest.configs.recommended,
-      files: ["src/**/__tests__/*"],
-    },
-    ...pluginOxlint.buildFromOxlintConfigFile(".oxlintrc.json"),
-  ],
-});
+);
