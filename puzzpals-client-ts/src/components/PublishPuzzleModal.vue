@@ -8,18 +8,18 @@
         <input
           :value="title"
           type="text"
-          placeholder="Enter puzzle title"
+          placeholder="Enter puzzle title (Max 100 characters)"
           @input="onTitleInput"
         />
       </label>
 
       <label>
-        Description
+        Instructions
         <textarea
-          :value="description"
+          :value="instructions"
           rows="5"
-          placeholder="Enter puzzle description (you can also describe additional rules here)"
-          @input="onDescriptionInput"
+          placeholder="Enter puzzle instructions (Max 1000 characters; you can also describe additional rules here)"
+          @input="onInstructionsInput"
         ></textarea>
       </label>
 
@@ -38,11 +38,21 @@
 
     <div class="publish-form">
       <label>
+        Description
+        <textarea
+          :value="description"
+          rows="4"
+          placeholder="Enter catalogue description (Max 1000 characters)"
+          @input="onDescriptionInput"
+        ></textarea>
+      </label>
+
+      <label>
         Author
         <input
           :value="author"
           type="text"
-          placeholder="Enter optional nickname"
+          placeholder="Enter optional nickname (Max 100 characters)"
           @input="onAuthorInput"
         />
       </label>
@@ -83,12 +93,19 @@
 
 <script setup lang="ts">
 import BaseModal from "@/components/BaseModal.vue";
+import {
+  PUZZLE_AUTHOR_MAX_LENGTH,
+  PUZZLE_DESCRIPTION_MAX_LENGTH,
+  PUZZLE_INSTRUCTIONS_MAX_LENGTH,
+  PUZZLE_TITLE_MAX_LENGTH,
+} from "@puzzpals/puzzle-models";
 
 const props = defineProps<{
   isOpen: boolean;
   title: string;
-  author: string;
+  instructions: string;
   description: string;
+  author: string;
   published: boolean;
   isPublishing: boolean;
   statusText: string;
@@ -100,29 +117,43 @@ const emit = defineEmits<{
   publish: [];
   exportPuzzle: [];
   updateTitle: [value: string];
-  updateAuthor: [value: string];
+  updateInstructions: [value: string];
   updateDescription: [value: string];
+  updateAuthor: [value: string];
   updatePublished: [value: boolean];
 }>();
 
 function onTitleInput(event: Event) {
   const target = event.target;
   if (target instanceof HTMLInputElement) {
-    emit("updateTitle", target.value);
+    emit("updateTitle", target.value.slice(0, PUZZLE_TITLE_MAX_LENGTH));
   }
 }
 
-function onAuthorInput(event: Event) {
+function onInstructionsInput(event: Event) {
   const target = event.target;
-  if (target instanceof HTMLInputElement) {
-    emit("updateAuthor", target.value);
+  if (target instanceof HTMLTextAreaElement) {
+    emit(
+      "updateInstructions",
+      target.value.slice(0, PUZZLE_INSTRUCTIONS_MAX_LENGTH),
+    );
   }
 }
 
 function onDescriptionInput(event: Event) {
   const target = event.target;
   if (target instanceof HTMLTextAreaElement) {
-    emit("updateDescription", target.value);
+    emit(
+      "updateDescription",
+      target.value.slice(0, PUZZLE_DESCRIPTION_MAX_LENGTH),
+    );
+  }
+}
+
+function onAuthorInput(event: Event) {
+  const target = event.target;
+  if (target instanceof HTMLInputElement) {
+    emit("updateAuthor", target.value.slice(0, PUZZLE_AUTHOR_MAX_LENGTH));
   }
 }
 
@@ -139,6 +170,10 @@ function emitPublish() {
 </script>
 
 <style scoped>
+h3 {
+  margin-top: 0;
+}
+
 input {
   height: 24px;
 }

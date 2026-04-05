@@ -1,5 +1,11 @@
 import express from "express";
 import {
+  PUZZLE_AUTHOR_MAX_LENGTH,
+  PUZZLE_DESCRIPTION_MAX_LENGTH,
+  PUZZLE_INSTRUCTIONS_MAX_LENGTH,
+  PUZZLE_TITLE_MAX_LENGTH,
+} from "@puzzpals/puzzle-models";
+import {
   addPuzzle,
   getPuzzles,
   getPuzzleById,
@@ -73,6 +79,8 @@ router.post("/", async (req, res) => {
       payload !== null &&
       "author" in payload &&
       typeof payload.author === "string" &&
+      "description" in payload &&
+      typeof payload.description === "string" &&
       "published" in payload &&
       typeof payload.published === "boolean" &&
       "puzzleJson" in payload
@@ -86,10 +94,29 @@ router.post("/", async (req, res) => {
   } catch {
     return res.status(400).json({ error: "Invalid puzzleJson" });
   }
+  if (payload.description.length > PUZZLE_DESCRIPTION_MAX_LENGTH) {
+    return res.status(400).json({
+      error: `Puzzle description must be at most ${PUZZLE_DESCRIPTION_MAX_LENGTH} characters`,
+    });
+  }
+  if (payload.author.length > PUZZLE_AUTHOR_MAX_LENGTH) {
+    return res.status(400).json({
+      error: `Puzzle author must be at most ${PUZZLE_AUTHOR_MAX_LENGTH} characters`,
+    });
+  }
+
+  // parsePuzzle validates and bounds title/instructions in puzzleJson.
+  if (
+    parsedPuzzle.title.length > PUZZLE_TITLE_MAX_LENGTH ||
+    parsedPuzzle.instructions.length > PUZZLE_INSTRUCTIONS_MAX_LENGTH
+  ) {
+    return res.status(400).json({ error: "Title or instructions too long" });
+  }
   try {
     const savedPuzzle = await addPuzzle(
       payload.author,
       author_id,
+      payload.description,
       parsedPuzzle,
       payload.published,
     );
@@ -120,6 +147,8 @@ router.patch("/:id", async (req, res) => {
       payload !== null &&
       "author" in payload &&
       typeof payload.author === "string" &&
+      "description" in payload &&
+      typeof payload.description === "string" &&
       "published" in payload &&
       typeof payload.published === "boolean" &&
       "puzzleJson" in payload
@@ -133,11 +162,30 @@ router.patch("/:id", async (req, res) => {
   } catch {
     return res.status(400).json({ error: "Invalid puzzleJson" });
   }
+  if (payload.description.length > PUZZLE_DESCRIPTION_MAX_LENGTH) {
+    return res.status(400).json({
+      error: `Puzzle description must be at most ${PUZZLE_DESCRIPTION_MAX_LENGTH} characters`,
+    });
+  }
+  if (payload.author.length > PUZZLE_AUTHOR_MAX_LENGTH) {
+    return res.status(400).json({
+      error: `Puzzle author must be at most ${PUZZLE_AUTHOR_MAX_LENGTH} characters`,
+    });
+  }
+
+  // parsePuzzle validates and bounds title/instructions in puzzleJson.
+  if (
+    parsedPuzzle.title.length > PUZZLE_TITLE_MAX_LENGTH ||
+    parsedPuzzle.instructions.length > PUZZLE_INSTRUCTIONS_MAX_LENGTH
+  ) {
+    return res.status(400).json({ error: "Invalid puzzleJson" });
+  }
   try {
     const updated = await updatePuzzle(
       id,
       author_id,
       payload.author,
+      payload.description,
       parsedPuzzle,
       payload.published,
     );

@@ -30,6 +30,7 @@ import type { PuzzleData } from "@puzzpals/puzzle-models";
 interface Puzzle {
   id: number;
   author: string;
+  description: string;
   puzzle_json: PuzzleData;
   publish_date: Date;
 }

@@ -17,34 +17,39 @@
         <span class="puzzle-id">#{{ puzzle.id }}</span>
       </div>
 
+      <p><strong>Author:</strong> {{ puzzle.author }}</p>
+
+      <p>
+        <strong>Date:</strong>
+        {{
+          puzzle.publish_date
+            ? formatDate(new Date(puzzle.publish_date))
+            : "Unknown"
+        }}
+      </p>
+
       <p class="puzzle-description">
-        {{ puzzle.puzzle_json?.description || "No description provided." }}
+        {{ descriptionTruncated }}
       </p>
 
       <p v-if="showStatus">
         <strong>Status:</strong>
         {{ puzzle.published ? "Published" : "Draft" }}
       </p>
-      <p><strong>Author:</strong> {{ puzzle.author }}</p>
-      <p>
-        <strong>Date:</strong>
-        {{
-          puzzle.publish_date
-            ? new Date(puzzle.publish_date).toLocaleString()
-            : "Unknown"
-        }}
-      </p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import type { PuzzleData } from "@puzzpals/puzzle-models";
 import GridSVG from "@/components/editor/GridSVG.vue";
+import { formatDate } from "@/util";
 
 interface PuzzleCardData {
   id: number;
   author: string;
+  description: string;
   puzzle_json: PuzzleData;
   publish_date?: string | Date;
   published?: boolean;
@@ -63,6 +68,14 @@ const props = withDefaults(
     size: 180,
   },
 );
+
+const descriptionTruncated = computed(() => {
+  const desc = props.puzzle.description || "No description provided";
+  if (desc.length > 100) {
+    return desc.slice(0, 100) + "...";
+  }
+  return desc;
+});
 
 const emit = defineEmits<{
   click: [id: number];
