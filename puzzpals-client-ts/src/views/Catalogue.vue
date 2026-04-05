@@ -91,13 +91,22 @@
         aria-hidden="true"
       ></div>
     </div>
+    <AlertNotification ref="alertRef" />
   </div>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from "vue";
 import PuzzleCard from "@/components/PuzzleCard.vue";
-import api from "@/services/api";
+import {
+  getSearchParams,
+  fetchPuzzles,
+  validateSearchParams,
+  type SearchParams,
+  type Puzzle,
+  PUZZLE_PAGE_SIZE,
+} from "@/services/PuzzleSearchService";
+import AlertNotification from "@/components/AlertNotification.vue";
 
 const sort = ref({
   field: "publish_date",
@@ -106,8 +115,8 @@ const sort = ref({
 });
 function onSortDropdownChange() {
   const [field, dir] = sort.value.combined.split("-");
-  sort.value.field = field;
-  sort.value.dir = dir;
+  sort.value.field = field ?? "publish_date";
+  sort.value.dir = dir ?? "desc";
   offset.value = 0;
   puzzles.value = [];
   hasMore.value = true;
@@ -116,24 +125,16 @@ function onSortDropdownChange() {
 }
 import type { PuzzleData } from "@puzzpals/puzzle-models";
 
-interface Puzzle {
-  id: number;
-  author: string;
-  description: string;
-  puzzle_json: PuzzleData;
-  publish_date: Date;
-}
-
 const puzzles = ref<Puzzle[]>([]);
-const PAGE_SIZE = 10;
 const offset = ref(0);
 const hasMore = ref(true);
 const initialLoading = ref(true);
 const loadingMore = ref(false);
 const loadMoreSentinel = ref<HTMLElement | null>(null);
 let observer: IntersectionObserver | null = null;
+const alertRef = ref<InstanceType<typeof AlertNotification> | null>(null);
 
-function formatDateInput(date) {
+function formatDateInput(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
@@ -154,19 +155,8 @@ const search = ref({
 
 const dateError = ref("");
 
-function getSearchParams() {
-  const params: Record<string, string | number> = {
-    limit: PAGE_SIZE,
-    offset: offset.value,
-    sort_field: sort.value.field,
-    sort_dir: sort.value.dir,
-  };
-  if (search.value.title) params.title = search.value.title;
-  if (search.value.description) params.description = search.value.description;
-  if (search.value.author) params.author = search.value.author;
-  if (search.value.date_start) params.date_start = search.value.date_start;
-  if (search.value.date_end) params.date_end = search.value.date_end;
-  return params;
+function getSearchParamsWrapper(): SearchParams {
+  return getSearchParams(search.value, sort.value, offset.value);
 }
 
 async function fetchNextBatch() {
@@ -175,13 +165,10 @@ async function fetchNextBatch() {
   }
   loadingMore.value = true;
   try {
-    const { data } = await api.get("/puzzles", {
-      params: getSearchParams(),
-    });
-    const batch = Array.isArray(data) ? data : [];
+    const batch = await fetchPuzzles(getSearchParamsWrapper());
     puzzles.value.push(...batch);
     offset.value += batch.length;
-    if (batch.length < PAGE_SIZE) {
+    if (batch.length < PUZZLE_PAGE_SIZE) {
       hasMore.value = false;
     }
   } catch (e) {
@@ -194,12 +181,9 @@ async function fetchNextBatch() {
 
 function onSearch() {
   dateError.value = "";
-  if (search.value.date_start > search.value.date_end) {
-    dateError.value = "Start date cannot be after end date.";
-    return;
-  }
-  if (search.value.date_end > maxDate || search.value.date_start > maxDate) {
-    dateError.value = "Dates cannot be in the future.";
+  const validationError = validateSearchParams(search.value, maxDate);
+  if (validationError) {
+    alertRef.value?.showAlert("error", validationError);
     return;
   }
   offset.value = 0;
