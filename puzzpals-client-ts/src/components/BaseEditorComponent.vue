@@ -154,49 +154,47 @@
         </button>
       </div>
 
-      <div class="layer-toggle-con">
-        <label>
-          <input
-            type="checkbox"
-            v-model="showProblem"
-            :disabled="problemLayerIndex < 0"
-          />
-          Show problem layer
-        </label>
-        <label>
-          <input
-            type="checkbox"
-            v-model="showSolution"
-            :disabled="solutionLayerIndex < 0"
-          />
-          Show solution layer
-        </label>
-      </div>
+      <div class="canvas-toolbar-2">
+        <div class="layer-toggle-con">
+          <label>
+            <input
+              type="checkbox"
+              v-model="showProblem"
+              :disabled="problemLayerIndex < 0"
+            />
+            Show problem layer
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              v-model="showSolution"
+              :disabled="solutionLayerIndex < 0"
+            />
+            Show solution layer
+          </label>
+        </div>
 
-      <div class="undo-redo-button">
-        <span
-          class="location-status"
-          aria-live="polite"
-          style="margin-right: 8px"
-        >
-          Hover: {{ formatCellStatus(hoverCell) }}
-        </span>
-        <button
-          class="tool-button"
-          @click="undo"
-          :disabled="undoStack.length === 0"
-          aria-label="Undo last edit"
-        >
-          Undo
-        </button>
-        <button
-          class="tool-button"
-          @click="redo"
-          :disabled="redoStack.length === 0"
-          aria-label="Redo last undone edit"
-        >
-          Redo
-        </button>
+        <div class="undo-redo-button">
+          <span class="location-status" aria-live="polite">
+            Hover: {{ formatCellStatus(hoverCell) }}
+          </span>
+          <button
+            class="tool-button"
+            @click="undo"
+            :disabled="undoStack.length === 0"
+            aria-label="Undo last edit"
+          >
+            Undo
+          </button>
+          <button
+            class="tool-button"
+            @click="redo"
+            :disabled="redoStack.length === 0"
+            aria-label="Redo last undone edit"
+          >
+            Redo
+          </button>
+        </div>
       </div>
     </div>
 
@@ -266,7 +264,7 @@ const hoverCell = ref<Coordinate | null>(null);
 
 function formatCellStatus(coordinate: Coordinate | null): string {
   if (coordinate === null) {
-    return "-";
+    return "------";
   }
 
   return `R${Math.floor(coordinate[0]) + 1}, C${Math.floor(coordinate[1]) + 1}`;
@@ -1065,6 +1063,13 @@ watch(canvasZoom, (value) => {
 
 .canvas-toolbar {
   display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.canvas-toolbar-2 {
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
@@ -1134,11 +1139,11 @@ watch(canvasZoom, (value) => {
 }
 
 .location-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+  display: flex;
   font-size: 0.92rem;
   color: #4d5468;
+  margin-right: 8px;
+  min-width: 130px;
 }
 .undo-redo-button {
   display: flex;
