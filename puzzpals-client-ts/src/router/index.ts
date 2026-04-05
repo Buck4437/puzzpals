@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from "vue-router";
 
-import Login from "@/views/Login.vue";
+import LoginPage from "@/views/LoginPage.vue";
 import NotFound from "@/views/NotFound.vue";
 import RoomPage from "@/views/RoomPage.vue";
 import config from "@/config";
@@ -40,7 +40,7 @@ const router = createRouter({
     },
     {
       path: "/login",
-      component: Login,
+      component: LoginPage,
     },
     {
       path: "/:pathMatch(.*)*",
