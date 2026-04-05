@@ -199,6 +199,7 @@ import {
   type TypeToCheck,
 } from "@puzzpals/puzzle-models";
 import { parsePuzzle } from "@puzzpals/puzzle-parser";
+import { isAxiosError } from "axios";
 
 // Author, title, description, and publish toggle for editor controls
 const authorName = ref("");
@@ -396,7 +397,7 @@ async function fetchUploadedPuzzle() {
         authorName.value = res.data.author || "";
         publishToggle.value = res.data.published || false;
       }
-    } catch (e) {
+    } catch {
       uploadStatus.value = "Failed to load puzzle for editing.";
     }
   }
@@ -415,10 +416,6 @@ const selectedTypesToCheck = computed<TypeToCheck[]>(() => {
 const enabledRulesCount = computed(() => {
   return customRulesInfoList.filter((rule) => customRulesInput.value[rule.id])
     .length;
-});
-
-const includeSolution = computed(() => {
-  return selectedTypesToCheck.value.length > 0;
 });
 
 function updateGridRules() {
@@ -505,7 +502,6 @@ const getPuzzleJSON = () => {
   const puzzleObj = JSON.parse(JSON.stringify(grid.value)) as PuzzleData;
   if (puzzleObj.solution) {
     puzzleObj.solution.typeToCheck = [...selectedTypesToCheck.value];
-  } else {
   }
 
   puzzleObj.title = puzzleTitle.value.trim() || "Untitled Puzzle";
@@ -577,13 +573,18 @@ async function publishPuzzle() {
     }
     alertRef.value?.showAlert("success", "Puzzle published successfully!");
     showPublishModal.value = false;
-  } catch (e: any) {
+  } catch (e) {
     let errorMessage;
-    errorMessage = e?.response?.data?.details || e?.message || "Unknown error";
-    if (e.response?.status === 400) {
-      errorMessage = "Invalid payload";
-    } else if (e.response?.status === 401) {
-      errorMessage = "Login required for publishing puzzles";
+    if (isAxiosError(e)) {
+      errorMessage =
+        e?.response?.data?.details || e?.message || "Unknown error";
+      if (e.response?.status === 400) {
+        errorMessage = "Invalid payload";
+      } else if (e.response?.status === 401) {
+        errorMessage = "Login required for publishing puzzles";
+      }
+    } else {
+      errorMessage = "Unknown error";
     }
     alertRef.value?.showAlert("error", `Publish failed: ${errorMessage}`);
   } finally {
