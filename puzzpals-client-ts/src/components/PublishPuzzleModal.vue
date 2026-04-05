@@ -84,7 +84,7 @@
 <script setup lang="ts">
 import BaseModal from "@/components/BaseModal.vue";
 
-const props = defineProps<{
+defineProps<{
   isOpen: boolean;
   title: string;
   author: string;

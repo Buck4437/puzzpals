@@ -59,7 +59,7 @@ async function fetchNextBatch() {
     if (batch.length < PAGE_SIZE) {
       hasMore.value = false;
     }
-  } catch (e) {
+  } catch {
     hasMore.value = false;
   } finally {
     loadingMore.value = false;

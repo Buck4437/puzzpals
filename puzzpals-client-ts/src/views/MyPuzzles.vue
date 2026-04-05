@@ -49,15 +49,8 @@ async function fetchUserPuzzles() {
     } else {
       puzzles.value = [];
     }
-  } catch (e: any) {
-    // If 401, clear puzzles and optionally redirect
-    if (e?.response?.status === 401) {
-      puzzles.value = [];
-      // Optionally redirect to login
-      // window.location.href = '/login';
-    } else {
-      puzzles.value = [];
-    }
+  } catch {
+    puzzles.value = [];
   } finally {
     loading.value = false;
   }

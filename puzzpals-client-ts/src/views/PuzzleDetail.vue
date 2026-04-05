@@ -31,15 +31,21 @@ import { useRoute, useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user";
 import api from "@/services/api";
 import GridSVG from "@/components/editor/GridSVG.vue";
+import { isAxiosError } from "axios";
 
 const route = useRoute();
 const router = useRouter();
 const userStore = useUserStore();
+
+// TODO: Move `Puzzle` interface to a common package
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const puzzle = ref<any>(null);
 const loading = ref(true);
 
 const puzzleId = computed(() => Number(route.params.id));
 
+// TODO: Move `SessionUser` interface to a common package
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getUserId(user: any): string | undefined {
   if (!user) return undefined;
   if (typeof user === "object") {
@@ -66,7 +72,7 @@ async function fetchPuzzle() {
   try {
     const res = await api.get(`/puzzles/${puzzleId.value}`);
     puzzle.value = res.data;
-  } catch (e) {
+  } catch {
     puzzle.value = null;
   } finally {
     loading.value = false;
@@ -87,8 +93,14 @@ async function openRoom() {
     } else {
       alert("Failed to create room.");
     }
-  } catch (err: any) {
-    alert(`Failed to create room: ${err.response?.data?.error || err.message}`);
+  } catch (err) {
+    if (isAxiosError(err)) {
+      alert(
+        `Failed to create room: ${err.response?.data?.error || err.message}`,
+      );
+    } else {
+      alert("Failed to create room: Unknown error");
+    }
   }
 }
 

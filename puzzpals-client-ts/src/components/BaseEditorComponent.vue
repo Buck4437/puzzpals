@@ -236,7 +236,6 @@ const renderedLayerList = computed(() => props.renderedLayerList);
 const editableLayerIndex = computed(() => props.editableLayerIndex ?? 0);
 const MIN_CANVAS_ZOOM = 0.1;
 const MAX_CANVAS_ZOOM = 3.0;
-const CANVAS_ZOOM_STEP = 0.1;
 const MIN_CANVAS_ZOOM_PERCENT = Math.round(MIN_CANVAS_ZOOM * 100);
 const MAX_CANVAS_ZOOM_PERCENT = Math.round(MAX_CANVAS_ZOOM * 100);
 const canvasZoom = ref(1);
@@ -262,14 +261,6 @@ function setZoomPercent(value: number) {
   const clampedPercent = clampZoomPercent(value);
   zoomPercentInput.value = clampedPercent;
   canvasZoom.value = Number((clampedPercent / 100).toFixed(2));
-}
-
-function zoomIn() {
-  setZoomPercent((canvasZoom.value + CANVAS_ZOOM_STEP) * 100);
-}
-
-function zoomOut() {
-  setZoomPercent((canvasZoom.value - CANVAS_ZOOM_STEP) * 100);
 }
 
 function resetZoom() {
