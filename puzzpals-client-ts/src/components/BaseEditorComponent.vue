@@ -154,30 +154,47 @@
         </button>
       </div>
 
-      <div class="undo-redo-button">
-        <span
-          class="location-status"
-          aria-live="polite"
-          style="margin-right: 8px"
-        >
-          Hover: {{ formatCellStatus(hoverCell) }}
-        </span>
-        <button
-          class="tool-button"
-          @click="undo"
-          :disabled="undoStack.length === 0"
-          aria-label="Undo last edit"
-        >
-          Undo
-        </button>
-        <button
-          class="tool-button"
-          @click="redo"
-          :disabled="redoStack.length === 0"
-          aria-label="Redo last undone edit"
-        >
-          Redo
-        </button>
+      <div class="canvas-toolbar-2">
+        <div class="layer-toggle-con">
+          <label>
+            <input
+              type="checkbox"
+              v-model="showProblem"
+              :disabled="problemLayerIndex < 0"
+            />
+            Show problem layer
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              v-model="showSolution"
+              :disabled="solutionLayerIndex < 0"
+            />
+            Show solution layer
+          </label>
+        </div>
+
+        <div class="undo-redo-button">
+          <span class="location-status" aria-live="polite">
+            Hover: {{ formatCellStatus(hoverCell) }}
+          </span>
+          <button
+            class="tool-button"
+            @click="undo"
+            :disabled="undoStack.length === 0"
+            aria-label="Undo last edit"
+          >
+            Undo
+          </button>
+          <button
+            class="tool-button"
+            @click="redo"
+            :disabled="redoStack.length === 0"
+            aria-label="Redo last undone edit"
+          >
+            Redo
+          </button>
+        </div>
       </div>
     </div>
 
@@ -224,6 +241,8 @@ const props = defineProps<{
   grid: PuzzleData;
   renderedLayerList: LayerData[];
   editableLayerIndex?: number;
+  problemLayerIndex?: number;
+  solutionLayerIndex?: number;
 }>();
 
 const emit = defineEmits<{
@@ -245,7 +264,7 @@ const hoverCell = ref<Coordinate | null>(null);
 
 function formatCellStatus(coordinate: Coordinate | null): string {
   if (coordinate === null) {
-    return "-";
+    return "------";
   }
 
   return `R${Math.floor(coordinate[0]) + 1}, C${Math.floor(coordinate[1]) + 1}`;
@@ -306,12 +325,47 @@ const emptyLayer: LayerData = {
   shapeObjects: {},
 };
 
+const problemLayerIndex = computed(() => {
+  const index = props.problemLayerIndex ?? 0;
+  return index >= 0 && index < renderedLayerList.value.length ? index : -1;
+});
+
+const solutionLayerIndex = computed(() => {
+  const defaultIndex = renderedLayerList.value.length - 1;
+  const index = props.solutionLayerIndex ?? defaultIndex;
+  return index >= 0 && index < renderedLayerList.value.length ? index : -1;
+});
+
+function isLayerVisible(index: number): boolean {
+  if (index < 0 || index >= renderedLayerList.value.length) {
+    return false;
+  }
+
+  if (index === problemLayerIndex.value && !showProblem.value) {
+    return false;
+  }
+
+  if (index === solutionLayerIndex.value && !showSolution.value) {
+    return false;
+  }
+
+  return true;
+}
+
 const layers = computed(() => {
   if (renderedLayerList.value.length === 0) {
     return [emptyLayer];
   }
 
-  return renderedLayerList.value;
+  const result: LayerData[] = [];
+  for (let i = 0; i < renderedLayerList.value.length; i += 1) {
+    const layer = renderedLayerList.value[i];
+    if (layer && isLayerVisible(i)) {
+      result.push(layer);
+    }
+  }
+
+  return result.length ? result : [emptyLayer];
 });
 
 const BASE_GRID_SIZE_PX = 480;
@@ -330,7 +384,18 @@ const gridSizePx = computed(() => {
 });
 
 const editableLayer = computed<LayerData>(() => {
-  return layers.value[editableLayerIndex.value] ?? emptyLayer;
+  return renderedLayerList.value[editableLayerIndex.value] ?? emptyLayer;
+});
+
+const canEditSelectedLayer = computed(() => {
+  if (
+    editableLayerIndex.value < 0 ||
+    editableLayerIndex.value >= renderedLayerList.value.length
+  ) {
+    return false;
+  }
+
+  return isLayerVisible(editableLayerIndex.value);
 });
 
 const renderedLayer = computed<LayerData>(() => {
@@ -496,6 +561,9 @@ const shapes = computed(() => {
   return SPECIAL_CHARACTERS_LIST;
 });
 
+const showProblem = ref(true);
+const showSolution = ref(true);
+
 function emitRemoveMessage(type: EditMessage["type"], key: string) {
   emitEditMessage({
     messageType: "remove",
@@ -545,6 +613,10 @@ function pushUndoEntry(entry: UndoRedoStackEntry) {
 }
 
 function emitEditMessage(message: EditMessage) {
+  if (!canEditSelectedLayer.value) {
+    return;
+  }
+
   const inverseMessage = createInverseEditMessage(editableLayer.value, message);
   if (inverseMessage === null) {
     return;
@@ -991,10 +1063,30 @@ watch(canvasZoom, (value) => {
 
 .canvas-toolbar {
   display: flex;
+  flex-direction: column;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.canvas-toolbar-2 {
+  display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
+}
+
+.layer-toggle-con {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.layer-toggle-con label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.9rem;
 }
 
 .zoom-button {
@@ -1047,11 +1139,11 @@ watch(canvasZoom, (value) => {
 }
 
 .location-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
+  display: flex;
   font-size: 0.92rem;
   color: #4d5468;
+  margin-right: 8px;
+  min-width: 130px;
 }
 .undo-redo-button {
   display: flex;

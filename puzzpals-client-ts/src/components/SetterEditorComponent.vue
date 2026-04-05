@@ -19,6 +19,8 @@
         :grid="grid"
         :rendered-layer-list="renderedLayerList"
         :editable-layer-index="editableLayerIndex"
+        :problem-layer-index="problemLayerIndex"
+        :solution-layer-index="solutionLayerIndex"
         @edit-message="onEditMessage"
       />
     </div>
@@ -90,10 +92,18 @@ const renderedLayerList = computed<LayerData[]>(() => {
   return renderedLayers;
 });
 
+const problemLayerIndex = computed(() => {
+  return renderedLayerList.value.indexOf(props.grid.problem);
+});
+
+const solutionLayerIndex = computed(() => {
+  return renderedLayerList.value.indexOf(solutionLayer.value);
+});
+
 const editableLayerIndex = computed(() => {
   return selectedLayer.value === "problem"
-    ? 0
-    : renderedLayerList.value.length - 1;
+    ? problemLayerIndex.value
+    : solutionLayerIndex.value;
 });
 
 function onEditMessage(message: EditMessage) {
