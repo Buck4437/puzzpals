@@ -48,8 +48,37 @@ router.get("/", async (req, res) => {
     res.status(400).json({ error: "Invalid offset param" });
     return;
   }
+
+  // New search params
+  const author =
+    typeof req.query.author === "string" ? req.query.author : undefined;
+  const description =
+    typeof req.query.description === "string"
+      ? req.query.description
+      : undefined;
+  const title =
+    typeof req.query.title === "string" ? req.query.title : undefined;
+  const date_start =
+    typeof req.query.date_start === "string" ? req.query.date_start : undefined;
+  const date_end =
+    typeof req.query.date_end === "string" ? req.query.date_end : undefined;
+  const sort_field =
+    typeof req.query.sort_field === "string" ? req.query.sort_field : undefined;
+  const sort_dir =
+    typeof req.query.sort_dir === "string" ? req.query.sort_dir : undefined;
+
   try {
-    const puzzles: UploadedPuzzle[] = await getPuzzles(limit, offset);
+    const puzzles: UploadedPuzzle[] = await getPuzzles({
+      limit,
+      offset,
+      author,
+      description,
+      title,
+      date_start,
+      date_end,
+      sort_field,
+      sort_dir,
+    });
     res.json(puzzles);
   } catch {
     res.status(500).json({ error: "Failed to fetch puzzles" });

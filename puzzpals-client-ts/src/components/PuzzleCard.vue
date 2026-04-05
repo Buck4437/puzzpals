@@ -148,14 +148,32 @@ function handleClick() {
   white-space: pre-line;
 }
 
-@media (max-width: 700px) {
+@media (max-width: 500px) {
   .puzzle-card {
     flex-direction: column;
     align-items: stretch;
+    min-width: 0;
   }
-
   .puzzle-card-left {
     align-self: flex-start;
+    margin-bottom: 0.5em;
+    min-width: 0;
+    max-width: 100%;
   }
+}
+
+/* Default: always row (SVG left, info right) */
+.puzzle-card {
+  display: flex;
+  flex-direction: row;
+  min-width: 260px;
+  max-width: 100%;
+}
+.puzzle-card-left {
+  min-width: 100px;
+  max-width: 140px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>
