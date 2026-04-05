@@ -51,25 +51,26 @@ export async function upsertGoogleUser(
   email: string,
   name: string,
   picture: string,
-): Promise<User> {
+) {
   const sql = `INSERT INTO user_data (google_id, email, name, picture, is_guest, last_login)
     VALUES ($1, $2, $3, $4, FALSE, NOW())
     ON CONFLICT (google_id) DO UPDATE SET email = EXCLUDED.email, name = EXCLUDED.name, picture = EXCLUDED.picture, last_login = NOW()
     RETURNING *`;
   const result = await pool.query(sql, [google_id, email, name, picture]);
-  return result.rows[0];
+  return result.rows[0] as User;
 }
 
-export async function createGuestUser(guest_name: string): Promise<User> {
+export async function createGuestUser(guest_name: string) {
   const sql = `INSERT INTO user_data (is_guest, guest_name, last_login) VALUES (TRUE, $1, NOW()) RETURNING *`;
   const result = await pool.query(sql, [guest_name]);
-  return result.rows[0];
+  return result.rows[0] as User;
 }
 
-export async function getUserById(id: number): Promise<User | null> {
+export async function getUserById(id: number) {
   const sql = `SELECT * FROM user_data WHERE id = $1`;
   const result = await pool.query(sql, [id]);
-  return result.rows[0] || null;
+  const row = result.rows[0] as User | undefined;
+  return row ?? null;
 }
 
 // export async function getAllUsersDebug(): Promise<User[]> {
@@ -147,7 +148,7 @@ export async function getPuzzleById(id: number) {
 export async function getUserPuzzles(userId: number) {
   const sql = `SELECT * FROM puzzle WHERE author_id = $1 ORDER BY publish_date DESC`;
   const result = await pool.query(sql, [userId]);
-  return result.rows;
+  return result.rows as UploadedPuzzle[];
 }
 
 async function upsertRoom(room: Room) {

@@ -15,7 +15,7 @@ const port = normalizePort(env.PORT);
 app.set("port", port);
 
 // Initialize database and memory store
-initDb();
+await initDb();
 startAutosave();
 
 // Create HTTP server
@@ -111,8 +111,8 @@ async function shutDown(eventName: string, exitCode: number) {
   }
 }
 
-process.on("SIGHUP", async () => await shutDown("SIGHUP", 128 + 1));
-process.on("SIGINT", async () => await shutDown("SIGINT", 128 + 2));
-process.on("SIGTERM", async () => await shutDown("SIGTERM", 128 + 15));
+process.on("SIGHUP", () => void shutDown("SIGHUP", 128 + 1));
+process.on("SIGINT", () => void shutDown("SIGINT", 128 + 2));
+process.on("SIGTERM", () => void shutDown("SIGTERM", 128 + 15));
 
 console.log("Server loaded");

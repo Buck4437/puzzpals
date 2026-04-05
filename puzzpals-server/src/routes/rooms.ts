@@ -62,13 +62,22 @@ router.post("/create", async (req, res) => {
 
 // Create room from puzzle ID in DB
 router.post("/create-from-id", async (req, res) => {
-  const { puzzleId } = req.body;
-  if (!puzzleId || typeof puzzleId !== "number" || puzzleId < 0) {
-    return res.status(400).json({ error: "Invalid puzzle id" });
+  const payload = req.body as unknown;
+  if (
+    !(
+      typeof payload === "object" &&
+      payload !== null &&
+      "puzzleId" in payload &&
+      typeof payload.puzzleId === "number" &&
+      payload.puzzleId >= 0
+    )
+  ) {
+    return res.status(400).json({ error: "Invalid payload" });
   }
+
   try {
     const { getPuzzleById } = await import("../db.js");
-    const puzzle = await getPuzzleById(puzzleId);
+    const puzzle = await getPuzzleById(payload.puzzleId);
     if (!puzzle || !puzzle.puzzle_json) {
       return res.status(404).json({ error: "Puzzle not found" });
     }

@@ -28,7 +28,7 @@ function regenerateSession(req: Request): Promise<void> {
   return new Promise((resolve, reject) => {
     req.session.regenerate((err) => {
       if (err) {
-        reject(err);
+        reject(err instanceof Error ? err : new Error(String(err)));
         return;
       }
       resolve();
@@ -371,7 +371,7 @@ router.get("/google/callback", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/session", async (req: Request, res: Response) => {
+router.get("/session", (req: Request, res: Response) => {
   // Prevent browser caching for this endpoint
   res.setHeader(
     "Cache-Control",
@@ -384,9 +384,21 @@ router.get("/session", async (req: Request, res: Response) => {
 });
 
 router.post("/ticket/exchange", async (req: Request, res: Response) => {
-  const ticket = typeof req.body?.ticket === "string" ? req.body.ticket : "";
-  const sessionUser = parseLoginTicket(ticket);
+  const payload = req.body as unknown;
+  if (
+    !(
+      typeof payload === "object" &&
+      payload !== null &&
+      "ticket" in payload &&
+      typeof payload.ticket === "string"
+    )
+  ) {
+    return res
+      .status(400)
+      .json({ success: false, error: "invalid_or_expired_ticket" });
+  }
 
+  const sessionUser = parseLoginTicket(payload.ticket);
   if (!sessionUser) {
     return res
       .status(400)
