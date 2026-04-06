@@ -169,16 +169,6 @@ function onPublishedChange(event: Event) {
   else search.value.published = undefined;
 }
 
-// function validateMySearchParams(): string | null {
-//   if (search.value.date_start > search.value.date_end) {
-//     return "Start date cannot be after end date.";
-//   }
-//   if (search.value.date_start > maxDate || search.value.date_end > maxDate) {
-//     return "Dates cannot be in the future.";
-//   }
-//   return null;
-// }
-
 function onSearch() {
   const validationError = validateMySearchParams(search.value, maxDate);
   if (validationError) {

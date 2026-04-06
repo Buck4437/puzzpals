@@ -122,7 +122,6 @@ function onSortDropdownChange() {
   initialLoading.value = true;
   fetchNextBatch();
 }
-import type { PuzzleData } from "@puzzpals/puzzle-models";
 
 const puzzles = ref<Puzzle[]>([]);
 const offset = ref(0);
