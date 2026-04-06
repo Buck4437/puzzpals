@@ -30,10 +30,10 @@
       </div>
     </div>
 
-    <h3>Publish puzzle</h3>
+    <h3>{{ isUpdateMode ? "Update puzzle" : "Publish puzzle" }}</h3>
 
     <p v-if="!isLoggedIn" class="status-text">
-      You must log in to publish puzzle.
+      You must log in to {{ isUpdateMode ? "update" : "publish" }} puzzle.
     </p>
 
     <div class="publish-form">
@@ -84,7 +84,15 @@
           :disabled="isPublishing || !isLoggedIn"
           @click="emitPublish"
         >
-          {{ isPublishing ? "Publishing..." : "Publish" }}
+          {{
+            isPublishing
+              ? isUpdateMode
+                ? "Updating..."
+                : "Publishing..."
+              : isUpdateMode
+                ? "Update"
+                : "Publish"
+          }}
         </button>
       </div>
     </div>
@@ -100,7 +108,7 @@ import {
   PUZZLE_TITLE_MAX_LENGTH,
 } from "@puzzpals/puzzle-models";
 
-const props = defineProps<{
+defineProps<{
   isOpen: boolean;
   title: string;
   instructions: string;
@@ -108,6 +116,7 @@ const props = defineProps<{
   author: string;
   published: boolean;
   isPublishing: boolean;
+  isUpdateMode: boolean;
   statusText: string;
   isLoggedIn: boolean;
 }>();

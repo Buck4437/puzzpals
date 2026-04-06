@@ -34,7 +34,7 @@
           </div>
 
           <div class="chat-con">
-            <Chat
+            <ChatRoom
               :chat-state="chatState"
               :userID="userID"
               @newMessage="onChatSubmit"
@@ -100,7 +100,7 @@ import PuzzleArea from "@/components/PuzzleArea.vue";
 import BaseModal from "@/components/BaseModal.vue";
 import TopBar from "@/components/TopBar.vue";
 
-import Chat from "@/components/Chat.vue";
+import ChatRoom from "@/components/ChatRoom.vue";
 import type ChatState from "@/models/ChatState";
 import {
   applyEditMessage,
@@ -120,7 +120,7 @@ const showPuzzleInfoModal = ref(false);
 const showSolvedModal = ref(false);
 
 const chatState: Ref<ChatState> = ref({ messages: [] });
-const chatComponent = ref<InstanceType<typeof Chat> | null>(null);
+const chatComponent = ref<InstanceType<typeof ChatRoom> | null>(null);
 
 const userID = ref<string | null>(null);
 const props = defineProps({

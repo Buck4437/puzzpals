@@ -1,19 +1,19 @@
 import { createRouter, createWebHistory } from "vue-router";
 
-import Login from "@/views/Login.vue";
+import LoginPage from "@/views/LoginPage.vue";
 import NotFound from "@/views/NotFound.vue";
 import RoomPage from "@/views/RoomPage.vue";
 import config from "@/config";
 import EditorPage from "@/views/EditorPage.vue";
 import MyPuzzles from "@/views/MyPuzzles.vue";
-import Catalogue from "@/views/Catalogue.vue";
+import CataloguePage from "@/views/CataloguePage.vue";
 
 const router = createRouter({
   history: createWebHistory(config.baseUrl),
   routes: [
     {
       path: "/",
-      component: Catalogue,
+      component: CataloguePage,
     },
     {
       path: "/404",
@@ -40,7 +40,7 @@ const router = createRouter({
     },
     {
       path: "/login",
-      component: Login,
+      component: LoginPage,
     },
     {
       path: "/:pathMatch(.*)*",

@@ -255,7 +255,6 @@ const renderedLayerList = computed(() => props.renderedLayerList);
 const editableLayerIndex = computed(() => props.editableLayerIndex ?? 0);
 const MIN_CANVAS_ZOOM = 0.1;
 const MAX_CANVAS_ZOOM = 3.0;
-const CANVAS_ZOOM_STEP = 0.1;
 const MIN_CANVAS_ZOOM_PERCENT = Math.round(MIN_CANVAS_ZOOM * 100);
 const MAX_CANVAS_ZOOM_PERCENT = Math.round(MAX_CANVAS_ZOOM * 100);
 const canvasZoom = ref(1);
@@ -283,14 +282,6 @@ function setZoomPercent(value: number) {
   canvasZoom.value = Number((clampedPercent / 100).toFixed(2));
 }
 
-function zoomIn() {
-  setZoomPercent((canvasZoom.value + CANVAS_ZOOM_STEP) * 100);
-}
-
-function zoomOut() {
-  setZoomPercent((canvasZoom.value - CANVAS_ZOOM_STEP) * 100);
-}
-
 function resetZoom() {
   setZoomPercent(100);
 }
@@ -313,10 +304,10 @@ const svgZoomStyle = computed(() => {
 
 const MAX_UNDO = 300;
 
-type UndoRedoStackEntry = {
+interface UndoRedoStackEntry {
   undoMessage: EditMessage;
   redoMessage: EditMessage;
-};
+}
 
 const emptyLayer: LayerData = {
   lineObjects: {},
@@ -670,7 +661,7 @@ function syncTextInputFromGrid() {
 }
 
 let cellStrokeMode: "draw" | "erase" | null = null;
-let visitedCells: Set<CoordinateKey> = new Set();
+let visitedCells = new Set<CoordinateKey>();
 let lastLineCenter: Coordinate | null = null;
 let lastEdgeCorner: Coordinate | null = null;
 let lineStrokeMode: "draw" | "erase" | null = null;
@@ -760,7 +751,7 @@ const moveCursorBy = (dr: number, dc: number) => {
   const numCols = grid.value.size[1];
 
   // Start from current cursor or top-left cell
-  let base: Coordinate = cursor.value ? cursor.value : [0.5, 0.5];
+  const base: Coordinate = cursor.value ? cursor.value : [0.5, 0.5];
 
   const [r, c] = base;
   const [newR, newC] = [r + dr, c + dc];

@@ -306,8 +306,7 @@ function handlePointerMove(event: MouseEvent) {
     emit("centerCellHover", toCenterCell(coord));
   }
 
-  if (isWithinGridBounds(coord)) {
-  } else {
+  if (!isWithinGridBounds(coord)) {
     emit("centerCellHover", null);
   }
 

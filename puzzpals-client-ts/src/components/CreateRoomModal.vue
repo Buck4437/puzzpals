@@ -31,6 +31,7 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import api from "@/services/api";
 import BaseModal from "@/components/BaseModal.vue";
+import { isAxiosError } from "axios";
 
 const router = useRouter();
 const emit = defineEmits(["close", "upload-success"]);
@@ -73,7 +74,7 @@ async function uploadFile() {
     let fileContent;
     try {
       fileContent = await readFile(pickedFile);
-    } catch (error) {
+    } catch {
       alert("Failed to read the file.");
       return;
     }
@@ -81,7 +82,7 @@ async function uploadFile() {
     let puzzleData;
     try {
       puzzleData = JSON.parse(fileContent);
-    } catch (error) {
+    } catch {
       alert("Failed to parse the file. Please ensure it is a valid JSON file.");
       return;
     }
@@ -106,8 +107,12 @@ async function uploadFile() {
         emit("upload-success");
         router.push(`/room/${res.data.token}`);
       }
-    } catch (err: any) {
-      alert(`Upload failed: ${err.response?.data?.error || err.message}`);
+    } catch (err: unknown) {
+      if (isAxiosError(err)) {
+        alert(`Upload failed: ${err.response?.data?.error || err.message}`);
+      } else {
+        alert("Upload failed: Unknown error");
+      }
     }
   } finally {
     isLoading.value = false;
