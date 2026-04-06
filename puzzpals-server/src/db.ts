@@ -239,7 +239,7 @@ export async function getUserPuzzles(
     published?: boolean | undefined;
   } = {},
 ) {
-  const safeLimit = limit <= 0 ? 10 : limit;
+  const safeLimit = limit <= 0 ? 30 : limit;
   const safeOffset = offset < 0 ? 0 : offset;
   const where: string[] = ["author_id = $1"];
   const values: (string | number | boolean)[] = [userId];
