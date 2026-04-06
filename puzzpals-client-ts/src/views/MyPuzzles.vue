@@ -72,7 +72,6 @@
         </select>
       </label>
     </div>
-    <div v-if="dateError" class="date-error">{{ dateError }}</div>
     <div v-if="initialLoading">Loading puzzles...</div>
     <div v-else>
       <div class="puzzle-grid">
@@ -170,8 +169,6 @@ function onPublishedChange(event: Event) {
   else search.value.published = undefined;
 }
 
-const dateError = ref("");
-
 // function validateMySearchParams(): string | null {
 //   if (search.value.date_start > search.value.date_end) {
 //     return "Start date cannot be after end date.";
@@ -183,11 +180,9 @@ const dateError = ref("");
 // }
 
 function onSearch() {
-  dateError.value = "";
   const validationError = validateMySearchParams(search.value, maxDate);
   if (validationError) {
     alertRef.value?.showAlert("error", validationError);
-    dateError.value = validationError;
     return;
   }
   offset.value = 0;
@@ -205,7 +200,6 @@ function onClear() {
     date_end: formatDateInput(today),
     published: undefined,
   };
-  dateError.value = "";
 }
 
 function getSearchParamsWrapper(): UserPuzzleSearchParams {

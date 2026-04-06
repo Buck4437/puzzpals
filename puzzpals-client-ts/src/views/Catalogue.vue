@@ -71,7 +71,6 @@
         </select>
       </label>
     </div>
-    <div v-if="dateError" class="date-error">{{ dateError }}</div>
     <div v-if="initialLoading">Loading puzzles...</div>
     <div v-else>
       <div class="puzzle-grid">
@@ -153,8 +152,6 @@ const search = ref({
   date_end: formatDateInput(today),
 });
 
-const dateError = ref("");
-
 function getSearchParamsWrapper(): SearchParams {
   return getSearchParams(search.value, sort.value, offset.value);
 }
@@ -180,7 +177,6 @@ async function fetchNextBatch() {
 }
 
 function onSearch() {
-  dateError.value = "";
   const validationError = validateSearchParams(search.value, maxDate);
   if (validationError) {
     alertRef.value?.showAlert("error", validationError);
@@ -201,7 +197,6 @@ function onClear() {
     date_start: formatDateInput(oneMonthAgo),
     date_end: formatDateInput(today),
   };
-  dateError.value = "";
 }
 
 onMounted(async () => {
