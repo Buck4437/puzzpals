@@ -113,8 +113,9 @@
   <PublishPuzzleModal
     :isOpen="showPublishModal"
     :title="puzzleTitle"
-    :author="authorName"
+    :instructions="puzzleInstructions"
     :description="puzzleDescription"
+    :author="authorName"
     :published="publishToggle"
     :isPublishing="isPublishing"
     :statusText="uploadStatus"
@@ -123,8 +124,9 @@
     @publish="publishPuzzle"
     @export-puzzle="exportPuzzle"
     @update-title="puzzleTitle = $event"
-    @update-author="authorName = $event"
+    @update-instructions="puzzleInstructions = $event"
     @update-description="puzzleDescription = $event"
+    @update-author="authorName = $event"
     @update-published="publishToggle = $event"
   />
 
@@ -187,10 +189,14 @@ import { useRoute } from "vue-router";
 import { useUserStore } from "@/stores/user";
 import {
   applyEditMessage,
+  PUZZLE_AUTHOR_MAX_LENGTH,
+  PUZZLE_DESCRIPTION_MAX_LENGTH,
   getAnswerCheckList,
   getRulesList,
   KeyToCoordinate,
   KeyToPairCoordinate,
+  PUZZLE_INSTRUCTIONS_MAX_LENGTH,
+  PUZZLE_TITLE_MAX_LENGTH,
   type EditMessage,
   type LayerData,
   type PuzzleData,
@@ -201,9 +207,10 @@ import {
 import { parsePuzzle } from "@puzzpals/puzzle-parser";
 import { isAxiosError } from "axios";
 
-// Author, title, description, and publish toggle for editor controls
+// Author, title, instructions, description, and publish toggle for editor controls
 const authorName = ref("");
 const puzzleTitle = ref("");
+const puzzleInstructions = ref("");
 const puzzleDescription = ref("");
 const publishToggle = ref(false);
 
@@ -245,8 +252,12 @@ async function onImportInputChange(event: Event) {
     const parsedPuzzle = parsePuzzle(puzzleJson) as PuzzleData;
 
     grid.value = parsedPuzzle;
-    puzzleTitle.value = parsedPuzzle.title;
-    puzzleDescription.value = parsedPuzzle.description;
+    puzzleTitle.value = parsedPuzzle.title.slice(0, PUZZLE_TITLE_MAX_LENGTH);
+    puzzleInstructions.value = parsedPuzzle.instructions.slice(
+      0,
+      PUZZLE_INSTRUCTIONS_MAX_LENGTH,
+    );
+    puzzleDescription.value = "";
 
     customRulesInfoList.forEach((rule) => {
       customRulesInput.value[rule.id] = parsedPuzzle.options.rules.includes(
@@ -357,7 +368,7 @@ function clipLayerData(
 
 const grid = ref<PuzzleData>({
   title: "Untitled Puzzle",
-  description: "",
+  instructions: "",
   size: [10, 10],
   problem: createEmptyLayerData(),
   solution: createEmptySolutionData(),
@@ -393,7 +404,8 @@ async function fetchUploadedPuzzle() {
 
         puzzleId.value = Number(idParam);
         puzzleTitle.value = puzzleData.title || "";
-        puzzleDescription.value = puzzleData.description || "";
+        puzzleInstructions.value = puzzleData.instructions || "";
+        puzzleDescription.value = (res.data.description as string) || "";
         authorName.value = res.data.author || "";
         publishToggle.value = res.data.published || false;
       }
@@ -505,7 +517,7 @@ const getPuzzleJSON = () => {
   }
 
   puzzleObj.title = puzzleTitle.value.trim() || "Untitled Puzzle";
-  puzzleObj.description = puzzleDescription.value;
+  puzzleObj.instructions = puzzleInstructions.value;
 
   puzzleObj.options = {
     ...puzzleObj.options,
@@ -554,18 +566,24 @@ async function publishPuzzle() {
   isPublishing.value = true;
   try {
     const puzzleObj = getPuzzleJSON();
-    const author = authorName.value.trim() || "Anonymous";
+    const author =
+      authorName.value.trim().slice(0, PUZZLE_AUTHOR_MAX_LENGTH) || "Anonymous";
+    const description = puzzleDescription.value
+      .trim()
+      .slice(0, PUZZLE_DESCRIPTION_MAX_LENGTH);
 
     let res;
     if (puzzleId.value != null) {
       res = await api.patch(`/puzzles/${puzzleId.value}`, {
         author,
+        description,
         puzzleJson: puzzleObj,
         published: publishToggle.value,
       });
     } else {
       res = await api.post("/puzzles", {
         author,
+        description,
         puzzleJson: puzzleObj,
         published: publishToggle.value,
       });

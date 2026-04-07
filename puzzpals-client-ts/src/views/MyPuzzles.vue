@@ -28,6 +28,7 @@ const router = useRouter();
 interface Puzzle {
   id: number;
   author: string;
+  description: string;
   puzzle_json: PuzzleData;
   publish_date?: string;
   published?: boolean;

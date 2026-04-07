@@ -2,11 +2,11 @@
   <div v-if="loading">Loading puzzle...</div>
   <div v-else-if="puzzle">
     <h1>{{ puzzle.puzzle_json?.title || "Untitled Puzzle" }}</h1>
+    <p><strong>Author:</strong> {{ puzzle.author }}</p>
     <p style="white-space: pre-line">
       <strong>Description:</strong>
-      {{ puzzle.puzzle_json?.description || "" }}
+      {{ puzzle.description || "" }}
     </p>
-    <p><strong>Author:</strong> {{ puzzle.author }}</p>
     <p><strong>Date:</strong> {{ formattedDate }}</p>
     <div v-if="puzzle.puzzle_json">
       <GridSVG
@@ -31,6 +31,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user";
 import api from "@/services/api";
 import GridSVG from "@/components/editor/GridSVG.vue";
+import { formatDate } from "@/util";
 import { isAxiosError } from "axios";
 
 const route = useRoute();
@@ -64,7 +65,7 @@ const isOwner = computed(() => {
 
 const formattedDate = computed(() => {
   if (!puzzle.value?.publish_date) return "Unknown";
-  return new Date(puzzle.value.publish_date).toLocaleString();
+  return formatDate(new Date(puzzle.value.publish_date));
 });
 
 async function fetchPuzzle() {

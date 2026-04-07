@@ -18,7 +18,7 @@ describe("RoomPage", () => {
   const gameData: GameData = {
     puzzle: {
       title: "Untitled Puzzle",
-      description: "",
+      instructions: "",
       size: [1, 1],
       problem: {
         lineObjects: {},

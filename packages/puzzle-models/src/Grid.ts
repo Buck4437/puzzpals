@@ -196,13 +196,18 @@ export interface SolutionData {
 
 export type RulesType = "akari";
 
+export const PUZZLE_AUTHOR_MAX_LENGTH = 100;
+export const PUZZLE_TITLE_MAX_LENGTH = 100;
+export const PUZZLE_INSTRUCTIONS_MAX_LENGTH = 1000;
+export const PUZZLE_DESCRIPTION_MAX_LENGTH = 1000;
+
 export interface OptionsObject {
   rules: RulesType[];
 }
 
 export interface PuzzleData {
   title: string;
-  description: string;
+  instructions: string;
   size: [number, number];
   problem: LayerData;
   solution?: SolutionData;

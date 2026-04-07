@@ -1,4 +1,8 @@
-import type { PuzzleData } from "@puzzpals/puzzle-models";
+import {
+  PUZZLE_AUTHOR_MAX_LENGTH,
+  PUZZLE_DESCRIPTION_MAX_LENGTH,
+  type PuzzleData,
+} from "@puzzpals/puzzle-models";
 
 import type { UploadedPuzzle } from "./models/UploadedPuzzle.js";
 import type { Room } from "./models/Room.js";
@@ -34,8 +38,9 @@ async function createTable() {
     );
     CREATE TABLE IF NOT EXISTS puzzle (
       id SERIAL PRIMARY KEY,
-      author TEXT NOT NULL,
+      author VARCHAR(${PUZZLE_AUTHOR_MAX_LENGTH}) NOT NULL,
       author_id INTEGER NOT NULL REFERENCES user_data(id),
+      description VARCHAR(${PUZZLE_DESCRIPTION_MAX_LENGTH}) NOT NULL DEFAULT '',
       puzzle_json JSONB NOT NULL,
       publish_date TIMESTAMP NOT NULL DEFAULT NOW(),
       published BOOLEAN NOT NULL DEFAULT FALSE
@@ -82,14 +87,16 @@ export async function getUserById(id: number): Promise<User | null> {
 export async function addPuzzle(
   author: string,
   author_id: number,
+  description: string,
   puzzleJson: PuzzleData,
   published = false,
 ) {
-  const sql = `INSERT INTO puzzle (author, author_id, puzzle_json, published)
-               VALUES ($1, $2, $3, $4) RETURNING *`;
+  const sql = `INSERT INTO puzzle (author, author_id, description, puzzle_json, published)
+               VALUES ($1, $2, $3, $4, $5) RETURNING *`;
   const result = await pool.query(sql, [
     author,
     author_id,
+    description,
     puzzleJson,
     published,
   ]);
@@ -101,6 +108,7 @@ export async function updatePuzzle(
   id: number,
   author_id: number,
   author?: string,
+  description?: string,
   puzzleJson?: PuzzleData,
   published?: boolean,
 ) {
@@ -111,6 +119,10 @@ export async function updatePuzzle(
   if (author !== undefined) {
     set.push(`author = $${idx++}`);
     values.push(author);
+  }
+  if (description !== undefined) {
+    set.push(`description = $${idx++}`);
+    values.push(description);
   }
   if (puzzleJson !== undefined) {
     set.push(`puzzle_json = $${idx++}`);
