@@ -8,7 +8,7 @@
         <input
           :value="title"
           type="text"
-          placeholder="Enter puzzle title (Max 100 characters)"
+          :placeholder="`Enter puzzle title (Max ${PUZZLE_TITLE_MAX_LENGTH} characters)`"
           @input="onTitleInput"
         />
       </label>
@@ -18,7 +18,10 @@
         <textarea
           :value="instructions"
           rows="5"
-          placeholder="Enter puzzle instructions (Max 1000 characters; you can also describe additional rules here)"
+          :placeholder="
+            `Enter puzzle instructions (Max ${PUZZLE_INSTRUCTIONS_MAX_LENGTH} characters;` +
+            ` you can also describe additional rules here)`
+          "
           @input="onInstructionsInput"
         ></textarea>
       </label>

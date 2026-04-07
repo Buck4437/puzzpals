@@ -197,19 +197,8 @@ function parsePuzzle(input: unknown): PuzzleData {
         ? input.description
         : "";
 
-  if (title.length > PUZZLE_TITLE_MAX_LENGTH) {
-    throw new Error(
-      `Puzzle title must be at most ${PUZZLE_TITLE_MAX_LENGTH} characters`,
-    );
-  }
-  if (instructions.length > PUZZLE_INSTRUCTIONS_MAX_LENGTH) {
-    throw new Error(
-      `Puzzle instructions must be at most ${PUZZLE_INSTRUCTIONS_MAX_LENGTH} characters`,
-    );
-  }
-
-  puzzle.title = title;
-  puzzle.instructions = instructions;
+  puzzle.title = title.slice(0, PUZZLE_TITLE_MAX_LENGTH);
+  puzzle.instructions = instructions.slice(0, PUZZLE_INSTRUCTIONS_MAX_LENGTH);
 
   if (!isValidSize(input.size)) {
     throw new Error("Puzzle size must be a tuple of two positive numbers");
