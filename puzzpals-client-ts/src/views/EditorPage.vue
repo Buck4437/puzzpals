@@ -186,7 +186,7 @@
     @close="showCreateNewPuzzleModal = false"
     :hide-close-button="true"
   >
-    <div class="new-puzzle-model-con">
+    <div class="new-puzzle-modal-con">
       <p class="helper-text">
         Are you sure you want to create a new puzzle? Any unsaved progress on
         the current puzzle will be lost.
@@ -284,6 +284,7 @@ const editorModeLabel = computed(() =>
 );
 
 let saveDraftTimeout: number | undefined;
+let lastSavedDraftPayload: string | null = null;
 
 // Alert/Toast notification component ref
 const alertRef = ref<InstanceType<typeof AlertNotification> | null>(null);
@@ -482,6 +483,7 @@ function restoreDraft(
     authorName.value = draft.authorName ?? "";
     publishToggle.value = draft.publishToggle ?? false;
     syncCheckboxInputsFromGridData();
+    lastSavedDraftPayload = draftJson;
     return true;
   } catch {
     return false;
@@ -496,9 +498,14 @@ function saveDraft(targetPuzzleId: number | null) {
     authorName: authorName.value,
     publishToggle: publishToggle.value,
   };
-
   try {
-    localStorage.setItem(LOCAL_STORAGE_DRAFT_KEY, JSON.stringify(draft));
+    const draftPayload = JSON.stringify(draft);
+    if (draftPayload === lastSavedDraftPayload) {
+      return;
+    }
+
+    localStorage.setItem(LOCAL_STORAGE_DRAFT_KEY, draftPayload);
+    lastSavedDraftPayload = draftPayload;
   } catch {
     // Ignore local storage quota/storage errors
   }
@@ -516,6 +523,7 @@ function scheduleDraftSave() {
 
 function clearDraft() {
   localStorage.removeItem(LOCAL_STORAGE_DRAFT_KEY);
+  lastSavedDraftPayload = null;
 }
 
 async function fetchUploadedPuzzle() {
@@ -524,7 +532,7 @@ async function fetchUploadedPuzzle() {
     try {
       const res = await api.get(`/puzzles/${idParam}/edit`);
       if (res.data && res.data.puzzle_json) {
-        const puzzleData = res.data.puzzle_json as PuzzleData;
+        const puzzleData = parsePuzzle(res.data.puzzle_json);
         grid.value = puzzleData;
 
         puzzleId.value = Number(idParam);
@@ -693,6 +701,7 @@ watch(
 
 const getPuzzleJSON = () => {
   const puzzleObj = JSON.parse(JSON.stringify(grid.value)) as PuzzleData;
+
   if (puzzleObj.solution) {
     puzzleObj.solution.typeToCheck = [...selectedTypesToCheck.value];
   }
@@ -770,9 +779,9 @@ async function publishPuzzle() {
         puzzleJson: puzzleObj,
         published: publishToggle.value,
       });
-      clearDraft();
       puzzleId.value = res.data.id;
     }
+    clearDraft();
     alertRef.value?.showAlert(
       "success",
       isUpdateMode
@@ -820,6 +829,7 @@ watch(
 );
 
 onMounted(() => {
+  lastSavedDraftPayload = localStorage.getItem(LOCAL_STORAGE_DRAFT_KEY);
   fetchUploadedPuzzle();
 });
 
@@ -1134,7 +1144,7 @@ onBeforeUnmount(() => {
   margin-top: 0;
 }
 
-.new-puzzle-model-con {
+.new-puzzle-modal-con {
   display: flex;
   flex-direction: column;
   justify-content: space-between;
