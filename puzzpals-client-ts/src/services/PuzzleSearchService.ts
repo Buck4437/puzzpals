@@ -86,8 +86,8 @@ export function validateSearchParams(
   }
   if (allFieldsEmpty) {
     const msInMonth = 30 * 24 * 60 * 60 * 1000;
-    if (end.getTime() - start.getTime() > 3 * msInMonth) {
-      return "Date range cannot exceed 3 months when all fields are empty.";
+    if (end.getTime() - start.getTime() > 12 * msInMonth) {
+      return "Date range cannot exceed 1 year when all fields are empty.";
     }
   }
   return null;
