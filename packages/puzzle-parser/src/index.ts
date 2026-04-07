@@ -1,4 +1,6 @@
 import {
+  PUZZLE_INSTRUCTIONS_MAX_LENGTH,
+  PUZZLE_TITLE_MAX_LENGTH,
   type LayerData,
   type PuzzleData,
   type RulesType,
@@ -41,7 +43,7 @@ function createEmptySolutionData(): SolutionData {
 function createEmptyGrid(): PuzzleData {
   return {
     title: "Untitled Puzzle",
-    description: "",
+    instructions: "",
     size: [0, 0],
     problem: createEmptyLayerData(),
     options: {
@@ -173,16 +175,30 @@ function parsePuzzle(input: unknown): PuzzleData {
   if ("title" in input && typeof input.title !== "string") {
     throw new Error("Puzzle title must be a string");
   }
-  if ("description" in input && typeof input.description !== "string") {
-    throw new Error("Puzzle description must be a string");
+  if ("instructions" in input && typeof input.instructions !== "string") {
+    throw new Error("Puzzle instructions must be a string");
+  }
+  if (
+    !("instructions" in input) &&
+    "description" in input &&
+    typeof input.description !== "string"
+  ) {
+    throw new Error("Puzzle instructions must be a string");
   }
 
-  puzzle.title =
+  const title =
     typeof input.title === "string" && input.title.trim().length > 0
       ? input.title.trim()
       : "Untitled Puzzle";
-  puzzle.description =
-    typeof input.description === "string" ? input.description : "";
+  const instructions =
+    typeof input.instructions === "string"
+      ? input.instructions
+      : typeof input.description === "string"
+        ? input.description
+        : "";
+
+  puzzle.title = title.slice(0, PUZZLE_TITLE_MAX_LENGTH);
+  puzzle.instructions = instructions.slice(0, PUZZLE_INSTRUCTIONS_MAX_LENGTH);
 
   if (!isValidSize(input.size)) {
     throw new Error("Puzzle size must be a tuple of two positive numbers");

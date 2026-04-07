@@ -10,7 +10,7 @@
       >
         ×
       </button>
-      <div class="model-content-slot">
+      <div class="model-content-slot scrollable">
         <slot> Your content goes here </slot>
       </div>
     </div>
@@ -39,16 +39,24 @@ defineProps<{
   max-width: 92%;
   min-height: 140px;
   max-height: 92vh;
+  display: flex;
+  flex-direction: column;
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  padding: 16px;
+  padding: 16px 4px 4px;
   box-sizing: border-box;
   position: relative;
-  display: flex;
-  flex-direction: column;
+  overflow: hidden;
   /* empty rectangle visual */
   border: 2px solid rgba(0, 0, 0, 0.08);
+}
+
+.scrollable {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 18px;
 }
 
 .close-btn {

@@ -29,7 +29,7 @@
           <div class="rule-pane">
             <h3>{{ gameData.puzzle.title || "Untitled Puzzle" }}</h3>
             <p class="rule-description" style="white-space: pre-line">
-              {{ gameData.puzzle.description || "No description provided." }}
+              {{ gameData.puzzle.instructions || "No instructions provided." }}
             </p>
           </div>
 
