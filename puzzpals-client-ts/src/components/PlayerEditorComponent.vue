@@ -2,7 +2,9 @@
   <BaseEditorComponent
     :grid="grid"
     :rendered-layer-list="renderedLayerList"
-    :editable-layer-index="renderedLayerList.length - 1"
+    :editable-layer-index="solutionLayerIndex"
+    :problem-layer-index="problemLayerIndex"
+    :solution-layer-index="solutionLayerIndex"
     @edit-message="emit('edit-message', $event)"
   />
 </template>
@@ -59,5 +61,13 @@ const renderedLayerList = computed(() => {
 
   renderedLayers.push(playerSolution.value);
   return renderedLayers;
+});
+
+const problemLayerIndex = computed(() => {
+  return renderedLayerList.value.indexOf(props.grid.problem);
+});
+
+const solutionLayerIndex = computed(() => {
+  return renderedLayerList.value.indexOf(playerSolution.value);
 });
 </script>
