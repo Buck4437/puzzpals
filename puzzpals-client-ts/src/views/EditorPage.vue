@@ -269,6 +269,7 @@ interface EditorDraft {
   puzzleId: number | null;
   puzzleData: PuzzleData;
   puzzleDescription: string;
+  puzzleInstructions: string;
   authorName: string;
   publishToggle: boolean;
 }
@@ -495,6 +496,7 @@ function saveDraft(targetPuzzleId: number | null) {
     puzzleId: targetPuzzleId,
     puzzleData: getPuzzleJSON(),
     puzzleDescription: puzzleDescription.value,
+    puzzleInstructions: puzzleInstructions.value,
     authorName: authorName.value,
     publishToggle: publishToggle.value,
   };
@@ -590,6 +592,7 @@ function resetEditorToNewPuzzle() {
   puzzleId.value = null;
   puzzleTitle.value = "";
   puzzleDescription.value = "";
+  puzzleInstructions.value = "";
   authorName.value = "";
   publishToggle.value = false;
   uploadStatus.value = "";
@@ -808,6 +811,7 @@ async function publishPuzzle() {
     );
   } finally {
     isPublishing.value = false;
+    uploadStatus.value = "";
   }
 }
 
@@ -816,6 +820,7 @@ watch(
     grid,
     puzzleTitle,
     puzzleDescription,
+    puzzleInstructions,
     authorName,
     publishToggle,
     typesToCheckInput,

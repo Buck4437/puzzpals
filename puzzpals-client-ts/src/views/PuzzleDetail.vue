@@ -8,7 +8,7 @@
       {{ puzzle.description || "" }}
     </p>
     <p><strong>Date:</strong> {{ formattedDate }}</p>
-    <div v-if="puzzle.puzzle_json">
+    <div class="puzzle-preview" v-if="puzzle.puzzle_json">
       <GridSVG
         :size="320"
         :grid-size="puzzle.puzzle_json.size"
@@ -16,7 +16,7 @@
       />
     </div>
     <div class="actions">
-      <button @click="openRoom">Open Room</button>
+      <button @click="createRoom">Create Room</button>
       <button v-if="isOwner" @click="editPuzzle">Edit Puzzle</button>
     </div>
   </div>
@@ -80,7 +80,7 @@ async function fetchPuzzle() {
   }
 }
 
-async function openRoom() {
+async function createRoom() {
   try {
     const res = await api.post(
       "/rooms/create-from-id",
@@ -115,6 +115,15 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.puzzle-preview {
+  flex: 0 0 auto;
+  padding: 0.4rem;
+  background: #fff;
+  border: 1px solid #e4e4e4;
+  border-radius: 6px;
+  width: fit-content;
+}
+
 .actions {
   margin-top: 1.5em;
 }

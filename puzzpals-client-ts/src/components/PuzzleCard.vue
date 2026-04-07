@@ -91,6 +91,7 @@ function handleClick() {
 
 <style scoped>
 .puzzle-card {
+  width: 100%;
   border: 1px solid #ccc;
   padding: 1em;
   margin-bottom: 1em;
@@ -123,6 +124,10 @@ function handleClick() {
   min-width: 0;
 }
 
+.puzzle-card-right p {
+  word-break: break-all;
+}
+
 .puzzle-card-top-row {
   display: flex;
   justify-content: space-between;
@@ -148,14 +153,24 @@ function handleClick() {
   white-space: pre-line;
 }
 
-@media (max-width: 700px) {
+@media (max-width: 500px) {
   .puzzle-card {
     flex-direction: column;
     align-items: stretch;
+    min-width: 0;
   }
-
   .puzzle-card-left {
     align-self: flex-start;
+    margin-bottom: 0.5em;
+    min-width: 0;
+    max-width: 100%;
   }
+}
+
+.puzzle-card-left {
+  width: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>
