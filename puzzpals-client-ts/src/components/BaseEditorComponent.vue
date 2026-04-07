@@ -202,6 +202,7 @@
       <div class="svg-only-zoom" :style="svgZoomStyle">
         <GridSVG
           class="grid-canvas"
+          :class="{ 'not-editable': !canEditSelectedLayer }"
           :size="gridSizePx"
           :grid-size="grid.size"
           :layers="layers"
@@ -263,7 +264,7 @@ const hoverCell = ref<Coordinate | null>(null);
 
 function formatCellStatus(coordinate: Coordinate | null): string {
   if (coordinate === null) {
-    return "------";
+    return "none";
   }
 
   return `R${Math.floor(coordinate[0]) + 1}, C${Math.floor(coordinate[1]) + 1}`;
@@ -1162,6 +1163,10 @@ watch(canvasZoom, (value) => {
   padding: 6px;
   display: block;
   flex: 0 0 auto;
+}
+
+.grid-canvas.not-editable {
+  cursor: not-allowed;
 }
 
 .svg-only-viewport {

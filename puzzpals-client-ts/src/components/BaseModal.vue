@@ -10,7 +10,10 @@
       >
         ×
       </button>
-      <div class="model-content-slot">
+      <div
+        class="modal-content-slot scrollable"
+        :class="{ 'no-margin': hideCloseButton }"
+      >
         <slot> Your content goes here </slot>
       </div>
     </div>
@@ -38,19 +41,16 @@ defineProps<{
   min-width: min(480px, 75%);
   max-width: 92%;
   min-height: 140px;
-  /* max-height: 80vh;
-  display: flex;
-  flex-direction: column; */
   max-height: 92vh;
+  display: flex;
+  flex-direction: column;
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  padding: 16px 4px 4px;
+  padding: 4px;
   box-sizing: border-box;
   position: relative;
-  /* overflow: hidden; */
-  display: flex;
-  flex-direction: column;
+  overflow: hidden;
   /* empty rectangle visual */
   border: 2px solid rgba(0, 0, 0, 0.08);
 }
@@ -84,12 +84,16 @@ defineProps<{
   background: rgba(0, 0, 0, 0.06);
 }
 
-.model-content-slot {
-  margin-top: 8px;
+.modal-content-slot {
+  margin-top: 12px;
   flex: 1;
   display: flex;
   flex-direction: column;
   min-height: 0;
   overflow: auto;
+}
+
+.modal-content-slot.no-margin {
+  margin-top: 0px;
 }
 </style>

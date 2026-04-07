@@ -1,8 +1,8 @@
 <template>
   <svg
     class="svg-grid"
-    :width="size"
-    :height="size"
+    :width="fullSize"
+    :height="fullSize"
     :viewBox="viewBoxStr"
     xmlns="http://www.w3.org/2000/svg"
     @mousedown="handleMouseDown"
