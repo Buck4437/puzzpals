@@ -33,11 +33,15 @@
 
     <aside class="editor-sidebar" :class="{ collapsed: controlsCollapsed }">
       <h2 class="sidebar-title">Editor Controls</h2>
+      <p class="editor-mode-indicator">{{ editorModeLabel }}</p>
 
       <div class="action-con">
+        <button @click="showCreateNewPuzzleModal = true">
+          Create New Puzzle
+        </button>
         <button @click="importPuzzle">Import Puzzle</button>
         <button @click="showPublishModal = true">
-          Export / Publish Puzzle
+          Export / {{ publishActionLabel }} Puzzle
         </button>
       </div>
       <input
@@ -118,6 +122,7 @@
     :author="authorName"
     :published="publishToggle"
     :isPublishing="isPublishing"
+    :isUpdateMode="isExistingPuzzle"
     :statusText="uploadStatus"
     :isLoggedIn="!!userStore.user"
     @close="showPublishModal = false"
@@ -175,6 +180,27 @@
       </li>
     </ul>
   </BaseModal>
+
+  <BaseModal
+    v-if="showCreateNewPuzzleModal"
+    @close="showCreateNewPuzzleModal = false"
+    :hide-close-button="true"
+  >
+    <div class="new-puzzle-modal-con">
+      <p class="helper-text">
+        Are you sure you want to create a new puzzle? Any unsaved progress on
+        the current puzzle will be lost.
+      </p>
+      <div class="confirm-actions">
+        <button type="button" @click="createNewPuzzle">
+          Create New Puzzle
+        </button>
+        <button type="button" @click="showCreateNewPuzzleModal = false">
+          Cancel
+        </button>
+      </div>
+    </div>
+  </BaseModal>
 </template>
 
 <script setup lang="ts">
@@ -183,9 +209,16 @@ import BaseModal from "../components/BaseModal.vue";
 import AlertNotification from "../components/AlertNotification.vue";
 import PublishPuzzleModal from "../components/PublishPuzzleModal.vue";
 
-import { computed, ref, onMounted, watch, type Ref } from "vue";
+import {
+  computed,
+  onBeforeUnmount,
+  onMounted,
+  ref,
+  watch,
+  type Ref,
+} from "vue";
 import api from "@/services/api";
-import { useRoute } from "vue-router";
+import { useRoute, useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user";
 import {
   applyEditMessage,
@@ -217,15 +250,41 @@ const publishToggle = ref(false);
 const uploadStatus = ref("");
 const puzzleId = ref<number | null>(null);
 const route = useRoute();
+const router = useRouter();
 const showPublishModal = ref(false);
 const showRulesModal = ref(false);
 const showAnswerCheckModal = ref(false);
+const showCreateNewPuzzleModal = ref(false);
 const controlsCollapsed = ref(false);
 const isPublishing = ref(false);
 const answerCheckInfoList = getAnswerCheckList();
 const customRulesInfoList = getRulesList();
 const userStore = useUserStore();
 const importInputRef = ref<HTMLInputElement | null>(null);
+
+const LOCAL_STORAGE_DRAFT_KEY = "puzzpals.editorDraft.v1";
+const DRAFT_SAVE_DELAY_MS = 300;
+
+interface EditorDraft {
+  puzzleId: number | null;
+  puzzleData: PuzzleData;
+  puzzleDescription: string;
+  authorName: string;
+  publishToggle: boolean;
+}
+
+const isExistingPuzzle = computed(() => puzzleId.value !== null);
+const publishActionLabel = computed(() =>
+  isExistingPuzzle.value ? "Update" : "Publish",
+);
+const editorModeLabel = computed(() =>
+  puzzleId.value === null
+    ? "Editing: New puzzle"
+    : `Editing: Puzzle #${puzzleId.value}`,
+);
+
+let saveDraftTimeout: number | undefined;
+let lastSavedDraftPayload: string | null = null;
 
 // Alert/Toast notification component ref
 const alertRef = ref<InstanceType<typeof AlertNotification> | null>(null);
@@ -311,6 +370,19 @@ function createEmptySolutionData(): SolutionData {
   };
 }
 
+function createEmptyPuzzleData(): PuzzleData {
+  return {
+    title: "Untitled Puzzle",
+    instructions: "",
+    size: [10, 10],
+    problem: createEmptyLayerData(),
+    solution: createEmptySolutionData(),
+    options: {
+      rules: [],
+    },
+  };
+}
+
 function clipLayerData(
   layerData: LayerData,
   rowCount: number,
@@ -366,16 +438,93 @@ function clipLayerData(
   };
 }
 
-const grid = ref<PuzzleData>({
-  title: "Untitled Puzzle",
-  instructions: "",
-  size: [10, 10],
-  problem: createEmptyLayerData(),
-  solution: createEmptySolutionData(),
-  options: {
-    rules: [],
-  },
-});
+const grid = ref<PuzzleData>(createEmptyPuzzleData());
+
+function syncCheckboxInputsFromGridData() {
+  customRulesInfoList.forEach((rule) => {
+    customRulesInput.value[rule.id] = grid.value.options.rules.includes(
+      rule.id,
+    );
+  });
+
+  answerCheckInfoList.forEach((type) => {
+    typesToCheckInput.value[type.type] =
+      grid.value.solution?.typeToCheck.includes(type.type) ?? false;
+  });
+}
+
+function restoreDraft(
+  targetPuzzleId: number | null,
+  forceLoad = false,
+): boolean {
+  // Target puzzle id: The puzzle id that the draft should match to restore
+  // forceLoad: Force restore the draft, used for new puzzle
+  const draftJson = localStorage.getItem(LOCAL_STORAGE_DRAFT_KEY);
+  if (!draftJson) {
+    return false;
+  }
+
+  try {
+    const draft = JSON.parse(draftJson) as Partial<EditorDraft>;
+    if (draft.puzzleData === undefined || draft.puzzleId === undefined) {
+      return false;
+    }
+
+    if (!forceLoad && draft.puzzleId !== targetPuzzleId) {
+      return false;
+    }
+
+    const parsedPuzzle = parsePuzzle(draft.puzzleData);
+    grid.value = parsedPuzzle;
+    puzzleId.value = draft.puzzleId;
+    puzzleTitle.value = parsedPuzzle.title ?? "";
+    puzzleInstructions.value = parsedPuzzle.instructions ?? "";
+    puzzleDescription.value = draft.puzzleDescription ?? "";
+    authorName.value = draft.authorName ?? "";
+    publishToggle.value = draft.publishToggle ?? false;
+    syncCheckboxInputsFromGridData();
+    lastSavedDraftPayload = draftJson;
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+function saveDraft(targetPuzzleId: number | null) {
+  const draft: EditorDraft = {
+    puzzleId: targetPuzzleId,
+    puzzleData: getPuzzleJSON(),
+    puzzleDescription: puzzleDescription.value,
+    authorName: authorName.value,
+    publishToggle: publishToggle.value,
+  };
+  try {
+    const draftPayload = JSON.stringify(draft);
+    if (draftPayload === lastSavedDraftPayload) {
+      return;
+    }
+
+    localStorage.setItem(LOCAL_STORAGE_DRAFT_KEY, draftPayload);
+    lastSavedDraftPayload = draftPayload;
+  } catch {
+    // Ignore local storage quota/storage errors
+  }
+}
+
+function scheduleDraftSave() {
+  if (saveDraftTimeout !== undefined) {
+    clearTimeout(saveDraftTimeout);
+  }
+
+  saveDraftTimeout = window.setTimeout(() => {
+    saveDraft(puzzleId.value);
+  }, DRAFT_SAVE_DELAY_MS);
+}
+
+function clearDraft() {
+  localStorage.removeItem(LOCAL_STORAGE_DRAFT_KEY);
+  lastSavedDraftPayload = null;
+}
 
 async function fetchUploadedPuzzle() {
   const idParam = route.query.id;
@@ -383,24 +532,8 @@ async function fetchUploadedPuzzle() {
     try {
       const res = await api.get(`/puzzles/${idParam}/edit`);
       if (res.data && res.data.puzzle_json) {
-        const puzzleData = res.data.puzzle_json as PuzzleData;
+        const puzzleData = parsePuzzle(res.data.puzzle_json);
         grid.value = puzzleData;
-
-        // Set pre-defined rules
-        if (grid.value.options?.rules) {
-          customRulesInfoList.forEach((rule) => {
-            customRulesInput.value[rule.id] = grid.value.options.rules.includes(
-              rule.id,
-            );
-          });
-        }
-
-        // Set answer checking rules
-        if (grid.value.solution?.typeToCheck) {
-          grid.value.solution.typeToCheck.forEach((type) => {
-            typesToCheckInput.value[type] = true;
-          });
-        }
 
         puzzleId.value = Number(idParam);
         puzzleTitle.value = puzzleData.title || "";
@@ -408,11 +541,67 @@ async function fetchUploadedPuzzle() {
         puzzleDescription.value = (res.data.description as string) || "";
         authorName.value = res.data.author || "";
         publishToggle.value = res.data.published || false;
+        syncCheckboxInputsFromGridData();
+
+        // If draft exist, restore the draft
+        if (restoreDraft(puzzleId.value)) {
+          alertRef.value?.showAlert(
+            "success",
+            `Local draft restored for puzzle #${puzzleId.value}`,
+          );
+        } else {
+          alertRef.value?.showAlert(
+            "success",
+            `Editing puzzle #${puzzleId.value}`,
+          );
+        }
       }
     } catch {
-      uploadStatus.value = "Failed to load puzzle for editing.";
+      const targetPuzzleId = Number(idParam);
+      if (restoreDraft(targetPuzzleId)) {
+        puzzleId.value = targetPuzzleId;
+        alertRef.value?.showAlert(
+          "success",
+          `Local draft restored for puzzle #${targetPuzzleId}`,
+        );
+      } else {
+        uploadStatus.value = "Failed to load puzzle for editing";
+      }
+    }
+
+    return;
+  }
+
+  puzzleId.value = null;
+  if (restoreDraft(null, true)) {
+    if (puzzleId.value === null) {
+      alertRef.value?.showAlert("success", "Local draft restored");
+    } else {
+      alertRef.value?.showAlert(
+        "success",
+        `Local draft restored for puzzle #${puzzleId.value}`,
+      );
     }
   }
+}
+
+function resetEditorToNewPuzzle() {
+  grid.value = createEmptyPuzzleData();
+  puzzleId.value = null;
+  puzzleTitle.value = "";
+  puzzleDescription.value = "";
+  authorName.value = "";
+  publishToggle.value = false;
+  uploadStatus.value = "";
+  syncCheckboxInputsFromGridData();
+}
+
+function createNewPuzzle() {
+  showCreateNewPuzzleModal.value = false;
+  clearDraft();
+  resetEditorToNewPuzzle();
+  router.replace({ path: "/editor" });
+  alertRef.value?.showAlert("success", "New puzzle created");
 }
 
 const showRulesLayerPreview = ref(true);
@@ -512,11 +701,12 @@ watch(
 
 const getPuzzleJSON = () => {
   const puzzleObj = JSON.parse(JSON.stringify(grid.value)) as PuzzleData;
+
   if (puzzleObj.solution) {
     puzzleObj.solution.typeToCheck = [...selectedTypesToCheck.value];
   }
 
-  puzzleObj.title = puzzleTitle.value.trim() || "Untitled Puzzle";
+  puzzleObj.title = puzzleTitle.value.trim();
   puzzleObj.instructions = puzzleInstructions.value;
 
   puzzleObj.options = {
@@ -546,10 +736,12 @@ const downloadObjectAsJson = (exportObj: object, exportName: string) => {
 };
 
 async function publishPuzzle() {
+  const isUpdateMode = isExistingPuzzle.value;
+
   if (!userStore.user) {
     alertRef.value?.showAlert(
       "error",
-      "Authentication required for publishing puzzles. Login to submit",
+      `Authentication required to ${publishActionLabel.value.toLowerCase()} puzzles. Login to submit.`,
     );
     return;
   }
@@ -557,12 +749,12 @@ async function publishPuzzle() {
   if (!title) {
     alertRef.value?.showAlert(
       "error",
-      "Please enter a puzzle title before publishing",
+      `Please enter a puzzle title before ${publishActionLabel.value.toLowerCase()}.`,
     );
     return;
   }
 
-  uploadStatus.value = "Publishing...";
+  uploadStatus.value = isUpdateMode ? "Updating..." : "Publishing...";
   isPublishing.value = true;
   try {
     const puzzleObj = getPuzzleJSON();
@@ -589,7 +781,13 @@ async function publishPuzzle() {
       });
       puzzleId.value = res.data.id;
     }
-    alertRef.value?.showAlert("success", "Puzzle published successfully!");
+    clearDraft();
+    alertRef.value?.showAlert(
+      "success",
+      isUpdateMode
+        ? "Puzzle updated successfully!"
+        : "Puzzle published successfully!",
+    );
     showPublishModal.value = false;
   } catch (e) {
     let errorMessage;
@@ -599,19 +797,47 @@ async function publishPuzzle() {
       if (e.response?.status === 400) {
         errorMessage = "Invalid payload";
       } else if (e.response?.status === 401) {
-        errorMessage = "Login required for publishing puzzles";
+        errorMessage = `Login required to ${publishActionLabel.value.toLowerCase()} puzzles`;
       }
     } else {
       errorMessage = "Unknown error";
     }
-    alertRef.value?.showAlert("error", `Publish failed: ${errorMessage}`);
+    alertRef.value?.showAlert(
+      "error",
+      `${publishActionLabel.value} failed: ${errorMessage}`,
+    );
   } finally {
     isPublishing.value = false;
   }
 }
 
+watch(
+  [
+    grid,
+    puzzleTitle,
+    puzzleDescription,
+    authorName,
+    publishToggle,
+    typesToCheckInput,
+    customRulesInput,
+    puzzleId,
+  ],
+  () => {
+    scheduleDraftSave();
+  },
+  { deep: true },
+);
+
 onMounted(() => {
+  lastSavedDraftPayload = localStorage.getItem(LOCAL_STORAGE_DRAFT_KEY);
   fetchUploadedPuzzle();
+});
+
+onBeforeUnmount(() => {
+  if (saveDraftTimeout !== undefined) {
+    clearTimeout(saveDraftTimeout);
+  }
+  saveDraft(puzzleId.value);
 });
 </script>
 
@@ -694,6 +920,12 @@ onMounted(() => {
 .sidebar-title {
   margin: 0;
   font-size: 1.15rem;
+}
+
+.editor-mode-indicator {
+  margin: 0;
+  color: #4d4d4d;
+  font-size: 0.95rem;
 }
 
 .collapse-button {
@@ -910,6 +1142,20 @@ onMounted(() => {
 
 .helper-text.no-top-margin {
   margin-top: 0;
+}
+
+.new-puzzle-modal-con {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  flex: 1;
+  min-height: 0;
+}
+
+.confirm-actions {
+  display: flex;
+  margin-top: auto;
+  gap: 8px;
 }
 
 .helper-text.compact {

@@ -33,10 +33,10 @@
       </div>
     </div>
 
-    <h3>Publish puzzle</h3>
+    <h3>{{ isUpdateMode ? "Update puzzle" : "Publish puzzle" }}</h3>
 
     <p v-if="!isLoggedIn" class="status-text">
-      You must log in to publish puzzle.
+      You must log in to {{ isUpdateMode ? "update" : "publish" }} puzzle.
     </p>
 
     <div class="publish-form">
@@ -87,7 +87,15 @@
           :disabled="isPublishing || !isLoggedIn"
           @click="emitPublish"
         >
-          {{ isPublishing ? "Publishing..." : "Publish" }}
+          {{
+            isPublishing
+              ? isUpdateMode
+                ? "Updating..."
+                : "Publishing..."
+              : isUpdateMode
+                ? "Update"
+                : "Publish"
+          }}
         </button>
       </div>
     </div>
@@ -111,6 +119,7 @@ defineProps<{
   author: string;
   published: boolean;
   isPublishing: boolean;
+  isUpdateMode: boolean;
   statusText: string;
   isLoggedIn: boolean;
 }>();
