@@ -267,8 +267,7 @@ const DRAFT_SAVE_DELAY_MS = 300;
 
 interface EditorDraft {
   puzzleId: number | null;
-  grid: PuzzleData;
-  puzzleTitle: string;
+  puzzleData: PuzzleData;
   puzzleDescription: string;
   authorName: string;
   publishToggle: boolean;
@@ -455,31 +454,34 @@ function syncCheckboxInputsFromGridData() {
 
 function restoreDraft(
   targetPuzzleId: number | null,
-  allowAnyTarget = false,
+  forceLoad = false,
 ): boolean {
+  // Target puzzle id: The puzzle id that the draft should match to restore
+  // forceLoad: Force restore the draft, used for new puzzle
   const draftJson = localStorage.getItem(LOCAL_STORAGE_DRAFT_KEY);
   if (!draftJson) {
     return false;
   }
 
   try {
-    const parsedDraft = JSON.parse(draftJson) as Partial<EditorDraft>;
-    if (parsedDraft.grid === undefined || parsedDraft.puzzleId === undefined) {
+    const draft = JSON.parse(draftJson) as Partial<EditorDraft>;
+    if (draft.puzzleData === undefined || draft.puzzleId === undefined) {
       return false;
     }
 
-    if (!allowAnyTarget && parsedDraft.puzzleId !== targetPuzzleId) {
+    if (!forceLoad && draft.puzzleId !== targetPuzzleId) {
       return false;
     }
 
-    const parsedPuzzle = parsePuzzle(parsedDraft.grid);
+    const parsedPuzzle = parsePuzzle(draft.puzzleData);
     grid.value = parsedPuzzle;
-    puzzleId.value = parsedDraft.puzzleId;
-    puzzleTitle.value = parsedDraft.puzzleTitle ?? parsedPuzzle.title ?? "";
-    puzzleInstructions.value =
-      parsedDraft.puzzleDescription ?? parsedPuzzle.instructions ?? "";
-    authorName.value = parsedDraft.authorName ?? "";
-    publishToggle.value = parsedDraft.publishToggle ?? false;
+    puzzleId.value = draft.puzzleId;
+    puzzleTitle.value = parsedPuzzle.title ?? "";
+    console.log("owo");
+    puzzleInstructions.value = parsedPuzzle.instructions ?? "";
+    puzzleDescription.value = draft.puzzleDescription ?? "";
+    authorName.value = draft.authorName ?? "";
+    publishToggle.value = draft.publishToggle ?? false;
     syncCheckboxInputsFromGridData();
     return true;
   } catch {
@@ -490,9 +492,8 @@ function restoreDraft(
 function saveDraft(targetPuzzleId: number | null) {
   const draft: EditorDraft = {
     puzzleId: targetPuzzleId,
-    grid: getPuzzleJSON(),
-    puzzleTitle: puzzleTitle.value,
-    puzzleDescription: puzzleInstructions.value,
+    puzzleData: getPuzzleJSON(),
+    puzzleDescription: puzzleDescription.value,
     authorName: authorName.value,
     publishToggle: publishToggle.value,
   };
@@ -535,6 +536,7 @@ async function fetchUploadedPuzzle() {
         publishToggle.value = res.data.published || false;
         syncCheckboxInputsFromGridData();
 
+        // If draft exist, restore the draft
         if (restoreDraft(puzzleId.value)) {
           alertRef.value?.showAlert(
             "success",
@@ -696,7 +698,7 @@ const getPuzzleJSON = () => {
     puzzleObj.solution.typeToCheck = [...selectedTypesToCheck.value];
   }
 
-  puzzleObj.title = puzzleTitle.value.trim() || "Untitled Puzzle";
+  puzzleObj.title = puzzleTitle.value.trim();
   puzzleObj.instructions = puzzleInstructions.value;
 
   puzzleObj.options = {
