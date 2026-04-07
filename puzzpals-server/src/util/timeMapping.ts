@@ -9,7 +9,7 @@
  */
 export function mapDateForSql(date: string, type: "start" | "end"): string {
   if (/^\d{4}-\d{2}-\d{2}$/.test(date)) {
-    return type === "start" ? date + " 00:00:00" : date + " 23:59:59.999";
+    return type === "start" ? date + " 00:00:00" : date + " 23:59:59.999999";
   }
   return date;
 }

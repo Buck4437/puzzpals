@@ -134,13 +134,6 @@ router.post("/", async (req, res) => {
     });
   }
 
-  // parsePuzzle validates and bounds title/instructions in puzzleJson.
-  if (
-    parsedPuzzle.title.length > PUZZLE_TITLE_MAX_LENGTH ||
-    parsedPuzzle.instructions.length > PUZZLE_INSTRUCTIONS_MAX_LENGTH
-  ) {
-    return res.status(400).json({ error: "Title or instructions too long" });
-  }
   try {
     const savedPuzzle = await addPuzzle(
       payload.author,

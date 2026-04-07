@@ -584,6 +584,7 @@ function resetEditorToNewPuzzle() {
   puzzleId.value = null;
   puzzleTitle.value = "";
   puzzleDescription.value = "";
+  puzzleInstructions.value = "";
   authorName.value = "";
   publishToggle.value = false;
   uploadStatus.value = "";
@@ -809,6 +810,7 @@ watch(
     grid,
     puzzleTitle,
     puzzleDescription,
+    puzzleInstructions,
     authorName,
     publishToggle,
     typesToCheckInput,
