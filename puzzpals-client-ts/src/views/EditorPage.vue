@@ -802,6 +802,7 @@ async function publishPuzzle() {
     );
   } finally {
     isPublishing.value = false;
+    uploadStatus.value = "";
   }
 }
 
