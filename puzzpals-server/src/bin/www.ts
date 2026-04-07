@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 import debug from "debug";
 import { createServer } from "http";
 import { Server } from "socket.io";
@@ -100,28 +98,21 @@ function onListening() {
  * Shut down the server gracefully
  */
 
-process.on("exit", function () {
-  console.log("Shutting down...");
-  server.close(() => {
-    process.exit(0);
-  });
+let shuttingDown = false;
+async function shutDown(eventName: string, exitCode: number) {
+  if (!shuttingDown) {
+    shuttingDown = true;
+    console.log(`Received ${eventName}, shutting down...`);
+    process.exitCode = exitCode;
 
-  // stop io
-  io.close();
-  closeDb();
-});
+    await io.close();
+    await stopAutosave();
+    await closeDb();
+  }
+}
 
-process.on("SIGHUP", () => {
-  console.log("Received SIGHUP, shutting down...");
-  stopAutosave().finally(() => process.exit(128 + 1));
-});
-process.on("SIGINT", () => {
-  console.log("Received SIGHUP, shutting down...");
-  stopAutosave().finally(() => process.exit(128 + 2));
-});
-process.on("SIGTERM", () => {
-  console.log("Received SIGHUP, shutting down...");
-  stopAutosave().finally(() => process.exit(128 + 15));
-});
+process.on("SIGHUP", async () => await shutDown("SIGHUP", 128 + 1));
+process.on("SIGINT", async () => await shutDown("SIGINT", 128 + 2));
+process.on("SIGTERM", async () => await shutDown("SIGTERM", 128 + 15));
 
 console.log("Server loaded");

@@ -1,8 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { GameData, SurfaceUpdateMessage } from "@puzzpals/puzzle-models";
+import type { GameData, SurfaceUpdateMessage } from "@puzzpals/puzzle-models";
 
-import { Room } from "../models/Room.js";
+import type { Room } from "../models/Room.js";
 import { arrangeBeforeEach, cleanUpAfterEach } from "./utils/arrange.js";
 
 import { createMockSocket, mockBroadcast, mockIo } from "../__mocks__/io.js";

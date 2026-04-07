@@ -103,7 +103,7 @@ import {
   PUZZLE_TITLE_MAX_LENGTH,
 } from "@puzzpals/puzzle-models";
 
-const props = defineProps<{
+defineProps<{
   isOpen: boolean;
   title: string;
   instructions: string;
