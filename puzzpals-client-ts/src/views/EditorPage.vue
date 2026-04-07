@@ -477,7 +477,6 @@ function restoreDraft(
     grid.value = parsedPuzzle;
     puzzleId.value = draft.puzzleId;
     puzzleTitle.value = parsedPuzzle.title ?? "";
-    console.log("owo");
     puzzleInstructions.value = parsedPuzzle.instructions ?? "";
     puzzleDescription.value = draft.puzzleDescription ?? "";
     authorName.value = draft.authorName ?? "";
