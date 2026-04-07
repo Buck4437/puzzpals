@@ -91,6 +91,7 @@ function handleClick() {
 
 <style scoped>
 .puzzle-card {
+  width: 100%;
   border: 1px solid #ccc;
   padding: 1em;
   margin-bottom: 1em;
@@ -121,6 +122,10 @@ function handleClick() {
 .puzzle-card-right {
   flex: 1;
   min-width: 0;
+}
+
+.puzzle-card-right p {
+  word-break: break-all;
 }
 
 .puzzle-card-top-row {
@@ -162,16 +167,8 @@ function handleClick() {
   }
 }
 
-/* Default: always row (SVG left, info right) */
-.puzzle-card {
-  display: flex;
-  flex-direction: row;
-  min-width: 260px;
-  max-width: 100%;
-}
 .puzzle-card-left {
-  min-width: 100px;
-  max-width: 140px;
+  width: 120px;
   display: flex;
   align-items: center;
   justify-content: center;
