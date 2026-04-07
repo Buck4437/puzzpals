@@ -202,6 +202,7 @@
       <div class="svg-only-zoom" :style="svgZoomStyle">
         <GridSVG
           class="grid-canvas"
+          :class="{ 'not-editable': !canEditSelectedLayer }"
           :size="gridSizePx"
           :grid-size="grid.size"
           :layers="layers"
@@ -1171,6 +1172,10 @@ watch(canvasZoom, (value) => {
   padding: 6px;
   display: block;
   flex: 0 0 auto;
+}
+
+.grid-canvas.not-editable {
+  cursor: not-allowed;
 }
 
 .svg-only-viewport {
