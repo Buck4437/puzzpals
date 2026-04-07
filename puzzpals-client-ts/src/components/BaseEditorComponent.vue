@@ -264,7 +264,7 @@ const hoverCell = ref<Coordinate | null>(null);
 
 function formatCellStatus(coordinate: Coordinate | null): string {
   if (coordinate === null) {
-    return "------";
+    return "none";
   }
 
   return `R${Math.floor(coordinate[0]) + 1}, C${Math.floor(coordinate[1]) + 1}`;
