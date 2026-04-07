@@ -3,7 +3,6 @@ import type { PuzzleData } from "@puzzpals/puzzle-models";
 
 export interface Puzzle {
   id: number;
-  title: string;
   author: string;
   description: string;
   puzzle_json: PuzzleData;
