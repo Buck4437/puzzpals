@@ -13,7 +13,7 @@ app.use(router);
 
 const userStore = useUserStore(pinia);
 
-async function bootstrap() {
+async function initializeAuthState() {
   await userStore.fetchUser();
 
   // Firefox requires the use of login tickets as cookies don't work for third-party websites
@@ -44,7 +44,7 @@ async function bootstrap() {
       userStore.fetchUser();
     }
   });
-  app.mount("#app");
 }
 
-bootstrap();
+app.mount("#app");
+initializeAuthState();

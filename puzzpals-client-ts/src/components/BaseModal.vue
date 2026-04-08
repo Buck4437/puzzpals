@@ -2,6 +2,7 @@
   <div class="modal-overlay" @click.self="$emit('close')">
     <div class="modal-content" role="dialog" aria-modal="true">
       <button
+        v-if="hideCloseButton !== true"
         type="button"
         class="close-btn"
         aria-label="Close"
@@ -9,14 +10,21 @@
       >
         ×
       </button>
-      <div class="scrollable">
+      <div
+        class="modal-content-slot scrollable"
+        :class="{ 'no-margin': hideCloseButton }"
+      >
         <slot> Your content goes here </slot>
       </div>
     </div>
   </div>
 </template>
 
-<script setup lang="ts"></script>
+<script setup lang="ts">
+defineProps<{
+  hideCloseButton?: boolean;
+}>();
+</script>
 
 <style scoped>
 .modal-overlay {
@@ -33,13 +41,13 @@
   min-width: min(480px, 75%);
   max-width: 92%;
   min-height: 140px;
-  max-height: 80vh;
+  max-height: 92vh;
   display: flex;
   flex-direction: column;
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-  padding: 16px 4px 4px;
+  padding: 4px;
   box-sizing: border-box;
   position: relative;
   overflow: hidden;
@@ -74,5 +82,18 @@
 
 .close-btn:hover {
   background: rgba(0, 0, 0, 0.06);
+}
+
+.modal-content-slot {
+  margin-top: 12px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: auto;
+}
+
+.modal-content-slot.no-margin {
+  margin-top: 0px;
 }
 </style>

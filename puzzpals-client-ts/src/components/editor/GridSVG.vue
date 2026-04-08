@@ -4,7 +4,6 @@
     :width="fullSize"
     :height="fullSize"
     :viewBox="viewBoxStr"
-    shape-rendering="crispEdges"
     xmlns="http://www.w3.org/2000/svg"
     @mousedown="handleMouseDown"
     @mouseup="handleMouseUp"

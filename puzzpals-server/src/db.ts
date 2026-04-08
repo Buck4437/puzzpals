@@ -7,6 +7,7 @@ import {
 import type { UploadedPuzzle } from "./models/UploadedPuzzle.js";
 import type { Room } from "./models/Room.js";
 import pool from "./pool.js";
+import { mapDateForSql } from "./util/timeMapping.js";
 
 async function initDb() {
   try {
@@ -140,12 +141,71 @@ export async function updatePuzzle(
   return result.rows[0] as UploadedPuzzle;
 }
 
-export async function getPuzzles(limit = 10, offset = 0) {
+export async function getPuzzles({
+  limit = 10,
+  offset = 0,
+  author,
+  description,
+  title,
+  date_start,
+  date_end,
+  sort_field,
+  sort_dir,
+}: {
+  limit?: number;
+  offset?: number;
+  author?: string | undefined;
+  description?: string | undefined;
+  title?: string | undefined;
+  date_start?: string | undefined;
+  date_end?: string | undefined;
+  sort_field?: string | undefined;
+  sort_dir?: string | undefined;
+} = {}) {
   const safeLimit = limit <= 0 ? 10 : limit;
   const safeOffset = offset < 0 ? 0 : offset;
-
-  const sql = `SELECT * FROM puzzle WHERE published = TRUE ORDER BY publish_date DESC LIMIT $1 OFFSET $2`;
-  const result = await pool.query(sql, [safeLimit, safeOffset]);
+  const where: string[] = ["published = TRUE"];
+  const values: (string | number)[] = [];
+  let idx = 1;
+  if (author) {
+    where.push(`author ILIKE $${idx++}`);
+    values.push(`%${author}%`);
+  }
+  if (description) {
+    where.push(`description ILIKE $${idx++}`);
+    values.push(`%${description}%`);
+  }
+  if (title) {
+    where.push(`puzzle_json->>'title' ILIKE $${idx++}`);
+    values.push(`%${title}%`);
+  }
+  if (date_start) {
+    const startVal = mapDateForSql(date_start, "start");
+    where.push(`publish_date >= $${idx++}`);
+    values.push(startVal);
+  }
+  if (date_end) {
+    const endVal = mapDateForSql(date_end, "end");
+    where.push(`publish_date <= $${idx++}`);
+    values.push(endVal);
+  }
+  // Sorting
+  let orderBy = "publish_date DESC";
+  const allowedFields: Record<string, string> = {
+    publish_date: "publish_date",
+    // Case-insensitive sorting
+    title: `LOWER(COALESCE(puzzle_json->>'title', ''))`,
+    author: "author",
+  };
+  const allowedDirs = ["asc", "desc"];
+  if (sort_field && allowedFields[sort_field]) {
+    const dir = (sort_dir || "desc").toLowerCase();
+    orderBy = `${allowedFields[sort_field]} ${allowedDirs.includes(dir) ? dir.toUpperCase() : "DESC"}`;
+  }
+  const whereClause = where.length ? `WHERE ${where.join(" AND ")}` : "";
+  const sql = `SELECT * FROM puzzle ${whereClause} ORDER BY ${orderBy} LIMIT $${idx++} OFFSET $${idx}`;
+  values.push(safeLimit, safeOffset);
+  const result = await pool.query(sql, values);
   return result.rows as UploadedPuzzle[];
 }
 
@@ -156,10 +216,75 @@ export async function getPuzzleById(id: number) {
   return row ?? null;
 }
 
-export async function getUserPuzzles(userId: number) {
-  const sql = `SELECT * FROM puzzle WHERE author_id = $1 ORDER BY publish_date DESC`;
-  const result = await pool.query(sql, [userId]);
-  return result.rows;
+export async function getUserPuzzles(
+  userId: number,
+  {
+    limit = 10,
+    offset = 0,
+    description,
+    title,
+    date_start,
+    date_end,
+    sort_field,
+    sort_dir,
+    published,
+  }: {
+    limit?: number;
+    offset?: number;
+    description?: string | undefined;
+    title?: string | undefined;
+    date_start?: string | undefined;
+    date_end?: string | undefined;
+    sort_field?: string | undefined;
+    sort_dir?: string | undefined;
+    published?: boolean | undefined;
+  } = {},
+) {
+  const safeLimit = limit <= 0 ? 30 : limit;
+  const safeOffset = offset < 0 ? 0 : offset;
+  const where: string[] = ["author_id = $1"];
+  const values: (string | number | boolean)[] = [userId];
+  let idx = 2;
+  if (typeof published === "boolean") {
+    where.push(`published = $${idx++}`);
+    values.push(published);
+  }
+
+  if (description) {
+    where.push(`description ILIKE $${idx++}`);
+    values.push(`%${description}%`);
+  }
+  if (title) {
+    where.push(`puzzle_json->>'title' ILIKE $${idx++}`);
+    values.push(`%${title}%`);
+  }
+  if (date_start) {
+    const startVal = mapDateForSql(date_start, "start");
+    where.push(`publish_date >= $${idx++}`);
+    values.push(startVal);
+  }
+  if (date_end) {
+    const endVal = mapDateForSql(date_end, "end");
+    where.push(`publish_date <= $${idx++}`);
+    values.push(endVal);
+  }
+
+  let orderBy = "publish_date DESC";
+  const allowedFields: Record<string, string> = {
+    publish_date: "publish_date",
+    title: `puzzle_json->>'title'`,
+  };
+  const allowedDirs = ["asc", "desc"];
+  if (sort_field && allowedFields[sort_field]) {
+    const dir = (sort_dir || "desc").toLowerCase();
+    orderBy = `${allowedFields[sort_field]} ${allowedDirs.includes(dir) ? dir.toUpperCase() : "DESC"}`;
+  }
+
+  const whereClause = `WHERE ${where.join(" AND ")}`;
+  const sql = `SELECT * FROM puzzle ${whereClause} ORDER BY ${orderBy} LIMIT $${idx++} OFFSET $${idx}`;
+  values.push(safeLimit, safeOffset);
+  const result = await pool.query(sql, values);
+  return result.rows as UploadedPuzzle[];
 }
 
 async function upsertRoom(room: Room) {
