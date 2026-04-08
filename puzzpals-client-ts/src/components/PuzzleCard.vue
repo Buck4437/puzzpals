@@ -18,7 +18,7 @@
       </div>
 
       <p>
-        <strong>Author:</strong>
+        <strong>Author: </strong>
         <span class="puzzle-author">{{ puzzle.author }}</span>
       </p>
 
