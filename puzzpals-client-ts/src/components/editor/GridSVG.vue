@@ -190,7 +190,10 @@ const fullSize = computed(() => {
   return Math.round(maxDimension * pixelsPerCell);
 });
 
-const displayedSize = computed(() => props.displaySize ?? fullSize.value);
+const displayedSize = computed(() => {
+  const requestedSize = props.displaySize ?? fullSize.value;
+  return Number.isFinite(requestedSize) ? Math.max(requestedSize, 1) : 1;
+});
 
 const viewBoxSize = computed(() => fullSize.value + 2 * PADDING);
 const viewBoxStr = computed(
