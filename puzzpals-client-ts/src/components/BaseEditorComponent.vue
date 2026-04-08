@@ -858,6 +858,7 @@ onBeforeUnmount(() => {
   window.removeEventListener("keydown", handleKeyboardInput);
 });
 
+const MAX_TEXT_LENGTH = 100;
 const updateSelectedCell = () => {
   if (!cursor.value) {
     return;
@@ -872,6 +873,7 @@ const updateSelectedCell = () => {
       emitRemoveMessage("textObjects", key);
     }
   } else {
+    textInputValue.value = textInputValue.value.slice(0, MAX_TEXT_LENGTH);
     emitTextUpdate({
       location: cursor.value,
       content: textInputValue.value,

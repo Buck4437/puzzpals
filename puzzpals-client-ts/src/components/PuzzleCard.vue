@@ -17,7 +17,10 @@
         <span class="puzzle-id">#{{ puzzle.id }}</span>
       </div>
 
-      <p><strong>Author:</strong> {{ puzzle.author }}</p>
+      <div class="puzzle-card-author-con">
+        <strong>Author: </strong>
+        <span class="puzzle-author">{{ puzzle.author }}</span>
+      </div>
 
       <p>
         <strong>Date:</strong>
@@ -136,7 +139,9 @@ function handleClick() {
 }
 
 .puzzle-card-top-row h2 {
-  margin: 0;
+  margin-top: 0;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
 .puzzle-id {
@@ -146,6 +151,18 @@ function handleClick() {
   border: 1px solid #d0d0d0;
   background: #ffffff;
   white-space: nowrap;
+}
+
+.puzzle-card-author-con {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.puzzle-author {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
 }
 
 .puzzle-description {
