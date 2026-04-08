@@ -79,7 +79,7 @@ export function init(io: Server) {
       io.to(user.roomToken).emit("grid:edited", editMessage);
     });
 
-    socket.on("chat:newMessage", (message: unknown) => {
+    socket.on("chat:sendMessage", (message: unknown) => {
       // Check socket has joined a room
       const user = socketUserMap.get(socket);
       if (user === undefined) return;

@@ -193,7 +193,8 @@ export async function getPuzzles({
   let orderBy = "publish_date DESC";
   const allowedFields: Record<string, string> = {
     publish_date: "publish_date",
-    title: `puzzle_json->>'title'`,
+    // Case-insensitive sorting
+    title: `LOWER(COALESCE(puzzle_json->>'title', ''))`,
     author: "author",
   };
   const allowedDirs = ["asc", "desc"];

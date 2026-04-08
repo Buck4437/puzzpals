@@ -73,15 +73,7 @@
     </div>
     <div v-if="initialLoading">Loading puzzles...</div>
     <div v-else>
-      <div class="puzzle-grid">
-        <PuzzleCard
-          v-for="puzzle in puzzles"
-          :key="puzzle.id"
-          :puzzle="puzzle"
-          :clickable="true"
-          @click="goToDetail"
-        />
-      </div>
+      <PuzzleList :puzzles="puzzles" @puzzle-click="goToDetail" />
       <div v-if="puzzles.length === 0">No puzzles found.</div>
       <div v-if="loadingMore" class="loading-more">Loading more puzzles...</div>
       <div
@@ -96,7 +88,6 @@
 
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from "vue";
-import PuzzleCard from "@/components/PuzzleCard.vue";
 import {
   getSearchParams,
   fetchPuzzles,
@@ -106,6 +97,7 @@ import {
   PUZZLE_PAGE_SIZE,
 } from "@/services/PuzzleSearchService";
 import AlertNotification from "@/components/AlertNotification.vue";
+import PuzzleList from "@/components/PuzzleList.vue";
 
 const sort = ref({
   field: "publish_date",
@@ -352,37 +344,6 @@ function goToDetail(id: number) {
   font-size: 1em;
 }
 
-.puzzle-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 1.2em;
-  margin-bottom: 1em;
-  width: 100%;
-  align-items: stretch;
-}
-.puzzle-grid > * {
-  min-width: 260px;
-  max-width: 100%;
-  box-sizing: border-box;
-  /* Do not override display, let .puzzle-card use flex */
-}
-/* Prevent last row from stretching cards */
-.puzzle-grid {
-  justify-items: stretch;
-}
-@media (max-width: 900px) {
-  .puzzle-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-@media (max-width: 600px) {
-  .puzzle-grid {
-    grid-template-columns: 1fr;
-  }
-  .puzzle-grid > * {
-    min-width: 0;
-  }
-}
 .search-bar-actions {
   display: flex;
   gap: 0.7em;
