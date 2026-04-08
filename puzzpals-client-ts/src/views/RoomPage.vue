@@ -313,9 +313,10 @@ input {
 
 .solving-page {
   width: 100%;
-  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .room-id {
@@ -332,15 +333,18 @@ input {
 .content {
   flex: 1;
   display: flex;
+  min-height: 0;
   gap: 12px;
   padding: 12px;
   box-sizing: border-box;
   background: #f7f8fb;
+  overflow: hidden;
 }
 
 .puzzle-pane {
   flex: 1 1 60%;
   min-width: 0;
+  min-height: 0;
   background: #fff;
   border: 1px solid #ececec;
   border-radius: 6px;
@@ -357,6 +361,7 @@ input {
 .info-pane {
   flex: 1 1 40%;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -398,6 +403,7 @@ input {
   padding: 8px;
   display: flex;
   flex: 1 1;
+  min-height: 0;
   box-sizing: border-box;
   align-items: stretch;
   overflow: hidden;
