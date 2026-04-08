@@ -2,6 +2,13 @@
   <TopBar v-if="!isFullScreen" @title-click="goToHome">
     <template #right>
       <div class="main-header-actions">
+        <input
+          class="quick-join-input"
+          placeholder="Enter Room ID..."
+          v-model="roomId"
+          @keydown.enter.prevent="joinRoom"
+        />
+        <button class="join-room-btn" @click="joinRoom">Join</button>
         <button class="create-room-btn" @click="openRoomDialog">
           Create Room
         </button>
@@ -75,6 +82,7 @@ const currentUser = computed(
   () => userStore.user as { picture?: string; email?: string } | null,
 );
 
+const roomId = ref("");
 const showCreateRoomDialog = ref(false);
 const dropdownOpen = ref(false);
 const profileIconRef = ref<HTMLElement | null>(null);
@@ -133,6 +141,14 @@ onBeforeUnmount(() => {
   document.removeEventListener("click", onDocumentClick);
 });
 
+function joinRoom() {
+  const trimmedId = roomId.value.trim();
+  roomId.value = "";
+  if (trimmedId) {
+    router.push(`/room/${trimmedId}`);
+  }
+}
+
 async function logout() {
   await userStore.logout();
   dropdownOpen.value = false;
@@ -179,6 +195,14 @@ main {
   gap: 8px;
 }
 
+.quick-join-input {
+  padding: 6px 8px;
+  border-radius: 4px;
+  min-height: 24px;
+  width: 150px;
+}
+
+.join-room-btn,
 .create-room-btn,
 .login-btn {
   padding: 8px 16px;

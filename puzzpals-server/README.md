@@ -66,7 +66,7 @@ If successful, the server broadcasts `grid:edited` to all clients in the room wi
 
 - `message`: Same as above.
 
-### `chat:newMessage`
+### `chat:sendMessage`
 
 Send a message to a room. Can only be called by a client in the room. Arguments:
 

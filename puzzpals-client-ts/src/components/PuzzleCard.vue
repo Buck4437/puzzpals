@@ -17,7 +17,10 @@
         <span class="puzzle-id">#{{ puzzle.id }}</span>
       </div>
 
-      <p><strong>Author:</strong> {{ puzzle.author }}</p>
+      <p>
+        <strong>Author:</strong>
+        <span class="puzzle-author">{{ puzzle.author }}</span>
+      </p>
 
       <p>
         <strong>Date:</strong>
@@ -146,6 +149,10 @@ function handleClick() {
   border: 1px solid #d0d0d0;
   background: #ffffff;
   white-space: nowrap;
+}
+
+.puzzle-author {
+  overflow: hidden;
 }
 
 .puzzle-description {
