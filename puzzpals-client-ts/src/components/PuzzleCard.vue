@@ -6,7 +6,7 @@
   >
     <div class="puzzle-card-left" v-if="puzzle.puzzle_json">
       <GridSVG
-        :size="size"
+        :display-size="120"
         :grid-size="puzzle.puzzle_json.size"
         :layers="[puzzle.puzzle_json.problem]"
       />
@@ -63,12 +63,10 @@ const props = withDefaults(
     puzzle: PuzzleCardData;
     showStatus?: boolean;
     clickable?: boolean;
-    size?: number;
   }>(),
   {
     showStatus: false,
     clickable: false,
-    size: 180,
   },
 );
 

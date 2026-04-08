@@ -203,7 +203,6 @@
         <GridSVG
           class="grid-canvas"
           :class="{ 'not-editable': !canEditSelectedLayer }"
-          :size="gridSizePx"
           :grid-size="grid.size"
           :layers="layers"
           :cursor="currentTool.codename === 'text' ? cursor : null"
@@ -358,21 +357,6 @@ const layers = computed(() => {
   }
 
   return result.length ? result : [emptyLayer];
-});
-
-const BASE_GRID_SIZE_PX = 480;
-const BASE_GRID_DIMENSION = 10;
-
-const gridSizePx = computed(() => {
-  const [rows, cols] = grid.value.size;
-  const maxDimension = Math.max(rows, cols, 1);
-
-  if (maxDimension <= BASE_GRID_DIMENSION) {
-    return BASE_GRID_SIZE_PX;
-  }
-
-  const pixelsPerCell = BASE_GRID_SIZE_PX / BASE_GRID_DIMENSION;
-  return Math.round(maxDimension * pixelsPerCell);
 });
 
 const editableLayer = computed<LayerData>(() => {
