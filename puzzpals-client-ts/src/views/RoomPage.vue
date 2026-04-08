@@ -331,6 +331,7 @@ input {
 
 .content {
   flex: 1;
+  min-height: 0;
   display: flex;
   gap: 12px;
   padding: 12px;
@@ -340,6 +341,7 @@ input {
 
 .puzzle-pane {
   flex: 1 1 60%;
+  min-height: 0;
   min-width: 0;
   background: #fff;
   border: 1px solid #ececec;

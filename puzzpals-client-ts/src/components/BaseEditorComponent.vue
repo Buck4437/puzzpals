@@ -298,7 +298,7 @@ function applyZoomPercentInput() {
 
 const svgZoomStyle = computed(() => {
   return {
-    transform: `scale(${canvasZoom.value})`,
+    zoom: canvasZoom.value,
   };
 });
 
@@ -1165,7 +1165,6 @@ watch(canvasZoom, (value) => {
 
 .svg-only-zoom {
   width: max-content;
-  transform-origin: top left;
 }
 
 .undo-redo-button {
