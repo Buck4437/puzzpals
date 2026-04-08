@@ -1,4 +1,5 @@
 import express from "express";
+import rateLimit from "express-rate-limit";
 import type { Request, Response } from "express";
 import { google } from "googleapis";
 import { CodeChallengeMethod, OAuth2Client } from "google-auth-library";
@@ -9,6 +10,37 @@ import env from "../config.js";
 import { upsertGoogleUser } from "../db.js";
 
 const router = express.Router();
+
+// Rate limiters for specific auth endpoints
+const loginRateLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // limit each IP to 10 login attempts per minute
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const ticketRateLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // limit each IP to 10 ticket exchanges per minute
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const sessionRateLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 180, // more generous for session checks
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+const logoutRateLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 10, // limit each IP to 10 logout attempts per minute
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+// Do NOT rate limit Google callback (to avoid blocking Google IPs)
 
 interface SessionUser {
   id: number;
@@ -253,7 +285,7 @@ function getoAuth2Client(): OAuth2Client {
 
 const SCOPES = ["profile", "email"];
 
-router.get("/google/login", (req, res) => {
+router.get("/google/login", loginRateLimiter, (req, res) => {
   const oauth2Client = getoAuth2Client();
   const rawReturnUrl =
     typeof req.query.returnUrl === "string" ? req.query.returnUrl : "/";
@@ -371,34 +403,42 @@ router.get("/google/callback", async (req: Request, res: Response) => {
   }
 });
 
-router.get("/session", async (req: Request, res: Response) => {
-  // Prevent browser caching for this endpoint
-  res.setHeader(
-    "Cache-Control",
-    "no-store, no-cache, must-revalidate, proxy-revalidate",
-  );
-  if (!req.session.user) {
-    return res.status(200).json({ authenticated: false, data: null });
-  }
-  res.status(200).json({ authenticated: true, data: req.session.user });
-});
+router.get(
+  "/session",
+  sessionRateLimiter,
+  async (req: Request, res: Response) => {
+    // Prevent browser caching for this endpoint
+    res.setHeader(
+      "Cache-Control",
+      "no-store, no-cache, must-revalidate, proxy-revalidate",
+    );
+    if (!req.session.user) {
+      return res.status(200).json({ authenticated: false, data: null });
+    }
+    res.status(200).json({ authenticated: true, data: req.session.user });
+  },
+);
 
-router.post("/ticket/exchange", async (req: Request, res: Response) => {
-  const ticket = typeof req.body?.ticket === "string" ? req.body.ticket : "";
-  const sessionUser = parseLoginTicket(ticket);
+router.post(
+  "/ticket/exchange",
+  ticketRateLimiter,
+  async (req: Request, res: Response) => {
+    const ticket = typeof req.body?.ticket === "string" ? req.body.ticket : "";
+    const sessionUser = parseLoginTicket(ticket);
 
-  if (!sessionUser) {
-    return res
-      .status(400)
-      .json({ success: false, error: "invalid_or_expired_ticket" });
-  }
+    if (!sessionUser) {
+      return res
+        .status(400)
+        .json({ success: false, error: "invalid_or_expired_ticket" });
+    }
 
-  await regenerateSession(req);
-  req.session.user = sessionUser;
-  return res.status(200).json({ success: true });
-});
+    await regenerateSession(req);
+    req.session.user = sessionUser;
+    return res.status(200).json({ success: true });
+  },
+);
 
-router.post("/logout", (req, res) => {
+router.post("/logout", logoutRateLimiter, (req, res) => {
   req.session.destroy(() => {
     const isProduction = process.env.NODE_ENV === "production";
     res.clearCookie("connect.sid", {

@@ -1,4 +1,5 @@
 import express from "express";
+import rateLimit from "express-rate-limit";
 import {
   PUZZLE_AUTHOR_MAX_LENGTH,
   PUZZLE_DESCRIPTION_MAX_LENGTH,
@@ -14,6 +15,16 @@ import type { UploadedPuzzle } from "../models/UploadedPuzzle.js";
 import { parsePuzzle } from "@puzzpals/puzzle-parser";
 
 const router = express.Router();
+
+// Rate limiter for puzzle endpoints
+const puzzleRateLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 180, // limit each IP to 180 requests per windowMs
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+
+router.use(puzzleRateLimiter);
 
 /*
  * Catalogue Fetch
