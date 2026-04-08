@@ -10,7 +10,7 @@
     <p><strong>Date:</strong> {{ formattedDate }}</p>
     <div class="puzzle-preview" v-if="puzzle.puzzle_json">
       <GridSVG
-        :size="320"
+        :display-size="480"
         :grid-size="puzzle.puzzle_json.size"
         :layers="[puzzle.puzzle_json.problem]"
       />

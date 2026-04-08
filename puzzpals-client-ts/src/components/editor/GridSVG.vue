@@ -1,8 +1,8 @@
 <template>
   <svg
     class="svg-grid"
-    :width="fullSize"
-    :height="fullSize"
+    :width="displayedSize"
+    :height="displayedSize"
     :viewBox="viewBoxStr"
     xmlns="http://www.w3.org/2000/svg"
     @mousedown="handleMouseDown"
@@ -169,13 +169,29 @@ function toGridCoordinates(coordinate: [number, number]): [number, number] {
 }
 
 const props = defineProps<{
-  size: number;
   layers: LayerData[]; // Layers that come later will be rendered on top of layers that come earlier
   gridSize: [number, number];
+  displaySize?: number | null; // If not provided, will size based on gridSize
   cursor?: Coordinate | null;
 }>();
 
-const fullSize = computed(() => Math.max(props.size, 1));
+const BASE_GRID_SIZE_PX = 480;
+const BASE_GRID_DIMENSION = 10;
+
+const fullSize = computed(() => {
+  const [rows, cols] = props.gridSize;
+  const maxDimension = Math.max(rows, cols, 1);
+
+  if (maxDimension <= BASE_GRID_DIMENSION) {
+    return BASE_GRID_SIZE_PX;
+  }
+
+  const pixelsPerCell = BASE_GRID_SIZE_PX / BASE_GRID_DIMENSION;
+  return Math.round(maxDimension * pixelsPerCell);
+});
+
+const displayedSize = computed(() => props.displaySize ?? fullSize.value);
+
 const viewBoxSize = computed(() => fullSize.value + 2 * PADDING);
 const viewBoxStr = computed(
   () => `-${PADDING} -${PADDING} ${viewBoxSize.value} ${viewBoxSize.value}`,
