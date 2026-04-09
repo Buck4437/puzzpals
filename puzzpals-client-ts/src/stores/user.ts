@@ -20,7 +20,18 @@ export const useUserStore = defineStore("user", {
         try {
           const res = await api.get("/auth/session");
           this.user = res.data.authenticated ? res.data.data : null;
-        } catch {
+        } catch (error) {
+          const status =
+            typeof error === "object" &&
+            error !== null &&
+            "response" in error &&
+            typeof (error as { response?: { status?: unknown } }).response
+              ?.status === "number"
+              ? (error as { response: { status: number } }).response.status
+              : undefined;
+          if (status === 401) {
+            localStorage.removeItem("persistentBearerToken");
+          }
           this.user = null;
         } finally {
           this.loading = false;
@@ -33,6 +44,7 @@ export const useUserStore = defineStore("user", {
     async logout() {
       await api.post("/auth/logout");
       this.user = null;
+      localStorage.removeItem("persistentBearerToken");
       localStorage.setItem("authChanged", Date.now().toString());
       location.reload();
     },

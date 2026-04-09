@@ -8,48 +8,42 @@ import { readFileSync } from "fs";
 import { join } from "path";
 import env from "../config.js";
 import { upsertGoogleUser } from "../db.js";
+import {
+  createPersistentBearerToken,
+  getBearerTokenFromRequest,
+  verifyPersistentBearerToken,
+  type SessionUser,
+} from "../util/authUtil.js";
 
 const router = express.Router();
 
-// Rate limiters for specific auth endpoints
 const loginRateLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 10, // limit each IP to 10 login attempts per minute
+  windowMs: 60 * 1000,
+  max: 10,
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 const ticketRateLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 10, // limit each IP to 10 ticket exchanges per minute
+  windowMs: 60 * 1000,
+  max: 10,
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 const sessionRateLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 180, // more generous for session checks
+  windowMs: 60 * 1000,
+  max: 180,
   standardHeaders: true,
   legacyHeaders: false,
 });
 
 const logoutRateLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 10, // limit each IP to 10 logout attempts per minute
+  windowMs: 60 * 1000,
+  max: 10,
   standardHeaders: true,
   legacyHeaders: false,
 });
-
-// Do NOT rate limit Google callback (to avoid blocking Google IPs)
-
-interface SessionUser {
-  id: number;
-  google_id?: string | undefined;
-  is_guest: boolean;
-  email?: string | undefined;
-  name?: string | undefined;
-  picture?: string | undefined;
-}
 
 interface LoginTicketPayload {
   exp: number;
@@ -333,7 +327,6 @@ router.get("/google/callback", async (req: Request, res: Response) => {
     );
   }
 
-  // Google returns an error query param (for example access_denied) when user aborts sign-in.
   const oauthError =
     typeof req.query.error === "string" ? req.query.error : null;
   if (oauthError) {
@@ -362,7 +355,6 @@ router.get("/google/callback", async (req: Request, res: Response) => {
     const oauth2 = google.oauth2("v2");
     const userInfo = await oauth2.userinfo.get({ auth: oauth2Client });
 
-    // Save user info to DB
     const googleId = userInfo.data.id ?? "";
     const dbUser = await upsertGoogleUser(
       googleId,
@@ -371,7 +363,6 @@ router.get("/google/callback", async (req: Request, res: Response) => {
       userInfo.data.picture || "",
     );
 
-    // Rotate session ID after successful authentication to prevent fixation.
     await regenerateSession(req);
 
     const sessionUser: SessionUser = {
@@ -385,8 +376,6 @@ router.get("/google/callback", async (req: Request, res: Response) => {
 
     req.session.user = sessionUser;
 
-    // Firefox and other browsers may partition third-party cookies.
-    // A short-lived signed ticket lets the SPA finalize session setup via XHR.
     const redirectUrl = appendQueryParam(
       buildClientRedirectUrl(returnUrl),
       "loginTicket",
@@ -407,15 +396,36 @@ router.get(
   "/session",
   sessionRateLimiter,
   async (req: Request, res: Response) => {
-    // Prevent browser caching for this endpoint
     res.setHeader(
       "Cache-Control",
       "no-store, no-cache, must-revalidate, proxy-revalidate",
     );
-    if (!req.session.user) {
-      return res.status(200).json({ authenticated: false, data: null });
+
+    if (req.session.user) {
+      return res
+        .status(200)
+        .json({ authenticated: true, data: req.session.user });
     }
-    res.status(200).json({ authenticated: true, data: req.session.user });
+
+    const bearerToken = getBearerTokenFromRequest(req);
+    if (bearerToken) {
+      const bearerUser = verifyPersistentBearerToken(bearerToken);
+      if (bearerUser) {
+        const { id, google_id, email, name, picture, is_guest } = bearerUser;
+        return res.status(200).json({
+          authenticated: true,
+          data: { id, google_id, email, name, picture, is_guest },
+        });
+      }
+
+      return res.status(401).json({
+        authenticated: false,
+        data: null,
+        error: "invalid_or_expired_token",
+      });
+    }
+
+    return res.status(200).json({ authenticated: false, data: null });
   },
 );
 
@@ -424,6 +434,7 @@ router.post(
   ticketRateLimiter,
   async (req: Request, res: Response) => {
     const ticket = typeof req.body?.ticket === "string" ? req.body.ticket : "";
+    const issueBearerToken = req.body?.issueBearerToken === true;
     const sessionUser = parseLoginTicket(ticket);
 
     if (!sessionUser) {
@@ -432,35 +443,24 @@ router.post(
         .json({ success: false, error: "invalid_or_expired_ticket" });
     }
 
-    await regenerateSession(req);
-    req.session.user = sessionUser;
-    return res.status(200).json({ success: true });
-  },
-);
-
-router.get(
-  "/ticket/finalize",
-  ticketRateLimiter,
-  async (req: Request, res: Response) => {
-    const ticket = typeof req.query.ticket === "string" ? req.query.ticket : "";
-    const rawReturnUrl =
-      typeof req.query.returnUrl === "string" ? req.query.returnUrl : "/";
-    const returnUrl = normalizeReturnUrl(rawReturnUrl);
-    const redirectUrl = buildClientRedirectUrl(returnUrl);
-
-    const sessionUser = parseLoginTicket(ticket);
-    if (!sessionUser) {
-      return res.redirect(
-        `${redirectUrl}?authError=${encodeURIComponent("invalid_or_expired_ticket")}`,
-      );
+    if (issueBearerToken) {
+      const persistentBearerToken = createPersistentBearerToken(sessionUser);
+      return res.status(200).json({
+        success: true,
+        persistentBearerToken,
+      });
     }
 
-    await regenerateSession(req);
-    req.session.user = sessionUser;
-
-    // Some browsers can block cross-site cookie writes in XHR; finalize auth
-    // through top-level navigation where the API origin is first-party.
-    return res.redirect(redirectUrl);
+    try {
+      await regenerateSession(req);
+      req.session.user = sessionUser;
+      return res.status(200).json({ success: true });
+    } catch {
+      return res.status(500).json({
+        success: false,
+        error: "session_establishment_failed",
+      });
+    }
   },
 );
 
@@ -472,7 +472,6 @@ router.post("/logout", logoutRateLimiter, (req, res) => {
       secure: isProduction,
       sameSite: isProduction ? "none" : "lax",
     });
-    // Prevent browser caching after logout
     res.setHeader(
       "Cache-Control",
       "no-store, no-cache, must-revalidate, proxy-revalidate",
@@ -480,22 +479,5 @@ router.post("/logout", logoutRateLimiter, (req, res) => {
     res.json({ success: true });
   });
 });
-
-import "express-session";
-
-declare module "express-session" {
-  interface SessionData {
-    oauthState?: string;
-    oauthReturnUrl?: string;
-    oauthCodeVerifier?: string;
-    user?: SessionUser;
-  }
-}
-
-// router.get("/allUsersDebug", async (req: Request, res: Response) => {
-//   // This is just for debugging purposes to see all users in the DB. Remove in production!
-//   const users = await getAllUsersDebug();
-//   res.json(users);
-// });
 
 export default router;

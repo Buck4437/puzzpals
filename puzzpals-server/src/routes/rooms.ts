@@ -3,6 +3,7 @@ import rateLimit from "express-rate-limit";
 import { getRoomFromStore, createRoomInStore } from "../memorystore.js";
 import { parsePuzzle, createEmptyLayerData } from "@puzzpals/puzzle-parser";
 import type { GameData } from "@puzzpals/puzzle-models";
+import { getAuthenticatedUser } from "../util/authUtil.js";
 
 const router = Router();
 
@@ -86,7 +87,8 @@ router.post("/create-from-id", async (req, res) => {
     // Allow room creation for published puzzles by anyone.
     // For unpublished puzzles, only the author can create a room.
     if (!puzzle.published) {
-      if (!req.session.user || puzzle.author_id !== req.session.user.id) {
+      const authUser = getAuthenticatedUser(req);
+      if (!authUser || puzzle.author_id !== authUser.id) {
         return res.status(404).json({ error: "Puzzle not found" });
       }
     }

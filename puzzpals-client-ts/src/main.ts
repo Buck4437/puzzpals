@@ -4,7 +4,6 @@ import router from "./router";
 import { createPinia } from "pinia";
 import { useUserStore } from "./stores/user";
 import api from "./services/api";
-import config from "./config";
 
 const app = createApp(App);
 const pinia = createPinia();
@@ -17,27 +16,33 @@ const userStore = useUserStore(pinia);
 async function initializeAuthState() {
   await userStore.fetchUser();
 
-  // Some browsers can block cross-site cookie writes for XHR-based login finalization.
-  // If API exchange does not establish a session, retry with top-level navigation.
+  // Some browsers can block cross-site cookie writes.
+  // First try session establishment, then explicitly request token fallback.
   const currentUrl = new URL(window.location.href);
   const loginTicket = currentUrl.searchParams.get("loginTicket");
-  const finalizeAttempted =
-    sessionStorage.getItem("pendingAuthFinalize") === "1";
 
   if (!userStore.user && loginTicket) {
     try {
       await api.post("/auth/ticket/exchange", { ticket: loginTicket });
       await userStore.fetchUser();
+
+      if (!userStore.user) {
+        const tokenResp = await api.post("/auth/ticket/exchange", {
+          ticket: loginTicket,
+          issueBearerToken: true,
+        });
+        if (tokenResp.data && tokenResp.data.persistentBearerToken) {
+          localStorage.setItem(
+            "persistentBearerToken",
+            tokenResp.data.persistentBearerToken,
+          );
+        }
+        await userStore.fetchUser();
+      } else {
+        localStorage.removeItem("persistentBearerToken");
+      }
     } catch {
       // Ignore exchange failures; UI remains logged out.
-    }
-
-    if (!userStore.user && !finalizeAttempted) {
-      sessionStorage.setItem("pendingAuthFinalize", "1");
-      currentUrl.searchParams.delete("loginTicket");
-      const returnUrl = `${currentUrl.pathname}${currentUrl.search}${currentUrl.hash}`;
-      window.location.href = `${config.apiBase}/auth/ticket/finalize?ticket=${encodeURIComponent(loginTicket)}&returnUrl=${encodeURIComponent(returnUrl)}`;
-      return;
     }
   }
 

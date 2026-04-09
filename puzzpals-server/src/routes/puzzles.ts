@@ -13,6 +13,7 @@ import {
 } from "../db.js";
 import type { UploadedPuzzle } from "../models/UploadedPuzzle.js";
 import { parsePuzzle } from "@puzzpals/puzzle-parser";
+import { getAuthenticatedUser } from "../util/authUtil.js";
 
 const router = express.Router();
 
@@ -102,14 +103,15 @@ router.get("/", async (req, res) => {
  * - No caching for this endpoint
  */
 router.post("/", async (req, res) => {
-  if (!req.session.user || req.session.user.is_guest) {
+  const authUser = getAuthenticatedUser(req);
+  if (!authUser || authUser.is_guest) {
     return res.status(401).json({ error: "Not authenticated." });
   }
   res.setHeader(
     "Cache-Control",
     "no-store, no-cache, must-revalidate, proxy-revalidate",
   );
-  const author_id = req.session.user.id;
+  const author_id = authUser.id;
   const payload = req.body as unknown;
   if (
     !(
@@ -161,7 +163,8 @@ router.post("/", async (req, res) => {
 
 // Update a puzzle (draft or publish)
 router.patch("/:id", async (req, res) => {
-  if (!req.session.user) {
+  const authUser = getAuthenticatedUser(req);
+  if (!authUser) {
     return res.status(401).json({ error: "Not authenticated" });
   }
   res.setHeader(
@@ -172,7 +175,7 @@ router.patch("/:id", async (req, res) => {
   if (!Number.isInteger(id) || id < 0) {
     return res.status(400).json({ error: "Invalid puzzle id" });
   }
-  const author_id = req.session.user.id;
+  const author_id = authUser.id;
   const payload = req.body as unknown;
   if (
     !(
@@ -234,7 +237,8 @@ router.patch("/:id", async (req, res) => {
  * - No caching for this endpoint
  */
 router.get("/user", async (req, res) => {
-  if (!req.session.user) {
+  const authUser = getAuthenticatedUser(req);
+  if (!authUser) {
     return res.status(401).json({ error: "Not authenticated" });
   }
   const rawLimit = req.query.limit;
@@ -286,7 +290,7 @@ router.get("/user", async (req, res) => {
     else if (req.query.published === "false") published = false;
   }
   try {
-    const puzzles = await getUserPuzzles(req.session.user.id, {
+    const puzzles = await getUserPuzzles(authUser.id, {
       limit,
       offset,
       description,
@@ -325,15 +329,16 @@ router.get("/:id", async (req, res) => {
     if (!puzzle) {
       return res.status(404).json({ error: "Puzzle not found" });
     }
+    const authUser = getAuthenticatedUser(req);
     // If not authenticated, only allow published puzzles
-    if (!req.session.user) {
+    if (!authUser) {
       if (!puzzle.published) {
         return res.status(403).json({ error: "Puzzle not found" });
       }
       return res.json(puzzle);
     }
     // If authenticated, allow own unpublished puzzles, but not others'
-    if (puzzle.published || puzzle.author_id === req.session.user.id) {
+    if (puzzle.published || puzzle.author_id === authUser.id) {
       return res.json(puzzle);
     } else {
       return res.status(403).json({ error: "Puzzle not found" });
@@ -364,7 +369,8 @@ router.get("/:id/edit", async (req, res) => {
     if (!puzzle) {
       return res.status(404).json({ error: "Puzzle not found" });
     }
-    if (!req.session.user || puzzle.author_id !== req.session.user.id) {
+    const authUser = getAuthenticatedUser(req);
+    if (!authUser || puzzle.author_id !== authUser.id) {
       return res.status(403).json({ error: "Puzzle not found" });
     }
     return res.json(puzzle);
