@@ -438,6 +438,32 @@ router.post(
   },
 );
 
+router.get(
+  "/ticket/finalize",
+  ticketRateLimiter,
+  async (req: Request, res: Response) => {
+    const ticket = typeof req.query.ticket === "string" ? req.query.ticket : "";
+    const rawReturnUrl =
+      typeof req.query.returnUrl === "string" ? req.query.returnUrl : "/";
+    const returnUrl = normalizeReturnUrl(rawReturnUrl);
+    const redirectUrl = buildClientRedirectUrl(returnUrl);
+
+    const sessionUser = parseLoginTicket(ticket);
+    if (!sessionUser) {
+      return res.redirect(
+        `${redirectUrl}?authError=${encodeURIComponent("invalid_or_expired_ticket")}`,
+      );
+    }
+
+    await regenerateSession(req);
+    req.session.user = sessionUser;
+
+    // Some browsers can block cross-site cookie writes in XHR; finalize auth
+    // through top-level navigation where the API origin is first-party.
+    return res.redirect(redirectUrl);
+  },
+);
+
 router.post("/logout", logoutRateLimiter, (req, res) => {
   req.session.destroy(() => {
     const isProduction = process.env.NODE_ENV === "production";
