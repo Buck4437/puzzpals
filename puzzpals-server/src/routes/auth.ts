@@ -3,7 +3,7 @@ import rateLimit from "express-rate-limit";
 import type { Request, Response } from "express";
 import { google } from "googleapis";
 import { CodeChallengeMethod, OAuth2Client } from "google-auth-library";
-import { createHash, createHmac, randomBytes, timingSafeEqual } from "crypto";
+import { createHash, randomBytes } from "crypto";
 import { readFileSync } from "fs";
 import { join } from "path";
 import env from "../config.js";
@@ -15,13 +15,6 @@ const router = express.Router();
 const loginRateLimiter = rateLimit({
   windowMs: 60 * 1000, // 1 minute
   max: 10, // limit each IP to 10 login attempts per minute
-  standardHeaders: true,
-  legacyHeaders: false,
-});
-
-const ticketRateLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 10, // limit each IP to 10 ticket exchanges per minute
   standardHeaders: true,
   legacyHeaders: false,
 });
@@ -51,11 +44,6 @@ interface SessionUser {
   picture?: string | undefined;
 }
 
-interface LoginTicketPayload {
-  exp: number;
-  user: SessionUser;
-}
-
 function regenerateSession(req: Request): Promise<void> {
   return new Promise((resolve, reject) => {
     req.session.regenerate((err) => {
@@ -74,12 +62,6 @@ function toBase64Url(input: Buffer): string {
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=+$/g, "");
-}
-
-function fromBase64Url(input: string): Buffer {
-  const base64 = input.replace(/-/g, "+").replace(/_/g, "/");
-  const padding = (4 - (base64.length % 4)) % 4;
-  return Buffer.from(`${base64}${"=".repeat(padding)}`, "base64");
 }
 
 function normalizeReturnUrl(returnUrl: string): string {
@@ -104,75 +86,6 @@ function buildClientRedirectUrl(returnUrl: string): string {
   }
 
   return `${env.CLIENT_BASE_URL}${normalizedReturnUrl}`;
-}
-
-function appendQueryParam(
-  urlString: string,
-  key: string,
-  value: string,
-): string {
-  const url = new URL(urlString);
-  url.searchParams.set(key, value);
-  return url.toString();
-}
-
-function getSessionSigningSecret(): string {
-  return process.env.SESSION_SECRET || "dev-only-session-secret";
-}
-
-function createLoginTicket(user: SessionUser): string {
-  const payload: LoginTicketPayload = {
-    exp: Date.now() + 1000 * 60 * 2,
-    user,
-  };
-  const encodedPayload = toBase64Url(
-    Buffer.from(JSON.stringify(payload), "utf-8"),
-  );
-  const signature = toBase64Url(
-    createHmac("sha256", getSessionSigningSecret())
-      .update(encodedPayload)
-      .digest(),
-  );
-  return `${encodedPayload}.${signature}`;
-}
-
-function parseLoginTicket(ticket: string): SessionUser | null {
-  const [encodedPayload, providedSignature, ...rest] = ticket.split(".");
-  if (!encodedPayload || !providedSignature || rest.length > 0) {
-    return null;
-  }
-
-  const expectedSignature = toBase64Url(
-    createHmac("sha256", getSessionSigningSecret())
-      .update(encodedPayload)
-      .digest(),
-  );
-
-  const providedSigBuffer = Buffer.from(providedSignature, "utf-8");
-  const expectedSigBuffer = Buffer.from(expectedSignature, "utf-8");
-  if (providedSigBuffer.length !== expectedSigBuffer.length) {
-    return null;
-  }
-  if (!timingSafeEqual(providedSigBuffer, expectedSigBuffer)) {
-    return null;
-  }
-
-  try {
-    const parsed = JSON.parse(
-      fromBase64Url(encodedPayload).toString("utf-8"),
-    ) as LoginTicketPayload;
-
-    if (!parsed || typeof parsed.exp !== "number" || parsed.exp < Date.now()) {
-      return null;
-    }
-    if (!parsed.user || typeof parsed.user.id !== "number") {
-      return null;
-    }
-
-    return parsed.user;
-  } catch {
-    return null;
-  }
 }
 
 interface GoogleCredentials {
@@ -385,15 +298,7 @@ router.get("/google/callback", async (req: Request, res: Response) => {
 
     req.session.user = sessionUser;
 
-    // Firefox and other browsers may partition third-party cookies.
-    // A short-lived signed ticket lets the SPA finalize session setup via XHR.
-    const redirectUrl = appendQueryParam(
-      buildClientRedirectUrl(returnUrl),
-      "loginTicket",
-      createLoginTicket(sessionUser),
-    );
-
-    return res.redirect(redirectUrl);
+    return res.redirect(buildClientRedirectUrl(returnUrl));
   } catch (err) {
     console.error("Google OAuth callback failed:", err);
     const redirectUrl = buildClientRedirectUrl(returnUrl);
@@ -416,25 +321,6 @@ router.get(
       return res.status(200).json({ authenticated: false, data: null });
     }
     res.status(200).json({ authenticated: true, data: req.session.user });
-  },
-);
-
-router.post(
-  "/ticket/exchange",
-  ticketRateLimiter,
-  async (req: Request, res: Response) => {
-    const ticket = typeof req.body?.ticket === "string" ? req.body.ticket : "";
-    const sessionUser = parseLoginTicket(ticket);
-
-    if (!sessionUser) {
-      return res
-        .status(400)
-        .json({ success: false, error: "invalid_or_expired_ticket" });
-    }
-
-    await regenerateSession(req);
-    req.session.user = sessionUser;
-    return res.status(200).json({ success: true });
   },
 );
 
