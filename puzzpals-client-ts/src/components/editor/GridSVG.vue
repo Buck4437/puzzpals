@@ -58,19 +58,6 @@
     />
 
     <g v-for="(layer, index) in layers" :key="`foreground-${index}`">
-      <!-- Line objects -->
-      <line
-        v-for="line in layer.lineObjects"
-        :key="`line-${line.endpoints[0]}-${line.endpoints[1]}`"
-        :x1="toSvgCoordinates(line.endpoints[0])[0]"
-        :y1="toSvgCoordinates(line.endpoints[0])[1]"
-        :x2="toSvgCoordinates(line.endpoints[1])[0]"
-        :y2="toSvgCoordinates(line.endpoints[1])[1]"
-        :stroke="line.color"
-        :stroke-width="line.thickness || 3"
-        pointer-events="none"
-      />
-
       <!-- text objects -->
       <g
         v-for="textObject in layer.textObjects"
@@ -118,6 +105,19 @@
           {{ getShapeGlyph(shapeObject.content) }}
         </text>
       </g>
+
+      <!-- Line objects -->
+      <line
+        v-for="line in layer.lineObjects"
+        :key="`line-${line.endpoints[0]}-${line.endpoints[1]}`"
+        :x1="toSvgCoordinates(line.endpoints[0])[0]"
+        :y1="toSvgCoordinates(line.endpoints[0])[1]"
+        :x2="toSvgCoordinates(line.endpoints[1])[0]"
+        :y2="toSvgCoordinates(line.endpoints[1])[1]"
+        :stroke="line.color"
+        :stroke-width="line.thickness || 3"
+        pointer-events="none"
+      />
     </g>
 
     <!-- Cursor -->

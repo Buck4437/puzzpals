@@ -194,7 +194,7 @@ export interface SolutionData {
   typeToCheck: TypeToCheck[];
 }
 
-export type RulesType = "akari";
+export type RulesType = "akari" | "masyu";
 
 export const PUZZLE_AUTHOR_MAX_LENGTH = 100;
 export const PUZZLE_TITLE_MAX_LENGTH = 100;

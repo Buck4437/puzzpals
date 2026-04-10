@@ -353,6 +353,7 @@ const typesToCheckInput = ref<Record<TypeToCheck, boolean>>({
 
 const customRulesInput = ref<Record<RulesType, boolean>>({
   akari: false,
+  masyu: false,
 });
 
 function createEmptyLayerData(): LayerData {
