@@ -17,10 +17,10 @@ async function initializeAuthState() {
 
   window.addEventListener("storage", (event) => {
     if (event.key === "authChanged") {
-      userStore.fetchUser();
+      void userStore.fetchUser();
     }
   });
 }
 
+await initializeAuthState();
 app.mount("#app");
-initializeAuthState();

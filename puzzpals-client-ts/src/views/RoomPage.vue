@@ -89,6 +89,7 @@ import {
   onBeforeUnmount,
   onMounted,
   ref,
+  useTemplateRef,
   type Ref,
 } from "vue";
 import { useRouter } from "vue-router";
@@ -120,8 +121,9 @@ const showPuzzleInfoModal = ref(false);
 const showSolvedModal = ref(false);
 
 const chatState: Ref<ChatState> = ref({ messages: [] });
-const chatComponent = ref<InstanceType<typeof ChatRoom> | null>(null);
-const alertRef = ref<InstanceType<typeof AlertNotification> | null>(null);
+
+const chatComponent = useTemplateRef("chatComponent");
+const alertRef = useTemplateRef("alertRef");
 
 const userID = ref<string | null>(null);
 const props = defineProps({
@@ -150,23 +152,23 @@ async function checkRoomExists() {
   try {
     // Check that the room exists
     const res = await api.get(`/rooms/${props.token}/exists`);
-    if (res.data.exists === false) router.push("/404");
+    if (res.data.exists === false) await router.push("/404");
     return res.data.exists;
   } catch (err) {
     console.error(err);
-    router.push("/");
+    await router.push("/");
     return false;
   }
 }
 
-async function joinRoom() {
+function joinRoom() {
   socket.connect();
   socket.emit("room:join", props.token);
 }
 
-function goToHome() {
+async function goToHome() {
   socket.disconnect();
-  router.push("/");
+  await router.push("/");
 }
 
 function copyLink() {
@@ -212,7 +214,7 @@ function checkWinCondition() {
     const win = checkWin(currentSolution, solutionToCheck);
     if (win) {
       hasWon = true;
-      nextTick(() => {
+      void nextTick(() => {
         showSolvedModal.value = true;
       });
     }
@@ -287,7 +289,7 @@ onMounted(async () => {
     return;
   }
   console.log(`Joining room ${props.token}`);
-  await joinRoom();
+  joinRoom();
 });
 
 onBeforeUnmount(() => {
