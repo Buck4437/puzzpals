@@ -1,8 +1,8 @@
 <template>
   <svg
     class="svg-grid"
-    :width="size"
-    :height="size"
+    :width="displayedSize"
+    :height="displayedSize"
     :viewBox="viewBoxStr"
     xmlns="http://www.w3.org/2000/svg"
     @mousedown="handleMouseDown"
@@ -142,15 +142,9 @@ import {
   type LayerData,
   getSpecialCharacterById,
 } from "@puzzpals/puzzle-models";
-import { ref, computed } from "vue";
+import { computed } from "vue";
 
-const FULLSIZE = 480;
 const PADDING = 20;
-
-const VIEW_BOX_SIZE = FULLSIZE + 2 * PADDING;
-const viewBoxStr = ref(
-  `-${PADDING} -${PADDING} ${VIEW_BOX_SIZE} ${VIEW_BOX_SIZE}`,
-);
 
 let isDragging = false;
 
@@ -175,11 +169,36 @@ function toGridCoordinates(coordinate: [number, number]): [number, number] {
 }
 
 const props = defineProps<{
-  size: number;
   layers: LayerData[]; // Layers that come later will be rendered on top of layers that come earlier
   gridSize: [number, number];
+  displaySize?: number | null; // If not provided, will size based on gridSize
   cursor?: Coordinate | null;
 }>();
+
+const BASE_GRID_SIZE_PX = 480;
+const BASE_GRID_DIMENSION = 10;
+
+const fullSize = computed(() => {
+  const [rows, cols] = props.gridSize;
+  const maxDimension = Math.max(rows, cols, 1);
+
+  if (maxDimension <= BASE_GRID_DIMENSION) {
+    return BASE_GRID_SIZE_PX;
+  }
+
+  const pixelsPerCell = BASE_GRID_SIZE_PX / BASE_GRID_DIMENSION;
+  return Math.round(maxDimension * pixelsPerCell);
+});
+
+const displayedSize = computed(() => {
+  const requestedSize = props.displaySize ?? fullSize.value;
+  return Number.isFinite(requestedSize) ? Math.max(requestedSize, 1) : 1;
+});
+
+const viewBoxSize = computed(() => fullSize.value + 2 * PADDING);
+const viewBoxStr = computed(
+  () => `-${PADDING} -${PADDING} ${viewBoxSize.value} ${viewBoxSize.value}`,
+);
 
 const emit = defineEmits<{
   centerCellClick: [cell: [number, number]];
@@ -191,14 +210,14 @@ const emit = defineEmits<{
 }>();
 
 const cellSize = computed(
-  () => FULLSIZE / Math.max(props.gridSize[0], props.gridSize[1]),
+  () => fullSize.value / Math.max(props.gridSize[0], props.gridSize[1]),
 );
 
 const gridWidth = computed(() => props.gridSize[1] * cellSize.value); // numCols * cellSize
 const gridHeight = computed(() => props.gridSize[0] * cellSize.value); // numRows * cellSize
 
-const offsetX = computed(() => (FULLSIZE - gridWidth.value) / 2);
-const offsetY = computed(() => (FULLSIZE - gridHeight.value) / 2);
+const offsetX = computed(() => (fullSize.value - gridWidth.value) / 2);
+const offsetY = computed(() => (fullSize.value - gridHeight.value) / 2);
 
 let lastCenterCell: [number, number] | null = null;
 let lastCornerCell: [number, number] | null = null;
@@ -211,8 +230,8 @@ function getGridCoordinatesFromEvent(event: MouseEvent): [number, number] {
   const x = event.clientX - rect.left;
   const y = event.clientY - rect.top;
 
-  const scaleX = VIEW_BOX_SIZE / rect.width;
-  const scaleY = VIEW_BOX_SIZE / rect.height;
+  const scaleX = viewBoxSize.value / rect.width;
+  const scaleY = viewBoxSize.value / rect.height;
   const viewX = x * scaleX - PADDING;
   const viewY = y * scaleY - PADDING;
 

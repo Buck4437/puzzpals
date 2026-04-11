@@ -2,21 +2,21 @@
   <div v-if="loading">Loading puzzle...</div>
   <div v-else-if="puzzle">
     <h1>{{ puzzle.puzzle_json?.title || "Untitled Puzzle" }}</h1>
+    <p><strong>Author:</strong> {{ puzzle.author }}</p>
     <p style="white-space: pre-line">
       <strong>Description:</strong>
-      {{ puzzle.puzzle_json?.description || "" }}
+      {{ puzzle.description || "" }}
     </p>
-    <p><strong>Author:</strong> {{ puzzle.author }}</p>
     <p><strong>Date:</strong> {{ formattedDate }}</p>
-    <div v-if="puzzle.puzzle_json">
+    <div class="puzzle-preview" v-if="puzzle.puzzle_json">
       <GridSVG
-        :size="320"
+        :display-size="480"
         :grid-size="puzzle.puzzle_json.size"
         :layers="[puzzle.puzzle_json.problem]"
       />
     </div>
     <div class="actions">
-      <button @click="openRoom">Open Room</button>
+      <button @click="createRoom">Create Room</button>
       <button v-if="isOwner" @click="editPuzzle">Edit Puzzle</button>
     </div>
   </div>
@@ -31,6 +31,7 @@ import { useRoute, useRouter } from "vue-router";
 import { useUserStore } from "@/stores/user";
 import api from "@/services/api";
 import GridSVG from "@/components/editor/GridSVG.vue";
+import { formatDate } from "@/util";
 import { isAxiosError } from "axios";
 
 const route = useRoute();
@@ -64,7 +65,7 @@ const isOwner = computed(() => {
 
 const formattedDate = computed(() => {
   if (!puzzle.value?.publish_date) return "Unknown";
-  return new Date(puzzle.value.publish_date).toLocaleString();
+  return formatDate(new Date(puzzle.value.publish_date));
 });
 
 async function fetchPuzzle() {
@@ -79,7 +80,7 @@ async function fetchPuzzle() {
   }
 }
 
-async function openRoom() {
+async function createRoom() {
   try {
     const res = await api.post(
       "/rooms/create-from-id",
@@ -114,6 +115,15 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.puzzle-preview {
+  flex: 0 0 auto;
+  padding: 0.4rem;
+  background: #fff;
+  border: 1px solid #e4e4e4;
+  border-radius: 6px;
+  width: fit-content;
+}
+
 .actions {
   margin-top: 1.5em;
 }

@@ -6,7 +6,7 @@
   >
     <div class="puzzle-card-left" v-if="puzzle.puzzle_json">
       <GridSVG
-        :size="size"
+        :display-size="120"
         :grid-size="puzzle.puzzle_json.size"
         :layers="[puzzle.puzzle_json.problem]"
       />
@@ -17,34 +17,42 @@
         <span class="puzzle-id">#{{ puzzle.id }}</span>
       </div>
 
+      <div class="puzzle-card-author-con">
+        <strong>Author: </strong>
+        <span class="puzzle-author">{{ puzzle.author }}</span>
+      </div>
+
+      <p>
+        <strong>Date:</strong>
+        {{
+          puzzle.publish_date
+            ? formatDate(new Date(puzzle.publish_date))
+            : "Unknown"
+        }}
+      </p>
+
       <p class="puzzle-description">
-        {{ puzzle.puzzle_json?.description || "No description provided." }}
+        {{ descriptionTruncated }}
       </p>
 
       <p v-if="showStatus">
         <strong>Status:</strong>
         {{ puzzle.published ? "Published" : "Draft" }}
       </p>
-      <p><strong>Author:</strong> {{ puzzle.author }}</p>
-      <p>
-        <strong>Date:</strong>
-        {{
-          puzzle.publish_date
-            ? new Date(puzzle.publish_date).toLocaleString()
-            : "Unknown"
-        }}
-      </p>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { computed } from "vue";
 import type { PuzzleData } from "@puzzpals/puzzle-models";
 import GridSVG from "@/components/editor/GridSVG.vue";
+import { formatDate } from "@/util";
 
 interface PuzzleCardData {
   id: number;
   author: string;
+  description: string;
   puzzle_json: PuzzleData;
   publish_date?: string | Date;
   published?: boolean;
@@ -55,14 +63,20 @@ const props = withDefaults(
     puzzle: PuzzleCardData;
     showStatus?: boolean;
     clickable?: boolean;
-    size?: number;
   }>(),
   {
     showStatus: false,
     clickable: false,
-    size: 180,
   },
 );
+
+const descriptionTruncated = computed(() => {
+  const desc = props.puzzle.description || "No description provided";
+  if (desc.length > 100) {
+    return desc.slice(0, 100) + "...";
+  }
+  return desc;
+});
 
 const emit = defineEmits<{
   click: [id: number];
@@ -78,6 +92,7 @@ function handleClick() {
 
 <style scoped>
 .puzzle-card {
+  width: 100%;
   border: 1px solid #ccc;
   padding: 1em;
   margin-bottom: 1em;
@@ -110,6 +125,10 @@ function handleClick() {
   min-width: 0;
 }
 
+.puzzle-card-right p {
+  word-break: break-all;
+}
+
 .puzzle-card-top-row {
   display: flex;
   justify-content: space-between;
@@ -118,7 +137,9 @@ function handleClick() {
 }
 
 .puzzle-card-top-row h2 {
-  margin: 0;
+  margin-top: 0;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 
 .puzzle-id {
@@ -130,19 +151,41 @@ function handleClick() {
   white-space: nowrap;
 }
 
+.puzzle-card-author-con {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.puzzle-author {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: inline-block;
+}
+
 .puzzle-description {
   margin: 0.55rem 0 0.75rem;
   white-space: pre-line;
 }
 
-@media (max-width: 700px) {
+@media (max-width: 500px) {
   .puzzle-card {
     flex-direction: column;
     align-items: stretch;
+    min-width: 0;
   }
-
   .puzzle-card-left {
     align-self: flex-start;
+    margin-bottom: 0.5em;
+    min-width: 0;
+    max-width: 100%;
   }
+}
+
+.puzzle-card-left {
+  width: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>

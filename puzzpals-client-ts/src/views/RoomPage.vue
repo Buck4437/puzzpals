@@ -3,11 +3,9 @@
   <div v-else>
     <div class="solving-page">
       <TopBar @title-click="goToHome">
-        <template #middle>
-          <div class="room-id">Room ID: {{ props.token }}</div>
-        </template>
         <template #right>
           <div class="header-actions">
+            <button @click="copyLink">Copy room link</button>
             <button @click="showPuzzleInfoModal = true">
               Pre-defined rules / Answer check info
             </button>
@@ -29,7 +27,7 @@
           <div class="rule-pane">
             <h3>{{ gameData.puzzle.title || "Untitled Puzzle" }}</h3>
             <p class="rule-description" style="white-space: pre-line">
-              {{ gameData.puzzle.description || "No description provided." }}
+              {{ gameData.puzzle.instructions || "No instructions provided." }}
             </p>
           </div>
 
@@ -37,7 +35,7 @@
             <ChatRoom
               :chat-state="chatState"
               :userID="userID"
-              @newMessage="onChatSubmit"
+              @send-message="onChatSubmit"
               ref="chatComponent"
             />
           </div>
@@ -80,6 +78,7 @@
     <h3>Puzzle solved!</h3>
     <button class="win-modal-btn" @click="showSolvedModal = false">Yay!</button>
   </BaseModal>
+  <AlertNotification ref="alertRef" />
 </template>
 
 <script setup lang="ts">
@@ -99,6 +98,7 @@ import socket from "@/socket";
 import PuzzleArea from "@/components/PuzzleArea.vue";
 import BaseModal from "@/components/BaseModal.vue";
 import TopBar from "@/components/TopBar.vue";
+import AlertNotification from "@/components/AlertNotification.vue";
 
 import ChatRoom from "@/components/ChatRoom.vue";
 import type ChatState from "@/models/ChatState";
@@ -121,6 +121,7 @@ const showSolvedModal = ref(false);
 
 const chatState: Ref<ChatState> = ref({ messages: [] });
 const chatComponent = ref<InstanceType<typeof ChatRoom> | null>(null);
+const alertRef = ref<InstanceType<typeof AlertNotification> | null>(null);
 
 const userID = ref<string | null>(null);
 const props = defineProps({
@@ -168,6 +169,22 @@ function goToHome() {
   router.push("/");
 }
 
+function copyLink() {
+  const roomLink = `${window.location.origin}/room/${props.token}`;
+  navigator.clipboard
+    .writeText(roomLink)
+    .then(() => {
+      alertRef.value?.showAlert("success", "Room link copied to clipboard");
+    })
+    .catch((err) => {
+      console.error("Failed to copy room link: ", err);
+      alertRef.value?.showAlert(
+        "error",
+        "Unknown error: Failed to copy room link",
+      );
+    });
+}
+
 function applyIncomingEdit(message: EditMessage) {
   if (gameData.value === null) {
     return;
@@ -209,7 +226,7 @@ function onGridEdited(message: EditMessage) {
 
 function onChatSubmit(text: string) {
   const message = { msgtext: text };
-  socket.emit("chat:newMessage", message);
+  socket.emit("chat:sendMessage", message);
 }
 
 function initiateSocket() {
@@ -296,9 +313,10 @@ input {
 
 .solving-page {
   width: 100%;
-  height: 100vh;
+  height: 100dvh;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .room-id {
@@ -314,16 +332,21 @@ input {
 
 .content {
   flex: 1;
+  min-height: 0;
   display: flex;
+  min-height: 0;
   gap: 12px;
   padding: 12px;
   box-sizing: border-box;
   background: #f7f8fb;
+  overflow: hidden;
 }
 
 .puzzle-pane {
   flex: 1 1 60%;
+  min-height: 0;
   min-width: 0;
+  min-height: 0;
   background: #fff;
   border: 1px solid #ececec;
   border-radius: 6px;
@@ -340,6 +363,7 @@ input {
 .info-pane {
   flex: 1 1 40%;
   min-width: 0;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -381,6 +405,7 @@ input {
   padding: 8px;
   display: flex;
   flex: 1 1;
+  min-height: 0;
   box-sizing: border-box;
   align-items: stretch;
   overflow: hidden;
