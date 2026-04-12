@@ -3,6 +3,7 @@ import rateLimit from "express-rate-limit";
 import { getRoomFromStore, createRoomInStore } from "../memorystore.js";
 import { parsePuzzle, createEmptyLayerData } from "@puzzpals/puzzle-parser";
 import type { GameData } from "@puzzpals/puzzle-models";
+import { getPuzzleById } from "../db.js";
 
 const router = Router();
 
@@ -87,7 +88,6 @@ router.post("/create-from-id", async (req, res) => {
   }
 
   try {
-    const { getPuzzleById } = await import("../db.js");
     const puzzle = await getPuzzleById(payload.puzzleId);
     if (!puzzle || !puzzle.puzzle_json) {
       return res.status(404).json({ error: "Puzzle not found" });

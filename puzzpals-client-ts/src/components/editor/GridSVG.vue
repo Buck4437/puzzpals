@@ -58,25 +58,6 @@
     />
 
     <g v-for="(layer, index) in layers" :key="`foreground-${index}`">
-      <!-- text objects -->
-      <g
-        v-for="textObject in layer.textObjects"
-        :key="`text-${textObject.location}`"
-        :transform="`translate(${toSvgCoordinates(textObject.location)[0]}, ${toSvgCoordinates(textObject.location)[1]})`"
-        pointer-events="none"
-      >
-        <text
-          x="0"
-          y="0"
-          text-anchor="middle"
-          dominant-baseline="central"
-          :font-size="cellSize / 2"
-          :fill="textObject.color"
-        >
-          {{ textObject.content }}
-        </text>
-      </g>
-
       <!-- shape objects -->
       <g
         v-for="shapeObject in layer.shapeObjects"
@@ -105,7 +86,30 @@
           {{ getShapeGlyph(shapeObject.content) }}
         </text>
       </g>
+    </g>
 
+    <g v-for="(layer, index) in layers" :key="`foreground-${index}`">
+      <!-- text objects -->
+      <g
+        v-for="textObject in layer.textObjects"
+        :key="`text-${textObject.location}`"
+        :transform="`translate(${toSvgCoordinates(textObject.location)[0]}, ${toSvgCoordinates(textObject.location)[1]})`"
+        pointer-events="none"
+      >
+        <text
+          x="0"
+          y="0"
+          text-anchor="middle"
+          dominant-baseline="central"
+          :font-size="cellSize / 2"
+          :fill="textObject.color"
+        >
+          {{ textObject.content }}
+        </text>
+      </g>
+    </g>
+
+    <g v-for="(layer, index) in layers" :key="`foreground-${index}`">
       <!-- Line objects -->
       <line
         v-for="line in layer.lineObjects"
