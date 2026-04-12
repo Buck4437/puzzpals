@@ -8,11 +8,9 @@ import session from "express-session";
 
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import express, { json, static as serveStatic, urlencoded } from "express";
+import express, { json, urlencoded } from "express";
 import helmet from "helmet";
 import logger from "morgan";
-import { dirname, join } from "path";
-import { fileURLToPath } from "url";
 
 import env from "./config.js";
 import roomsRouter from "./routes/rooms.js";
@@ -32,10 +30,6 @@ app.use(json());
 app.use(urlencoded({ extended: false }));
 app.use(cookieParser());
 app.use(helmet());
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-app.use(serveStatic(join(__dirname, "../public")));
 
 const isProduction = process.env.NODE_ENV === "production";
 const sessionSecret = process.env.SESSION_SECRET;
