@@ -141,7 +141,7 @@ function calculateMasyuRulesLayer(
     const linesAtCircle =
       greenLinesByPoint.get(CoordinateToKey(location)) ?? [];
 
-    // Too many lines / Not enoguh lines, pass
+    // Too many lines / Not enough lines, pass
     if (linesAtCircle.length != 2) {
       return true;
     }
@@ -167,7 +167,7 @@ function calculateMasyuRulesLayer(
     const linesAtCircle =
       greenLinesByPoint.get(CoordinateToKey(bigCircle.location)) ?? [];
 
-    // Not enoguh lines, pass
+    // Not enough lines, pass
     if (linesAtCircle.length <= 1) {
       continue;
     }
