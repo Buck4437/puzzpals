@@ -1,4 +1,5 @@
 import {
+  type Coordinate,
   CoordinateToKey,
   type PuzzleData,
   type LayerData,
@@ -80,6 +81,147 @@ function calculateAkariRulesLayer(
   return rulesLayer;
 }
 
+function calculateMasyuRulesLayer(
+  puzzle: PuzzleData,
+  playerSolution: LayerData,
+) {
+  // Locate all big circles in the problem layer
+  const bigCircles = Object.values(puzzle.problem.shapeObjects).filter(
+    (shapeObject) =>
+      shapeObject.content === SPECIAL_CHARACTERS.WHITE_CIRCLE_BIG.id ||
+      shapeObject.content === SPECIAL_CHARACTERS.BLACK_CIRCLE_BIG.id,
+  );
+
+  // Locate green, non-diagonal lines in the player's solution
+  const filteredLines = Object.values(playerSolution.lineObjects).filter(
+    (lineObject) =>
+      lineObject.color === "green" &&
+      Math.abs(lineObject.endpoints[0][0] - lineObject.endpoints[1][0]) +
+        Math.abs(lineObject.endpoints[0][1] - lineObject.endpoints[1][1]) ===
+        1,
+  );
+
+  const greenLinesByPoint = new Map<string, Coordinate[]>();
+
+  // Organize green lines by their endpoints for easy lookup
+  for (const line of filteredLines) {
+    const [start, end] = line.endpoints;
+    const startArray = greenLinesByPoint.get(CoordinateToKey(start)) ?? [];
+    const endArray = greenLinesByPoint.get(CoordinateToKey(end)) ?? [];
+
+    greenLinesByPoint.set(CoordinateToKey(start), [...startArray, end]);
+    greenLinesByPoint.set(CoordinateToKey(end), [...endArray, start]);
+  }
+
+  const rulesLayer: LayerData = {
+    lineObjects: {},
+    surfaceObjects: {},
+    textObjects: {},
+    shapeObjects: {},
+  };
+
+  const addInvalidPearl = (location: Coordinate, isBlack: boolean) => {
+    const key = CoordinateToKey(location);
+    rulesLayer.surfaceObjects[key] = {
+      location,
+      color: "red",
+    };
+    rulesLayer.shapeObjects[key] = {
+      location,
+      content: isBlack
+        ? SPECIAL_CHARACTERS.BLACK_CIRCLE_BIG.id
+        : SPECIAL_CHARACTERS.WHITE_CIRCLE_BIG.id,
+    };
+  };
+
+  const satisfyTurningConstraint = (
+    location: Coordinate,
+    type: "white" | "black",
+  ): boolean => {
+    const linesAtCircle =
+      greenLinesByPoint.get(CoordinateToKey(location)) ?? [];
+
+    // Too many lines / Not enough lines, pass
+    if (linesAtCircle.length != 2) {
+      return true;
+    }
+
+    // Check that two lines have different direction
+    const point1 = linesAtCircle[0] as Coordinate;
+    const point2 = linesAtCircle[1] as Coordinate;
+
+    // Check that location, point 1 and point 2 are not in a straight line
+    const turnedAtPearl = !(
+      (point1[0] === location[0] && point2[0] === location[0]) ||
+      (point1[1] === location[1] && point2[1] === location[1])
+    );
+
+    return type === "black" ? turnedAtPearl : !turnedAtPearl;
+  };
+
+  for (const bigCircle of bigCircles) {
+    const isBlack =
+      bigCircle.content === SPECIAL_CHARACTERS.BLACK_CIRCLE_BIG.id;
+    const addInvalid = () => addInvalidPearl(bigCircle.location, isBlack);
+
+    const linesAtCircle =
+      greenLinesByPoint.get(CoordinateToKey(bigCircle.location)) ?? [];
+
+    // Not enough lines, pass
+    if (linesAtCircle.length <= 1) {
+      continue;
+    }
+
+    // Too many lines
+    if (linesAtCircle.length > 2) {
+      addInvalid();
+      continue;
+    }
+
+    if (isBlack) {
+      // Black big circle rule: The line must turn at the circle,
+      // and must go straight in the cells immediately before or after the circle
+      if (!satisfyTurningConstraint(bigCircle.location, "black")) {
+        addInvalid();
+        continue;
+      }
+
+      // Neighbour endpoint: Both must satisfy white turning constraint
+      const neighbourEndpoints =
+        greenLinesByPoint.get(CoordinateToKey(bigCircle.location)) ?? [];
+      const allStraight = neighbourEndpoints.every((endpoint) =>
+        satisfyTurningConstraint(endpoint, "white"),
+      );
+
+      if (!allStraight) {
+        addInvalid();
+        continue;
+      }
+    } else {
+      // White big circle rule: The line must go straight through the circle,
+      // and must turn in the cells immediately before or after the circle
+      if (!satisfyTurningConstraint(bigCircle.location, "white")) {
+        addInvalid();
+        continue;
+      }
+
+      // Neighbour endpoint: at least one must satisfy black turning constraint
+      const neighbourEndpoints =
+        greenLinesByPoint.get(CoordinateToKey(bigCircle.location)) ?? [];
+      const atLeastOneTurn = neighbourEndpoints.some((endpoint) =>
+        satisfyTurningConstraint(endpoint, "black"),
+      );
+
+      if (!atLeastOneTurn) {
+        addInvalid();
+        continue;
+      }
+    }
+  }
+
+  return rulesLayer;
+}
+
 export interface RuleObject {
   id: RulesType;
   name: string;
@@ -96,6 +238,12 @@ export const CUSTOM_RULES_LIST: Record<RulesType, RuleObject> = {
     name: "Akari",
     description: `Highlights all cells that are lit by ${SPECIAL_CHARACTERS.AKARI_BULB.textGlyph}`,
     calculateRulesLayer: calculateAkariRulesLayer,
+  },
+  masyu: {
+    id: "masyu",
+    name: "Masyu",
+    description: "Check if green lines satisfy white / black big circle rules",
+    calculateRulesLayer: calculateMasyuRulesLayer,
   },
 };
 

@@ -22,7 +22,7 @@ const validTypeToCheckValues = new Set([
 
 const oldTypeToCheckMap: Record<string, TypeToCheck> = {};
 
-const validRulesTypeValues = new Set<RulesType>(["akari"]);
+const validRulesTypeValues = new Set<RulesType>(["akari", "masyu"]);
 
 function createEmptyLayerData(): LayerData {
   return {

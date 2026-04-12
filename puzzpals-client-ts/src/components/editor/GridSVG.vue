@@ -58,19 +58,6 @@
     />
 
     <g v-for="(layer, index) in layers" :key="`foreground-${index}`">
-      <!-- Line objects -->
-      <line
-        v-for="line in layer.lineObjects"
-        :key="`line-${line.endpoints[0]}-${line.endpoints[1]}`"
-        :x1="toSvgCoordinates(line.endpoints[0])[0]"
-        :y1="toSvgCoordinates(line.endpoints[0])[1]"
-        :x2="toSvgCoordinates(line.endpoints[1])[0]"
-        :y2="toSvgCoordinates(line.endpoints[1])[1]"
-        :stroke="line.color"
-        :stroke-width="line.thickness || 3"
-        pointer-events="none"
-      />
-
       <!-- text objects -->
       <g
         v-for="textObject in layer.textObjects"
@@ -100,10 +87,10 @@
         <image
           v-if="getShapeRenderMode(shapeObject.content) === 'image'"
           :href="getShapeImageAsset(shapeObject.content) ?? undefined"
-          :x="-cellSize / 3"
-          :y="-cellSize / 3"
-          :width="(2 * cellSize) / 3"
-          :height="(2 * cellSize) / 3"
+          :x="-cellSize / 2.5"
+          :y="-cellSize / 2.5"
+          :width="(2 * cellSize) / 2.5"
+          :height="(2 * cellSize) / 2.5"
           preserveAspectRatio="xMidYMid meet"
         />
         <text
@@ -118,6 +105,19 @@
           {{ getShapeGlyph(shapeObject.content) }}
         </text>
       </g>
+
+      <!-- Line objects -->
+      <line
+        v-for="line in layer.lineObjects"
+        :key="`line-${line.endpoints[0]}-${line.endpoints[1]}`"
+        :x1="toSvgCoordinates(line.endpoints[0])[0]"
+        :y1="toSvgCoordinates(line.endpoints[0])[1]"
+        :x2="toSvgCoordinates(line.endpoints[1])[0]"
+        :y2="toSvgCoordinates(line.endpoints[1])[1]"
+        :stroke="line.color"
+        :stroke-width="line.thickness || 3"
+        pointer-events="none"
+      />
     </g>
 
     <!-- Cursor -->
@@ -140,9 +140,17 @@
 import {
   type Coordinate,
   type LayerData,
+  type ShapeInfo,
   getSpecialCharacterById,
 } from "@puzzpals/puzzle-models";
 import { computed } from "vue";
+import blackCircleBigAsset from "@/assets/svg/black_circle_big.svg";
+import whiteCircleBigAsset from "@/assets/svg/white_circle_big.svg";
+
+const SHAPE_IMAGE_ASSETS: Record<string, string> = {
+  white_circle_big: whiteCircleBigAsset,
+  black_circle_big: blackCircleBigAsset,
+};
 
 const PADDING = 20;
 
@@ -369,17 +377,35 @@ function topLeft(coordinate: [number, number]): [number, number] {
   return [coordinate[0] - 0.5, coordinate[1] - 0.5];
 }
 
+function isImageShape(shape: ShapeInfo | null): shape is ShapeInfo & {
+  imageAsset: string;
+} {
+  return shape !== null && "imageAsset" in shape;
+}
+
+function isTextShape(shape: ShapeInfo | null): shape is ShapeInfo & {
+  textGlyph: string;
+} {
+  return shape !== null && "textGlyph" in shape;
+}
+
 function getShapeGlyph(shapeId: string): string {
-  return getSpecialCharacterById(shapeId)?.textGlyph ?? "?";
+  const shape = getSpecialCharacterById(shapeId);
+  return isTextShape(shape) ? shape.textGlyph : "?";
 }
 
 function getShapeRenderMode(shapeId: string): "text" | "image" {
   const shape = getSpecialCharacterById(shapeId);
-  return shape?.imageAsset ? "image" : "text";
+  return isImageShape(shape) ? "image" : "text";
 }
 
 function getShapeImageAsset(shapeId: string): string | null {
-  return getSpecialCharacterById(shapeId)?.imageAsset ?? null;
+  const shape = getSpecialCharacterById(shapeId);
+  if (!isImageShape(shape)) {
+    return null;
+  }
+
+  return SHAPE_IMAGE_ASSETS[shape.imageAsset] ?? null;
 }
 </script>
 

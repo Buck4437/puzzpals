@@ -64,8 +64,8 @@
 </template>
 
 <script setup lang="ts">
-import "./assets/main.css";
-import "./assets/colors.css";
+import "@/assets/stylesheets/main.css";
+import "@/assets/stylesheets/colors.css";
 import { computed, ref, onMounted, onBeforeUnmount } from "vue";
 import config from "@/config";
 
