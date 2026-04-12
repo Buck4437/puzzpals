@@ -11,13 +11,13 @@
     @mouseleave="handleMouseLeave"
   >
     <!--
-    Why use `background-${index}` and `foreground-${index}`:
+    Why use `surface-${index}`, `shape-${index}`, etc.:
     https://vuejs.org/api/built-in-special-attributes.html#key
     "Children of the same common parent must have unique keys."
     "Duplicate keys will cause render errors."
     -->
 
-    <g v-for="(layer, index) in layers" :key="`background-${index}`">
+    <g v-for="(layer, index) in layers" :key="`surface-${index}`">
       <!-- Surface objects -->
       <rect
         v-for="surface in layer.surfaceObjects"
@@ -57,26 +57,7 @@
       pointer-events="none"
     />
 
-    <g v-for="(layer, index) in layers" :key="`foreground-${index}`">
-      <!-- text objects -->
-      <g
-        v-for="textObject in layer.textObjects"
-        :key="`text-${textObject.location}`"
-        :transform="`translate(${toSvgCoordinates(textObject.location)[0]}, ${toSvgCoordinates(textObject.location)[1]})`"
-        pointer-events="none"
-      >
-        <text
-          x="0"
-          y="0"
-          text-anchor="middle"
-          dominant-baseline="central"
-          :font-size="cellSize / 2"
-          :fill="textObject.color"
-        >
-          {{ textObject.content }}
-        </text>
-      </g>
-
+    <g v-for="(layer, index) in layers" :key="`shape-${index}`">
       <!-- shape objects -->
       <g
         v-for="shapeObject in layer.shapeObjects"
@@ -105,7 +86,30 @@
           {{ getShapeGlyph(shapeObject.content) }}
         </text>
       </g>
+    </g>
 
+    <g v-for="(layer, index) in layers" :key="`text-${index}`">
+      <!-- text objects -->
+      <g
+        v-for="textObject in layer.textObjects"
+        :key="`text-${textObject.location}`"
+        :transform="`translate(${toSvgCoordinates(textObject.location)[0]}, ${toSvgCoordinates(textObject.location)[1]})`"
+        pointer-events="none"
+      >
+        <text
+          x="0"
+          y="0"
+          text-anchor="middle"
+          dominant-baseline="central"
+          :font-size="cellSize / 2"
+          :fill="textObject.color"
+        >
+          {{ textObject.content }}
+        </text>
+      </g>
+    </g>
+
+    <g v-for="(layer, index) in layers" :key="`line-${index}`">
       <!-- Line objects -->
       <line
         v-for="line in layer.lineObjects"

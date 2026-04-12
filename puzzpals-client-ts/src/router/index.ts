@@ -7,6 +7,7 @@ import config from "@/config";
 import EditorPage from "@/views/EditorPage.vue";
 import MyPuzzles from "@/views/MyPuzzles.vue";
 import CataloguePage from "@/views/CataloguePage.vue";
+import PuzzleDetail from "@/views/PuzzleDetail.vue";
 
 const router = createRouter({
   history: createWebHistory(config.baseUrl),
@@ -31,7 +32,7 @@ const router = createRouter({
     },
     {
       path: "/puzzle/:id",
-      component: () => import("@/views/PuzzleDetail.vue"),
+      component: PuzzleDetail,
       props: true,
     },
     {

@@ -120,17 +120,11 @@ function calculateMasyuRulesLayer(
     shapeObjects: {},
   };
 
-  const addInvalidPearl = (location: Coordinate, isBlack: boolean) => {
+  const labelAsInvalid = (location: Coordinate) => {
     const key = CoordinateToKey(location);
     rulesLayer.surfaceObjects[key] = {
       location,
       color: "red",
-    };
-    rulesLayer.shapeObjects[key] = {
-      location,
-      content: isBlack
-        ? SPECIAL_CHARACTERS.BLACK_CIRCLE_BIG.id
-        : SPECIAL_CHARACTERS.WHITE_CIRCLE_BIG.id,
     };
   };
 
@@ -162,7 +156,7 @@ function calculateMasyuRulesLayer(
   for (const bigCircle of bigCircles) {
     const isBlack =
       bigCircle.content === SPECIAL_CHARACTERS.BLACK_CIRCLE_BIG.id;
-    const addInvalid = () => addInvalidPearl(bigCircle.location, isBlack);
+    const addInvalid = () => labelAsInvalid(bigCircle.location);
 
     const linesAtCircle =
       greenLinesByPoint.get(CoordinateToKey(bigCircle.location)) ?? [];
