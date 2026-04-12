@@ -66,7 +66,7 @@ function send() {
 }
 
 function scrollToBottom() {
-  nextTick(() => {
+  void nextTick(() => {
     const cW = chatWindowRef.value;
     if (cW) {
       cW.scrollTop = cW.scrollHeight;

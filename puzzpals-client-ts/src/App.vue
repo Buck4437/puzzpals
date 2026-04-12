@@ -113,8 +113,8 @@ const navRoutes = computed(() => {
 
 const isFullScreen = computed(() => route.meta.isFullScreen === true);
 
-function handleRouteSelected(route: string) {
-  router.push(route);
+async function handleRouteSelected(route: string) {
+  await router.push(route);
 }
 
 function toggleDropdown() {
@@ -141,11 +141,11 @@ onBeforeUnmount(() => {
   document.removeEventListener("click", onDocumentClick);
 });
 
-function joinRoom() {
+async function joinRoom() {
   const trimmedId = roomId.value.trim();
   roomId.value = "";
   if (trimmedId) {
-    router.push(`/room/${trimmedId}`);
+    await router.push(`/room/${trimmedId}`);
   }
 }
 
@@ -154,21 +154,21 @@ async function logout() {
   dropdownOpen.value = false;
 }
 
-function goLogin() {
+async function goLogin() {
   const basePath = config.baseUrl.replace(/\/$/, "");
   const routeReturnUrl = route.path === "/login" ? "/" : route.fullPath;
   const returnUrl =
     basePath && basePath !== "/"
       ? `${basePath}${routeReturnUrl}`
       : routeReturnUrl;
-  router.push({
+  await router.push({
     path: "/login",
     query: { returnUrl },
   });
 }
 
-function goToHome() {
-  router.push("/");
+async function goToHome() {
+  await router.push("/");
 }
 
 function openRoomDialog() {

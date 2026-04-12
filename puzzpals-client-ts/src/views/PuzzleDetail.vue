@@ -90,7 +90,7 @@ async function createRoom() {
       },
     );
     if (res?.data?.token) {
-      router.push(`/room/${res.data.token}`);
+      await router.push(`/room/${res.data.token}`);
     } else {
       alert("Failed to create room.");
     }
@@ -105,12 +105,12 @@ async function createRoom() {
   }
 }
 
-function editPuzzle() {
-  router.push({ path: `/editor`, query: { id: puzzleId.value } });
+async function editPuzzle() {
+  await router.push({ path: `/editor`, query: { id: puzzleId.value } });
 }
 
 onMounted(() => {
-  fetchPuzzle();
+  void fetchPuzzle();
 });
 </script>
 
