@@ -100,8 +100,6 @@ router.post("/create-from-id", async (req, res) => {
       }
     }
 
-    const { parsePuzzle, createEmptyLayerData } =
-      await import("@puzzpals/puzzle-parser");
     const parsedPuzzle = parsePuzzle(puzzle.puzzle_json);
     const gameData = {
       puzzle: parsedPuzzle,
