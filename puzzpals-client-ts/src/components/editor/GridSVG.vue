@@ -144,8 +144,8 @@ import {
   getSpecialCharacterById,
 } from "@puzzpals/puzzle-models";
 import { computed } from "vue";
-import blackCircleBigAsset from "@/svg/black_circle_big.svg";
-import whiteCircleBigAsset from "@/svg/white_circle_big.svg";
+import blackCircleBigAsset from "@/assets/svg/black_circle_big.svg";
+import whiteCircleBigAsset from "@/assets/svg/white_circle_big.svg";
 
 const SHAPE_IMAGE_ASSETS: Record<string, string> = {
   white_circle_big: whiteCircleBigAsset,
