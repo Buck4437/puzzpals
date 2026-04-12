@@ -87,7 +87,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from "vue";
+import { ref, onMounted, onBeforeUnmount, useTemplateRef } from "vue";
 import {
   getSearchParams,
   fetchPuzzles,
@@ -112,7 +112,7 @@ function onSortDropdownChange() {
   puzzles.value = [];
   hasMore.value = true;
   initialLoading.value = true;
-  fetchNextBatch();
+  void fetchNextBatch();
 }
 
 const puzzles = ref<Puzzle[]>([]);
@@ -122,7 +122,8 @@ const initialLoading = ref(true);
 const loadingMore = ref(false);
 const loadMoreSentinel = ref<HTMLElement | null>(null);
 let observer: IntersectionObserver | null = null;
-const alertRef = ref<InstanceType<typeof AlertNotification> | null>(null);
+
+const alertRef = useTemplateRef("alertRef");
 
 function formatDateInput(date: Date): string {
   return date.toISOString().slice(0, 10);
@@ -177,7 +178,7 @@ function onSearch() {
   puzzles.value = [];
   hasMore.value = true;
   initialLoading.value = true;
-  fetchNextBatch();
+  void fetchNextBatch();
 }
 
 function onClear() {
@@ -195,7 +196,7 @@ onMounted(async () => {
   observer = new IntersectionObserver(
     (entries) => {
       if (entries.some((entry) => entry.isIntersecting)) {
-        fetchNextBatch();
+        void fetchNextBatch();
       }
     },
     { root: null, rootMargin: "120px", threshold: 0 },
@@ -215,8 +216,8 @@ onBeforeUnmount(() => {
 
 import { useRouter } from "vue-router";
 const router = useRouter();
-function goToDetail(id: number) {
-  router.push(`/puzzle/${id}`);
+async function goToDetail(id: number) {
+  await router.push(`/puzzle/${id}`);
 }
 </script>
 

@@ -105,7 +105,7 @@ async function uploadFile() {
 
       if (res?.data?.token) {
         emit("upload-success");
-        router.push(`/room/${res.data.token}`);
+        await router.push(`/room/${res.data.token}`);
       }
     } catch (err: unknown) {
       if (isAxiosError(err)) {
@@ -123,7 +123,7 @@ function readFile(file: File) {
   return new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(reader.error);
+    reader.onerror = () => reject(reader.error as DOMException);
     reader.readAsText(file);
   });
 }

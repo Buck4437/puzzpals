@@ -48,7 +48,7 @@ function regenerateSession(req: Request): Promise<void> {
   return new Promise((resolve, reject) => {
     req.session.regenerate((err) => {
       if (err) {
-        reject(err);
+        reject(err instanceof Error ? err : new Error(String(err)));
         return;
       }
       resolve();
@@ -308,21 +308,17 @@ router.get("/google/callback", async (req: Request, res: Response) => {
   }
 });
 
-router.get(
-  "/session",
-  sessionRateLimiter,
-  async (req: Request, res: Response) => {
-    // Prevent browser caching for this endpoint
-    res.setHeader(
-      "Cache-Control",
-      "no-store, no-cache, must-revalidate, proxy-revalidate",
-    );
-    if (!req.session.user) {
-      return res.status(200).json({ authenticated: false, data: null });
-    }
-    res.status(200).json({ authenticated: true, data: req.session.user });
-  },
-);
+router.get("/session", sessionRateLimiter, (req: Request, res: Response) => {
+  // Prevent browser caching for this endpoint
+  res.setHeader(
+    "Cache-Control",
+    "no-store, no-cache, must-revalidate, proxy-revalidate",
+  );
+  if (!req.session.user) {
+    return res.status(200).json({ authenticated: false, data: null });
+  }
+  res.status(200).json({ authenticated: true, data: req.session.user });
+});
 
 router.post("/logout", logoutRateLimiter, (req, res) => {
   req.session.destroy(() => {

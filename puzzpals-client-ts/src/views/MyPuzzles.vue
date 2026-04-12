@@ -88,7 +88,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, computed } from "vue";
+import { ref, onMounted, onBeforeUnmount, computed, useTemplateRef } from "vue";
 import PuzzleList from "@/components/PuzzleList.vue";
 import AlertNotification from "@/components/AlertNotification.vue";
 import { fetchUserPuzzles } from "@/services/PuzzleSearchService";
@@ -108,7 +108,8 @@ const hasMore = ref(true);
 const initialLoading = ref(true);
 const loadingMore = ref(false);
 const loadMoreSentinel = ref<HTMLElement | null>(null);
-const alertRef = ref<InstanceType<typeof AlertNotification> | null>(null);
+
+const alertRef = useTemplateRef("alertRef");
 
 const sort = ref({
   field: "publish_date",
@@ -123,7 +124,7 @@ function onSortDropdownChange() {
   puzzles.value = [];
   hasMore.value = true;
   initialLoading.value = true;
-  fetchNextBatch();
+  void fetchNextBatch();
 }
 
 function formatDateInput(date: Date): string {
@@ -170,7 +171,7 @@ function onSearch() {
   puzzles.value = [];
   hasMore.value = true;
   initialLoading.value = true;
-  fetchNextBatch();
+  void fetchNextBatch();
 }
 
 function onClear() {
@@ -202,7 +203,7 @@ async function fetchNextBatch() {
   loadingMore.value = true;
   try {
     const params = { ...getSearchParamsWrapper(), limit: MY_PUZZLES_PAGE_SIZE };
-    const batch = (await fetchUserPuzzles(params)) as Puzzle[];
+    const batch = await fetchUserPuzzles(params);
     if (offset.value === 0) puzzles.value = [];
     if (Array.isArray(batch) && batch.length > 0) {
       puzzles.value.push(...batch);
@@ -219,8 +220,8 @@ async function fetchNextBatch() {
   }
 }
 
-function goToDetail(id: number) {
-  router.push(`/puzzle/${id}`);
+async function goToDetail(id: number) {
+  await router.push(`/puzzle/${id}`);
 }
 
 let observer: IntersectionObserver | null = null;
@@ -229,7 +230,7 @@ onMounted(async () => {
   observer = new IntersectionObserver(
     (entries) => {
       if (entries.some((entry) => entry.isIntersecting)) {
-        fetchNextBatch();
+        void fetchNextBatch();
       }
     },
     { root: null, rootMargin: "120px", threshold: 0 },

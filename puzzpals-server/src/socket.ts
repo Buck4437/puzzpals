@@ -27,7 +27,7 @@ export function init(io: Server) {
       // Map socket to user
       socketUserMap.set(socket, { roomToken: token, name: userID });
 
-      socket.join(token);
+      await socket.join(token);
 
       const game = room.puzzle_data;
       socket.emit("room:initialize", game, userID);

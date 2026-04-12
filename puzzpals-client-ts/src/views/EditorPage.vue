@@ -214,6 +214,7 @@ import {
   onBeforeUnmount,
   onMounted,
   ref,
+  useTemplateRef,
   watch,
   type Ref,
 } from "vue";
@@ -288,7 +289,7 @@ let saveDraftTimeout: number | undefined;
 let lastSavedDraftPayload: string | null = null;
 
 // Alert/Toast notification component ref
-const alertRef = ref<InstanceType<typeof AlertNotification> | null>(null);
+const alertRef = useTemplateRef("alertRef");
 
 function importPuzzle() {
   importInputRef.value?.click();
@@ -309,7 +310,7 @@ async function onImportInputChange(event: Event) {
   try {
     const fileContent = await file.text();
     const puzzleJson = JSON.parse(fileContent) as unknown;
-    const parsedPuzzle = parsePuzzle(puzzleJson) as PuzzleData;
+    const parsedPuzzle = parsePuzzle(puzzleJson);
 
     grid.value = parsedPuzzle;
     puzzleTitle.value = parsedPuzzle.title.slice(0, PUZZLE_TITLE_MAX_LENGTH);
@@ -575,7 +576,6 @@ async function fetchUploadedPuzzle() {
     return;
   }
 
-  puzzleId.value = null;
   if (restoreDraft(null, true)) {
     if (puzzleId.value === null) {
       alertRef.value?.showAlert("success", "Local draft restored");
@@ -585,6 +585,8 @@ async function fetchUploadedPuzzle() {
         `Local draft restored for puzzle #${puzzleId.value}`,
       );
     }
+  } else {
+    puzzleId.value = null;
   }
 }
 
@@ -600,11 +602,11 @@ function resetEditorToNewPuzzle() {
   syncCheckboxInputsFromGridData();
 }
 
-function createNewPuzzle() {
+async function createNewPuzzle() {
   showCreateNewPuzzleModal.value = false;
   clearDraft();
   resetEditorToNewPuzzle();
-  router.replace({ path: "/editor" });
+  await router.replace({ path: "/editor" });
   alertRef.value?.showAlert("success", "New puzzle created");
 }
 
@@ -834,9 +836,9 @@ watch(
   { deep: true },
 );
 
-onMounted(() => {
+onMounted(async () => {
   lastSavedDraftPayload = localStorage.getItem(LOCAL_STORAGE_DRAFT_KEY);
-  fetchUploadedPuzzle();
+  await fetchUploadedPuzzle();
 });
 
 onBeforeUnmount(() => {
