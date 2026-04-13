@@ -272,7 +272,7 @@ function initiateSocket() {
   //   chatComponent.value.scrollToBottom();
   // });
 
-  socket.on("chat:messageNew", (msgBlock) => {
+  socket.on("chat:messageSent", (msgBlock) => {
     if (chatComponent.value === null) {
       throw new Error("Chat Block is missing");
     }

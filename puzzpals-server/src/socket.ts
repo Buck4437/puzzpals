@@ -88,7 +88,7 @@ export function init(io: Server) {
       if (!isMessageValid(message)) return;
 
       const processed = processChatMessage(message, user.name);
-      io.to(user.roomToken).emit("chat:messageNew", processed);
+      io.to(user.roomToken).emit("chat:messageSent", processed);
     });
 
     socket.on("disconnect", () => {
