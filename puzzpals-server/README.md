@@ -73,7 +73,7 @@ Send a message to a room. Can only be called by a client in the room. Arguments:
 - `message`: An object with the following property:
   - `msgtext`: `string`. Content of the message. Must be 1,000 characters or fewer.
 
-If successful, the server broadcasts `chat:messageNew` to all clients in the room with the following argument:
+If successful, the server broadcasts `chat:messageSent` to all clients in the room with the following argument:
 
 - `message`: An object with the following properties:
   - `user`: `string`. Username of the message sender.
