@@ -51,7 +51,7 @@ app.use(
     store: new PgSession({
       pool,
       tableName: "session",
-      createTableIfMissing: true,
+      createTableIfMissing: false,
     }),
     secret: sessionSecret || "dev-only-session-secret",
     proxy: isProduction,
