@@ -1,3 +1,4 @@
+import "dotenv/config";
 import debug from "debug";
 import { createServer } from "http";
 import { Server } from "socket.io";
