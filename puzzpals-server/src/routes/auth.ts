@@ -44,17 +44,23 @@ interface SessionUser {
   picture?: string | undefined;
 }
 
-function regenerateSession(req: Request): Promise<void> {
-  return new Promise((resolve, reject) => {
-    req.session.regenerate((err) => {
-      if (err) {
-        reject(err instanceof Error ? err : new Error(String(err)));
-        return;
-      }
-      resolve();
-    });
+const regenerateSession = (req: Request) =>
+  new Promise<void>((resolve, reject) => {
+    req.session.regenerate((err) =>
+      err
+        ? reject(err instanceof Error ? err : new Error(String(err)))
+        : resolve(),
+    );
   });
-}
+
+const saveSession = (req: Request) =>
+  new Promise<void>((resolve, reject) => {
+    req.session.save((err) =>
+      err
+        ? reject(err instanceof Error ? err : new Error(String(err)))
+        : resolve(),
+    );
+  });
 
 function toBase64Url(input: Buffer): string {
   return input
@@ -199,28 +205,35 @@ function getoAuth2Client(): OAuth2Client {
 const SCOPES = ["profile", "email"];
 
 router.get("/google/login", loginRateLimiter, (req, res) => {
-  const oauth2Client = getoAuth2Client();
-  const rawReturnUrl =
-    typeof req.query.returnUrl === "string" ? req.query.returnUrl : "/";
-  const returnUrl = normalizeReturnUrl(rawReturnUrl);
-  const oauthState = randomBytes(32).toString("hex");
-  const codeVerifier = toBase64Url(randomBytes(32));
-  const codeChallenge = toBase64Url(
-    createHash("sha256").update(codeVerifier).digest(),
-  );
+  void (async () => {
+    const oauth2Client = getoAuth2Client();
+    const rawReturnUrl =
+      typeof req.query.returnUrl === "string" ? req.query.returnUrl : "/";
+    const returnUrl = normalizeReturnUrl(rawReturnUrl);
+    const oauthState = randomBytes(32).toString("hex");
+    const codeVerifier = toBase64Url(randomBytes(32));
+    const codeChallenge = toBase64Url(
+      createHash("sha256").update(codeVerifier).digest(),
+    );
 
-  req.session.oauthState = oauthState;
-  req.session.oauthReturnUrl = returnUrl;
-  req.session.oauthCodeVerifier = codeVerifier;
+    req.session.oauthState = oauthState;
+    req.session.oauthReturnUrl = returnUrl;
+    req.session.oauthCodeVerifier = codeVerifier;
 
-  const url = oauth2Client.generateAuthUrl({
-    access_type: "offline",
-    scope: SCOPES,
-    state: oauthState,
-    code_challenge_method: CodeChallengeMethod.S256,
-    code_challenge: codeChallenge,
+    await saveSession(req);
+
+    const url = oauth2Client.generateAuthUrl({
+      access_type: "offline",
+      scope: SCOPES,
+      state: oauthState,
+      code_challenge_method: CodeChallengeMethod.S256,
+      code_challenge: codeChallenge,
+    });
+    res.redirect(url);
+  })().catch((err: unknown) => {
+    console.error("Google OAuth login initiation failed:", err);
+    res.status(500).json({ error: "Failed to start Google OAuth login" });
   });
-  res.redirect(url);
 });
 
 router.get("/google/callback", async (req: Request, res: Response) => {
@@ -297,6 +310,7 @@ router.get("/google/callback", async (req: Request, res: Response) => {
     };
 
     req.session.user = sessionUser;
+    await saveSession(req);
 
     return res.redirect(buildClientRedirectUrl(returnUrl));
   } catch (err) {
