@@ -62,26 +62,20 @@ const saveSession = (req: Request) =>
     );
   });
 
-function toBase64Url(input: Buffer): string {
-  return input
+const toBase64Url = (input: Buffer) =>
+  input
     .toString("base64")
     .replace(/\+/g, "-")
     .replace(/\//g, "_")
     .replace(/=+$/g, "");
-}
 
-function normalizeReturnUrl(returnUrl: string): string {
-  if (!returnUrl.startsWith("/") || returnUrl.startsWith("//")) {
-    return "/";
-  }
-  return returnUrl;
-}
+const normalizeReturnUrl = (returnUrl: string) =>
+  !returnUrl.startsWith("/") || returnUrl.startsWith("//") ? "/" : returnUrl;
 
-function buildClientRedirectUrl(returnUrl: string): string {
+const buildClientRedirectUrl = (returnUrl: string) => {
   const normalizedReturnUrl = normalizeReturnUrl(returnUrl);
   const clientBase = new URL(env.CLIENT_BASE_URL);
   const basePath = clientBase.pathname.replace(/\/$/, "");
-
   if (
     basePath &&
     basePath !== "/" &&
@@ -90,9 +84,8 @@ function buildClientRedirectUrl(returnUrl: string): string {
   ) {
     return `${clientBase.origin}${normalizedReturnUrl}`;
   }
-
   return `${env.CLIENT_BASE_URL}${normalizedReturnUrl}`;
-}
+};
 
 interface GoogleCredentials {
   web?: {
