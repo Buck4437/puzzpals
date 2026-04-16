@@ -4,7 +4,10 @@
 //     userId?: number;
 //   }
 // }
+
 import session from "express-session";
+import pgSession from "connect-pg-simple";
+import pool from "./pool.js";
 
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -42,8 +45,14 @@ if (isProduction) {
   app.set("trust proxy", 1);
 }
 
+const PgSession = pgSession(session);
 app.use(
   session({
+    store: new PgSession({
+      pool,
+      tableName: "session",
+      createTableIfMissing: true,
+    }),
     secret: sessionSecret || "dev-only-session-secret",
     proxy: isProduction,
     resave: false,
@@ -51,7 +60,7 @@ app.use(
     cookie: {
       httpOnly: true,
       secure: isProduction,
-      sameSite: isProduction ? "none" : "lax",
+      sameSite: "strict",
       maxAge: 1000 * 60 * 60 * 24 * 7,
     },
   }),
