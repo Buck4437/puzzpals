@@ -18,7 +18,7 @@ export const puzzleData: PuzzleData = {
 };
 
 export const uploadedPuzzle: UploadedPuzzle = {
-  id: 0,
+  id: 42,
   author: "Test author",
   author_id: 0,
   description: "Test description",

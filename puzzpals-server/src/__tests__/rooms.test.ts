@@ -1,11 +1,20 @@
 import request from "supertest";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 
 import app from "../app.js";
+import type { UploadedPuzzle } from "../models/UploadedPuzzle.js";
+import pool from "../pool.js";
 
-import { puzzleData } from "./utils/objects.js";
+import { puzzleData, uploadedPuzzle } from "./utils/objects.js";
 
-describe("/api/rooms/create", () => {
+const mockPool = vi.mocked(pool);
+
+function setQueryResolveValue(rows: unknown[]) {
+  // @ts-expect-error, TypeScript can't type this mock
+  mockPool.query.mockResolvedValueOnce({ rows });
+}
+
+describe("/create", () => {
   it("can create room", async () => {
     const res = await request(app).post("/api/rooms/create").send(puzzleData);
     expect(res.ok).toBe(true);
@@ -15,7 +24,57 @@ describe("/api/rooms/create", () => {
   });
 });
 
-describe("/api/rooms/:token/exists", () => {
+describe("/create-from-id", () => {
+  it("can create room", async () => {
+    // Uploaded puzzle exists in database
+    setQueryResolveValue([uploadedPuzzle]);
+
+    const res = await request(app)
+      .post("/api/rooms/create-from-id")
+      .send({ puzzleId: 42 });
+
+    expect(res.ok).toBe(true);
+  });
+
+  it("fails if payload is invalid", async () => {
+    const res = await request(app)
+      .post("/api/rooms/create-from-id")
+      .send({ puzzleId: "<script>" });
+
+    expect(res.ok).toBe(false);
+  });
+
+  it("fails if puzzle does not exist", async () => {
+    // Uploaded puzzle does not exist
+    setQueryResolveValue([]);
+
+    const res = await request(app)
+      .post("/api/rooms/create-from-id")
+      .send({ puzzleId: 42 });
+
+    expect(res.ok).toBe(false);
+  });
+
+  it("fails if puzzle is private", async () => {
+    const privatePuzzle: UploadedPuzzle = {
+      ...uploadedPuzzle,
+      published: false,
+    };
+    setQueryResolveValue([privatePuzzle]);
+
+    const res = await request(app)
+      .post("/api/rooms/create-from-id")
+      .send({ puzzleId: 42 });
+
+    expect(res.ok).toBe(false);
+  });
+
+  it.skip("succeeds if private puzzle belong to user", () => {
+    // TODO
+  });
+});
+
+describe("/:token/exists", () => {
   it("returns true when room exists", async () => {
     const res1 = await request(app).post("/api/rooms/create").send(puzzleData);
     const res2 = await request(app).get(`/api/rooms/${res1.body.token}/exists`);
