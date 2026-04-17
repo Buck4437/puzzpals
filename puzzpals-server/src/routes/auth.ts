@@ -197,8 +197,8 @@ function getoAuth2Client(): OAuth2Client {
 
 const SCOPES = ["profile", "email"];
 
-router.get("/google/login", loginRateLimiter, (req, res) => {
-  void (async () => {
+router.get("/google/login", loginRateLimiter, async (req, res) => {
+  try {
     const oauth2Client = getoAuth2Client();
     const rawReturnUrl =
       typeof req.query.returnUrl === "string" ? req.query.returnUrl : "/";
@@ -223,10 +223,10 @@ router.get("/google/login", loginRateLimiter, (req, res) => {
       code_challenge: codeChallenge,
     });
     res.redirect(url);
-  })().catch((err: unknown) => {
+  } catch (err) {
     console.error("Google OAuth login initiation failed:", err);
     res.status(500).json({ error: "Failed to start Google OAuth login" });
-  });
+  }
 });
 
 router.get("/google/callback", async (req: Request, res: Response) => {
