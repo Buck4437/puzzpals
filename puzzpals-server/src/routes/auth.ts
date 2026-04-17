@@ -62,6 +62,34 @@ const saveSession = (req: Request) =>
     );
   });
 
+const clearSessionCookie = (res: Response) => {
+  const isProduction = process.env.NODE_ENV === "production";
+  res.clearCookie("connect.sid", {
+    httpOnly: true,
+    secure: isProduction,
+    sameSite: "lax",
+    path: "/",
+  });
+};
+
+const destroySession = (req: Request) =>
+  new Promise<void>((resolve, reject) => {
+    req.session.destroy((err) =>
+      err
+        ? reject(err instanceof Error ? err : new Error(String(err)))
+        : resolve(),
+    );
+  });
+
+const clearAuthSession = async (req: Request, res: Response) => {
+  try {
+    await destroySession(req);
+  } catch (err) {
+    console.error("Failed to destroy session after auth failure:", err);
+  }
+  clearSessionCookie(res);
+};
+
 const toBase64Url = (input: Buffer) =>
   input
     .toString("base64")
@@ -225,6 +253,7 @@ router.get("/google/login", loginRateLimiter, async (req, res) => {
     res.redirect(url);
   } catch (err) {
     console.error("Google OAuth login initiation failed:", err);
+    await clearAuthSession(req, res);
     res.status(500).json({ error: "Failed to start Google OAuth login" });
   }
 });
@@ -247,6 +276,7 @@ router.get("/google/callback", async (req: Request, res: Response) => {
     !codeVerifier
   ) {
     const redirectUrl = buildClientRedirectUrl(returnUrl);
+    await clearAuthSession(req, res);
     return res.redirect(
       `${redirectUrl}?authError=${encodeURIComponent("invalid_state")}`,
     );
@@ -257,6 +287,7 @@ router.get("/google/callback", async (req: Request, res: Response) => {
     typeof req.query.error === "string" ? req.query.error : null;
   if (oauthError) {
     const redirectUrl = buildClientRedirectUrl(returnUrl);
+    await clearAuthSession(req, res);
     return res.redirect(
       `${redirectUrl}?authError=${encodeURIComponent(oauthError)}`,
     );
@@ -265,6 +296,7 @@ router.get("/google/callback", async (req: Request, res: Response) => {
   const code = typeof req.query.code === "string" ? req.query.code : "";
   if (!code) {
     const redirectUrl = buildClientRedirectUrl(returnUrl);
+    await clearAuthSession(req, res);
     return res.redirect(
       `${redirectUrl}?authError=${encodeURIComponent("missing_code")}`,
     );
@@ -309,6 +341,7 @@ router.get("/google/callback", async (req: Request, res: Response) => {
   } catch (err) {
     console.error("Google OAuth callback failed:", err);
     const redirectUrl = buildClientRedirectUrl(returnUrl);
+    await clearAuthSession(req, res);
     return res.redirect(
       `${redirectUrl}?authError=${encodeURIComponent("oauth_callback_failed")}`,
     );
@@ -329,12 +362,7 @@ router.get("/session", sessionRateLimiter, (req: Request, res: Response) => {
 
 router.post("/logout", logoutRateLimiter, (req, res) => {
   req.session.destroy(() => {
-    const isProduction = process.env.NODE_ENV === "production";
-    res.clearCookie("connect.sid", {
-      httpOnly: true,
-      secure: isProduction,
-      sameSite: isProduction ? "none" : "lax",
-    });
+    clearSessionCookie(res);
     // Prevent browser caching after logout
     res.setHeader(
       "Cache-Control",
