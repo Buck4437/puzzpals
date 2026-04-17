@@ -1,11 +1,3 @@
-// // Extend express-session types to support userId
-// declare module "express-session" {
-//   interface SessionData {
-//     userId?: number;
-//   }
-// }
-import session from "express-session";
-
 import cookieParser from "cookie-parser";
 import cors from "cors";
 import express, { json, urlencoded } from "express";
@@ -16,6 +8,10 @@ import env from "./config.js";
 import roomsRouter from "./routes/rooms.js";
 import puzzlesRouter from "./routes/puzzles.js";
 import authRouter from "./routes/auth.js";
+
+import session from "express-session";
+import pgSession from "connect-pg-simple";
+import pool from "./pool.js";
 
 const app = express();
 
@@ -42,8 +38,14 @@ if (isProduction) {
   app.set("trust proxy", 1);
 }
 
+const PgSession = pgSession(session);
 app.use(
   session({
+    store: new PgSession({
+      pool,
+      tableName: "session",
+      createTableIfMissing: false,
+    }),
     secret: sessionSecret || "dev-only-session-secret",
     proxy: isProduction,
     resave: false,
