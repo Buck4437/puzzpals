@@ -3,6 +3,7 @@ import {
   vueTsConfigs,
 } from "@vue/eslint-config-typescript";
 import pluginVue from "eslint-plugin-vue";
+import pluginVitest from "@vitest/eslint-plugin";
 
 import puzzpalsConfig from "../eslint.config";
 
@@ -15,6 +16,10 @@ export default defineConfigWithVueTs(
   puzzpalsConfig,
   pluginVue.configs["flat/essential"],
   vueTsConfigs.recommended,
+  {
+    ...pluginVitest.configs.recommended,
+    files: ["src/**/__tests__/*"],
+  },
   {
     languageOptions: {
       parserOptions: {
