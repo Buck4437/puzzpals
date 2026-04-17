@@ -336,7 +336,9 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
-  flushPendingTextEdits();
+  if (socket.connected) {
+    flushPendingTextEdits();
+  }
   socket.disconnect();
   socket.off();
 });

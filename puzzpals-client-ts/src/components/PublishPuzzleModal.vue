@@ -35,10 +35,6 @@
 
     <h3>{{ isUpdateMode ? "Update puzzle" : "Publish puzzle" }}</h3>
 
-    <p v-if="!isLoggedIn" class="status-text">
-      You must log in to {{ isUpdateMode ? "update" : "publish" }} puzzle.
-    </p>
-
     <div class="publish-form">
       <label>
         Description
@@ -79,11 +75,14 @@
         </span>
       </label>
 
-      <p v-if="statusText" class="status-text">{{ statusText }}</p>
-
       <div class="actions">
+        <p v-if="!isLoggedIn" class="status-text">
+          You must log in to {{ isUpdateMode ? "update" : "publish" }} puzzle.
+        </p>
+
         <button
           type="button"
+          class="publish-button"
           :disabled="isPublishing || !isLoggedIn"
           @click="emitPublish"
         >
@@ -309,5 +308,9 @@ label.publish-toggle-row {
 
 .switch input:checked + .slider:before {
   transform: translateX(18px);
+}
+
+.publish-button {
+  margin-left: 8px;
 }
 </style>
