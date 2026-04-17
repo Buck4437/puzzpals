@@ -106,7 +106,7 @@ let cachedOAuthConfig: {
   redirect_uri: string;
 } | null = null;
 
-function loadOAuthConfigFromSplitEnv() {
+const loadOAuthConfigFromSplitEnv = () => {
   const clientId = process.env.GOOGLE_CLIENT_ID;
   const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
   const redirectUri = process.env.GOOGLE_REDIRECT_URI;
@@ -127,9 +127,9 @@ function loadOAuthConfigFromSplitEnv() {
     client_secret: clientSecret,
     redirect_uri: redirectUri,
   };
-}
+};
 
-function parseCredentials(raw: string, source: string): GoogleCredentials {
+const parseCredentials = (raw: string, source: string): GoogleCredentials => {
   try {
     return JSON.parse(raw) as GoogleCredentials;
   } catch {
@@ -137,9 +137,9 @@ function parseCredentials(raw: string, source: string): GoogleCredentials {
       `Invalid Google OAuth credentials JSON from ${source}: failed to parse`,
     );
   }
-}
+};
 
-function loadGoogleCredentials(): GoogleCredentials {
+const loadGoogleCredentials = (): GoogleCredentials => {
   try {
     return parseCredentials(
       readFileSync(join(process.cwd(), "credentials.json"), "utf-8"),
@@ -151,9 +151,9 @@ function loadGoogleCredentials(): GoogleCredentials {
       { cause: err },
     );
   }
-}
+};
 
-function getoAuth2Client(): OAuth2Client {
+const getoAuth2Client = (): OAuth2Client => {
   if (!cachedOAuthConfig) {
     const splitEnvConfig = loadOAuthConfigFromSplitEnv();
     if (splitEnvConfig) {
@@ -193,7 +193,7 @@ function getoAuth2Client(): OAuth2Client {
   const { client_secret, client_id, redirect_uri } = oauthConfig;
 
   return new google.auth.OAuth2(client_id, client_secret, redirect_uri);
-}
+};
 
 const SCOPES = ["profile", "email"];
 
@@ -354,11 +354,5 @@ declare module "express-session" {
     user?: SessionUser;
   }
 }
-
-// router.get("/allUsersDebug", async (req: Request, res: Response) => {
-//   // This is just for debugging purposes to see all users in the DB. Remove in production!
-//   const users = await getAllUsersDebug();
-//   res.json(users);
-// });
 
 export default router;
