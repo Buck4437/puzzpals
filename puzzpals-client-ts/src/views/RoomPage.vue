@@ -122,7 +122,7 @@ const showPuzzleInfoModal = ref(false);
 const showSolvedModal = ref(false);
 const TEXT_EMIT_DEBOUNCE_MS = 1000;
 let textEditEmitTimer: ReturnType<typeof setTimeout> | null = null;
-let pendingTextEditsByCoordinate: [string, EditMessage] | null = null;
+let pendingTextEdits: [string, EditMessage] | null = null;
 
 const chatState: Ref<ChatState> = ref({ messages: [] });
 
@@ -238,14 +238,11 @@ function onGridEdited(message: EditMessage) {
 }
 
 function queueTextEditForEmit(coordinateKey: string, message: EditMessage) {
-  if (
-    pendingTextEditsByCoordinate !== null &&
-    pendingTextEditsByCoordinate[0] !== coordinateKey
-  ) {
+  if (pendingTextEdits !== null && pendingTextEdits[0] !== coordinateKey) {
     flushPendingTextEdits();
   }
 
-  pendingTextEditsByCoordinate = [coordinateKey, message];
+  pendingTextEdits = [coordinateKey, message];
 
   if (textEditEmitTimer !== null) {
     clearTimeout(textEditEmitTimer);
@@ -262,13 +259,13 @@ function flushPendingTextEdits() {
     textEditEmitTimer = null;
   }
 
-  if (pendingTextEditsByCoordinate === null) {
+  if (pendingTextEdits === null) {
     return;
   }
 
-  socket.emit("grid:edit", pendingTextEditsByCoordinate[1]);
+  socket.emit("grid:edit", pendingTextEdits[1]);
 
-  pendingTextEditsByCoordinate = null;
+  pendingTextEdits = null;
 }
 
 function onChatSubmit(text: string) {
@@ -278,7 +275,7 @@ function onChatSubmit(text: string) {
 
 function initiateSocket() {
   socket.on("room:initialize", (data: GameData, id: string) => {
-    pendingTextEditsByCoordinate = null;
+    pendingTextEdits = null;
     if (textEditEmitTimer !== null) {
       clearTimeout(textEditEmitTimer);
       textEditEmitTimer = null;
