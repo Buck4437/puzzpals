@@ -61,6 +61,18 @@ export type UpdateMessage =
 
 export type EditMessage = RemoveMessage | UpdateMessage;
 
+export function getTextEditCoordinateKey(message: EditMessage): string | null {
+  if (message.type !== "textObjects") {
+    return null;
+  }
+
+  if (message.messageType === "remove") {
+    return message.data;
+  }
+
+  return CoordinateToKey(message.data.location);
+}
+
 function isValidRemoveKey(type: ObjectTypes, value: unknown): value is string {
   if (typeof value !== "string") {
     return false;
