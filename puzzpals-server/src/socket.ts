@@ -22,7 +22,6 @@ export function init(io: Server) {
       if (!room) return;
 
       const userID = randomUserID(token);
-      console.log("joined", userID);
 
       // Map socket to user
       socketUserMap.set(socket, { roomToken: token, name: userID });

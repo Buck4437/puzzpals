@@ -10,6 +10,11 @@ export default defineConfig(
   {
     ...pluginVitest.configs.recommended,
     files: ["src/**/__tests__/*"],
+    rules: {
+      // The tests will check whether the type is correct
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+    },
   },
   {
     languageOptions: {
