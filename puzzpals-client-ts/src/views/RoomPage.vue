@@ -3,6 +3,9 @@
   <div v-else>
     <div class="solving-page">
       <TopBar @title-click="goToHome">
+        <template #middle>
+          <div class="room-id">Room ID: {{ token }}</div>
+        </template>
         <template #right>
           <div class="header-actions">
             <button @click="copyLink">Copy room link</button>
