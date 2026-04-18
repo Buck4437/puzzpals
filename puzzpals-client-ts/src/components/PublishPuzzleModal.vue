@@ -35,6 +35,10 @@
 
     <h3>{{ isUpdateMode ? "Update puzzle" : "Publish puzzle" }}</h3>
 
+    <p v-if="!isLoggedIn" class="status-text">
+      You must log in to {{ isUpdateMode ? "update" : "publish" }} puzzle.
+    </p>
+
     <div class="publish-form">
       <label>
         Description
@@ -76,9 +80,7 @@
       </label>
 
       <div class="actions">
-        <p v-if="!isLoggedIn" class="status-text">
-          You must log in to {{ isUpdateMode ? "update" : "publish" }} puzzle.
-        </p>
+        <p v-if="!isLoggedIn" class="status-text">Login required</p>
 
         <button
           type="button"
