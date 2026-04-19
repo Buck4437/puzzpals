@@ -3,6 +3,9 @@
   <div v-else>
     <div class="solving-page">
       <TopBar @title-click="goToHome">
+        <template #middle>
+          <div class="room-id">Room ID: {{ token }}</div>
+        </template>
         <template #right>
           <div class="header-actions">
             <button @click="copyLink">Copy room link</button>
@@ -107,6 +110,7 @@ import {
   applyEditMessage,
   getAnswerCheckListFromTypes,
   getEnabledRulesList,
+  getTextEditCoordinateKey,
   toEditMessage,
   type EditMessage,
   type GameData,
@@ -119,6 +123,9 @@ const gameData: Ref<GameData | null> = ref(null);
 let hasWon = false;
 const showPuzzleInfoModal = ref(false);
 const showSolvedModal = ref(false);
+const TEXT_EMIT_DEBOUNCE_MS = 1000;
+let textEditEmitTimer: ReturnType<typeof setTimeout> | null = null;
+let pendingTextEdits: [string, EditMessage] | null = null;
 
 const chatState: Ref<ChatState> = ref({ messages: [] });
 
@@ -223,7 +230,45 @@ function checkWinCondition() {
 
 function onGridEdited(message: EditMessage) {
   applyIncomingEdit(message);
-  socket.emit("grid:edit", message);
+
+  const textCoordinateKey = getTextEditCoordinateKey(message);
+  if (textCoordinateKey === null) {
+    socket.emit("grid:edit", message);
+    return;
+  }
+
+  queueTextEditForEmit(textCoordinateKey, message);
+}
+
+function queueTextEditForEmit(coordinateKey: string, message: EditMessage) {
+  if (pendingTextEdits !== null && pendingTextEdits[0] !== coordinateKey) {
+    flushPendingTextEdits();
+  }
+
+  pendingTextEdits = [coordinateKey, message];
+
+  if (textEditEmitTimer !== null) {
+    clearTimeout(textEditEmitTimer);
+  }
+
+  textEditEmitTimer = setTimeout(() => {
+    flushPendingTextEdits();
+  }, TEXT_EMIT_DEBOUNCE_MS);
+}
+
+function flushPendingTextEdits() {
+  if (textEditEmitTimer !== null) {
+    clearTimeout(textEditEmitTimer);
+    textEditEmitTimer = null;
+  }
+
+  if (pendingTextEdits === null) {
+    return;
+  }
+
+  socket.emit("grid:edit", pendingTextEdits[1]);
+
+  pendingTextEdits = null;
 }
 
 function onChatSubmit(text: string) {
@@ -233,6 +278,12 @@ function onChatSubmit(text: string) {
 
 function initiateSocket() {
   socket.on("room:initialize", (data: GameData, id: string) => {
+    pendingTextEdits = null;
+    if (textEditEmitTimer !== null) {
+      clearTimeout(textEditEmitTimer);
+      textEditEmitTimer = null;
+    }
+
     hasWon = false;
     showPuzzleInfoModal.value = false;
     showSolvedModal.value = false;
@@ -264,14 +315,6 @@ function initiateSocket() {
     }
   });
 
-  // socket.on('chat:records', (history) => {
-  //   if (chatComponent.value === null) {
-  //     throw new Error("Chat Block is missing");
-  //   }
-  //   chatState.value.messages.splice(0, chatState.value.messages.length, ...history);
-  //   chatComponent.value.scrollToBottom();
-  // });
-
   socket.on("chat:messageNew", (msgBlock) => {
     if (chatComponent.value === null) {
       throw new Error("Chat Block is missing");
@@ -293,6 +336,9 @@ onMounted(async () => {
 });
 
 onBeforeUnmount(() => {
+  if (socket.connected) {
+    flushPendingTextEdits();
+  }
   socket.disconnect();
   socket.off();
 });

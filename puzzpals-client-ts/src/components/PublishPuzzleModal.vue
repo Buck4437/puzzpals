@@ -79,11 +79,12 @@
         </span>
       </label>
 
-      <p v-if="statusText" class="status-text">{{ statusText }}</p>
-
       <div class="actions">
+        <p v-if="!isLoggedIn" class="status-text">Login required</p>
+
         <button
           type="button"
+          class="publish-button"
           :disabled="isPublishing || !isLoggedIn"
           @click="emitPublish"
         >
@@ -309,5 +310,9 @@ label.publish-toggle-row {
 
 .switch input:checked + .slider:before {
   transform: translateX(18px);
+}
+
+.publish-button {
+  margin-left: 8px;
 }
 </style>
