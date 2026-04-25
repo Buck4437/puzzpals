@@ -82,56 +82,6 @@ describe("RoomPage", () => {
     expect(socket.disconnect).toHaveBeenCalledOnce();
   });
 
-  // TODO: Update tests to use the new grid
-
-  /*
-  it("synchronises your grid upon entering room", async () => {
-    const wrapper = mount(RoomPage, { props: { token: token } });
-
-    socket.call("room:initialize", gameData, user);
-    await nextTick();
-
-    const cells = wrapper.findAll("div.cell");
-    expect(cells).toHaveLength(2);
-
-    expect(cells[0]?.text()).toStrictEqual("1");
-    expect(cells[0]?.classes()).toContain("black");
-
-    expect(cells[1]?.text()).toStrictEqual(bulbText);
-    expect(cells[1]?.classes()).toContain("white");
-  });
-
-  it("synchronises your grid when others edit a cell", async () => {
-    const wrapper = mount(RoomPage, { props: { token: token } });
-
-    // Set up the grid
-    socket.call("room:initialize", gameData, user);
-    await nextTick();
-
-    // Update the second cell
-    socket.call("grid:cellUpdated", 1, NO_INPUT);
-    await nextTick();
-
-    const cell = wrapper.findAll("div.cell")[1];
-    expect(cell?.text()).toStrictEqual("");
-  });
-
-  it("synchronises other grids when you edit a cell", async () => {
-    const wrapper = mount(RoomPage, { props: { token: token } });
-
-    // Set up the grid
-    socket.call("room:initialize", gameData, user);
-    await nextTick();
-
-    // Click the second cell
-    const cell = wrapper.findAll("div.cell")[1];
-    await cell?.trigger("click");
-
-    // Assert data emitted to socket
-    expect(socket.emit).toHaveBeenCalledWith("grid:updateCell", 1, NO_INPUT);
-  });
-  */
-
   // As a player, I want to communicate with other players
   // so that we can share insights.
   it("can send messages to other players", async () => {
@@ -146,11 +96,11 @@ describe("RoomPage", () => {
     const textInput = chatForm.get("input");
 
     // Type "Hello, world!" and send
-    textInput.setValue(msgtext);
-    chatForm.trigger("submit.prevent");
+    await textInput.setValue(msgtext);
+    await chatForm.trigger("submit.prevent");
 
     // Assert message sent
-    expect(socket.emit).toHaveBeenCalledWith("chat:newMessage", message);
+    expect(socket.emit).toHaveBeenCalledWith("chat:sendMessage", message);
   });
 
   it("can receive messages from other players", async () => {

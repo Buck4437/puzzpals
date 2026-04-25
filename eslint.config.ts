@@ -14,6 +14,11 @@ export default defineConfig(
   includeIgnoreFile(gitignorePath),
   eslint.configs.recommended,
   tseslint.configs.recommendedTypeChecked,
+  {
+    rules: {
+      complexity: ["warn", { max: 10 }],
+    },
+  },
   eslintConfigPrettier,
   {
     languageOptions: {

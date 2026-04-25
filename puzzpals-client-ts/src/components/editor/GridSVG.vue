@@ -141,6 +141,8 @@
 </template>
 
 <script setup lang="ts">
+// Imports
+
 import {
   type Coordinate,
   type LayerData,
@@ -151,34 +153,7 @@ import { computed } from "vue";
 import blackCircleBigAsset from "@/assets/svg/black_circle_big.svg";
 import whiteCircleBigAsset from "@/assets/svg/white_circle_big.svg";
 
-const SHAPE_IMAGE_ASSETS: Record<string, string> = {
-  white_circle_big: whiteCircleBigAsset,
-  black_circle_big: blackCircleBigAsset,
-};
-
-const PADDING = 20;
-
-let isDragging = false;
-
-/*
-    Grid file uses [r, c]
-    SVG uses [x, y]
-*/
-
-function toSvgCoordinates(coordinate: [number, number]): [number, number] {
-  const r = coordinate[0];
-  const c = coordinate[1];
-  return [
-    c * cellSize.value + offsetX.value,
-    r * cellSize.value + offsetY.value,
-  ];
-}
-
-function toGridCoordinates(coordinate: [number, number]): [number, number] {
-  const x = coordinate[0] - offsetX.value;
-  const y = coordinate[1] - offsetY.value;
-  return [y / cellSize.value, x / cellSize.value];
-}
+// Props
 
 const props = defineProps<{
   layers: LayerData[]; // Layers that come later will be rendered on top of layers that come earlier
@@ -187,8 +162,35 @@ const props = defineProps<{
   cursor?: Coordinate | null;
 }>();
 
+// Emits
+
+const emit = defineEmits<{
+  centerCellClick: [cell: [number, number]];
+  centerCellEnter: [cell: [number, number]];
+  centerCellHover: [cell: [number, number] | null];
+  cornerCellClick: [corner: [number, number]];
+  cornerCellEnter: [corner: [number, number]];
+  mouseRelease: [];
+}>();
+
+// Constants
+
+const SHAPE_IMAGE_ASSETS: Record<string, string> = {
+  white_circle_big: whiteCircleBigAsset,
+  black_circle_big: blackCircleBigAsset,
+};
+
+const PADDING = 20;
 const BASE_GRID_SIZE_PX = 480;
 const BASE_GRID_DIMENSION = 10;
+
+// Variables
+
+let isDragging = false;
+let lastCenterCell: [number, number] | null = null;
+let lastCornerCell: [number, number] | null = null;
+
+// Computed variables
 
 const fullSize = computed(() => {
   const [rows, cols] = props.gridSize;
@@ -212,15 +214,6 @@ const viewBoxStr = computed(
   () => `-${PADDING} -${PADDING} ${viewBoxSize.value} ${viewBoxSize.value}`,
 );
 
-const emit = defineEmits<{
-  centerCellClick: [cell: [number, number]];
-  centerCellEnter: [cell: [number, number]];
-  centerCellHover: [cell: [number, number] | null];
-  cornerCellClick: [corner: [number, number]];
-  cornerCellEnter: [corner: [number, number]];
-  mouseRelease: [];
-}>();
-
 const cellSize = computed(
   () => fullSize.value / Math.max(props.gridSize[0], props.gridSize[1]),
 );
@@ -231,8 +224,27 @@ const gridHeight = computed(() => props.gridSize[0] * cellSize.value); // numRow
 const offsetX = computed(() => (fullSize.value - gridWidth.value) / 2);
 const offsetY = computed(() => (fullSize.value - gridHeight.value) / 2);
 
-let lastCenterCell: [number, number] | null = null;
-let lastCornerCell: [number, number] | null = null;
+// Functions
+
+/*
+    Grid file uses [r, c]
+    SVG uses [x, y]
+*/
+
+function toSvgCoordinates(coordinate: [number, number]): [number, number] {
+  const r = coordinate[0];
+  const c = coordinate[1];
+  return [
+    c * cellSize.value + offsetX.value,
+    r * cellSize.value + offsetY.value,
+  ];
+}
+
+function toGridCoordinates(coordinate: [number, number]): [number, number] {
+  const x = coordinate[0] - offsetX.value;
+  const y = coordinate[1] - offsetY.value;
+  return [y / cellSize.value, x / cellSize.value];
+}
 
 // Returns [x, y] in SVG coordinate system (x=horizontal, y=vertical)
 function getGridCoordinatesFromEvent(event: MouseEvent): [number, number] {
@@ -334,10 +346,6 @@ function handlePointerMove(event: MouseEvent) {
     return;
   } else {
     emit("centerCellHover", toCenterCell(coord));
-  }
-
-  if (!isWithinGridBounds(coord)) {
-    emit("centerCellHover", null);
   }
 
   if (!isDragging) {

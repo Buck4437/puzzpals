@@ -80,7 +80,6 @@ async function autosave(forced = false) {
 
   // Upsert rooms
   for (const room of roomsToUpsert) {
-    console.log("Autosaving room:", room.token);
     await upsertRoom(room);
   }
 

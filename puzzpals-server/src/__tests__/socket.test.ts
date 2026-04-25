@@ -1,37 +1,56 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
-import type { GameData, SurfaceUpdateMessage } from "@puzzpals/puzzle-models";
+import type { SurfaceUpdateMessage } from "@puzzpals/puzzle-models";
 
 import type { Room } from "../models/Room.js";
-import { arrangeBeforeEach, cleanUpAfterEach } from "./utils/arrange.js";
+import pool from "../pool.js";
+import { init } from "../socket.js";
 
-import { createMockSocket, mockBroadcast, mockIo } from "../__mocks__/io.js";
-import pool from "../__mocks__/pool.js";
+import { gameData } from "./utils/objects.js";
 
-vi.mock("../pool.js");
+const mockPool = vi.mocked(pool);
 
-const gameData: GameData = {
-  puzzle: {
-    title: "Untitled Puzzle",
-    instructions: "",
-    size: [1, 1],
-    problem: {
-      lineObjects: {},
-      surfaceObjects: {},
-      textObjects: {},
-      shapeObjects: {},
-    },
-    options: {
-      rules: [],
-    },
+// The function used to initialise a socket, containing socket.on(...)
+let initSocket: (socket: unknown) => void;
+
+// Mock function for intercepting broadcasts
+const mockBroadcast = vi.fn();
+
+// Mock Socket.IO server socket
+const mockIo = {
+  on(_: unknown, listener: (socket: unknown) => void) {
+    initSocket = listener;
   },
-  playerSolution: {
-    lineObjects: {},
-    surfaceObjects: {},
-    textObjects: {},
-    shapeObjects: {},
-  },
+
+  to: vi.fn(() => ({ emit: mockBroadcast })),
 };
+
+type Callback = (...args: unknown[]) => void | Promise<void>;
+
+// Factory for mock Socket.IO client sockets
+function createMockSocket() {
+  const events: Record<string, Callback> = {};
+
+  const mockSocket = {
+    on(ev: string, listener: Callback) {
+      events[ev] = listener;
+    },
+
+    async call(ev: string, ...args: unknown[]) {
+      if (events[ev] !== undefined) {
+        // Callback might be async
+        await events[ev](...args);
+      }
+    },
+
+    join: vi.fn(),
+    leave: vi.fn(),
+    emit: vi.fn(),
+  };
+
+  initSocket(mockSocket);
+  return mockSocket;
+}
 
 const token = "abcdefghij";
 
@@ -40,17 +59,24 @@ const room: Room = {
   puzzle_data: gameData,
 };
 
+function setQueryResolveValue(rows: unknown[]) {
+  // @ts-expect-error, TypeScript can't type this mock
+  mockPool.query.mockResolvedValueOnce({ rows });
+}
+
 async function createSocketInRoom() {
   const socket = createMockSocket();
-  pool.query.mockResolvedValueOnce({ rows: [room] });
+  setQueryResolveValue([room]);
   await socket.call("room:join", token);
   return socket;
 }
 
-describe("room:join", () => {
-  beforeEach(arrangeBeforeEach);
-  afterEach(cleanUpAfterEach);
+beforeEach(() => {
+  // @ts-expect-error, we're inserting a mock object
+  init(mockIo);
+});
 
+describe("room:join", () => {
   // As a player, I want to synchronise my progress with other players
   // so that we can collaborate on the same puzzle.
   it("joins player to room", async () => {
@@ -72,16 +98,13 @@ describe("room:join", () => {
 
   it("rejects joining non-existent room", async () => {
     const socket = createMockSocket();
-    pool.query.mockResolvedValueOnce({ rows: [] });
+    setQueryResolveValue([]);
     await socket.call("room:join", token);
     expect(socket.emit).not.toHaveBeenCalled();
   });
 });
 
 describe("grid:edit", () => {
-  beforeEach(arrangeBeforeEach);
-  afterEach(cleanUpAfterEach);
-
   it("synchronizes grid with all players in same room", async () => {
     const editMessage: SurfaceUpdateMessage = {
       messageType: "edit",
@@ -100,10 +123,7 @@ describe("grid:edit", () => {
   });
 });
 
-describe("chat:newMessage", () => {
-  beforeEach(arrangeBeforeEach);
-  afterEach(cleanUpAfterEach);
-
+describe("chat:sendMessage", () => {
   // As a player, I want to communicate with other players
   // so that we can share insights.
   it("broadcasts chat messages to all players in same room", async () => {
@@ -112,13 +132,11 @@ describe("chat:newMessage", () => {
     vi.setSystemTime(0);
 
     // Join the room
-    const socket = createMockSocket();
-    pool.query.mockResolvedValueOnce({ rows: [room] });
-    await socket.call("room:join", token);
+    const socket = await createSocketInRoom();
 
     // Send a message
     const msgtext = "Hello, world!";
-    socket.call("chat:newMessage", { msgtext });
+    await socket.call("chat:sendMessage", { msgtext });
 
     // Get generated user name from "room:initialize"
     const user = socket.emit.mock.calls.at(0)?.at(2);
@@ -137,32 +155,32 @@ describe("chat:newMessage", () => {
 
   it("rejects wrong payload type", async () => {
     const socket = await createSocketInRoom();
-    await socket.call("chat:newMessage", "hello");
+    await socket.call("chat:sendMessage", "hello");
     expect(mockIo.to).not.toHaveBeenCalled();
   });
 
   it("rejects payload missing message", async () => {
     const socket = await createSocketInRoom();
-    await socket.call("chat:newMessage", {});
+    await socket.call("chat:sendMessage", {});
     expect(mockIo.to).not.toHaveBeenCalled();
   });
 
   it("rejects empty message", async () => {
     const socket = await createSocketInRoom();
-    await socket.call("chat:newMessage", { msgtext: "   " });
+    await socket.call("chat:sendMessage", { msgtext: "   " });
     expect(mockIo.to).not.toHaveBeenCalled();
   });
 
   it("rejects message too long", async () => {
     const socket = await createSocketInRoom();
     const longMessage = "x".repeat(1001);
-    await socket.call("chat:newMessage", { msgtext: longMessage });
+    await socket.call("chat:sendMessage", { msgtext: longMessage });
     expect(mockIo.to).not.toHaveBeenCalled();
   });
 
-  it("blocks unauthorized calls", () => {
+  it("blocks unauthorized calls", async () => {
     const socket = createMockSocket();
-    socket.call("chat:newMessage", {
+    await socket.call("chat:sendMessage", {
       msgtext: "This message is unauthorized",
     });
     expect(mockIo.to).not.toHaveBeenCalled();
