@@ -32,6 +32,6 @@
   <h3>Contact us</h3>
   <p>
     If you have questions or comments about this privacy policy, please contact
-    minghinshi at mhshi9768[at]google[dot]com.
+    minghinshi at mhshi9768[at]gmail[dot]com.
   </p>
 </template>
