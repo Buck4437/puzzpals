@@ -8,6 +8,7 @@ import EditorPage from "@/views/EditorPage.vue";
 import MyPuzzles from "@/views/MyPuzzles.vue";
 import CataloguePage from "@/views/CataloguePage.vue";
 import PuzzleDetail from "@/views/PuzzleDetail.vue";
+import AboutPage from "@/views/AboutPage.vue";
 
 const router = createRouter({
   history: createWebHistory(config.baseUrl),
@@ -42,6 +43,10 @@ const router = createRouter({
     {
       path: "/login",
       component: LoginPage,
+    },
+    {
+      path: "/about",
+      component: AboutPage,
     },
     {
       path: "/:pathMatch(.*)*",

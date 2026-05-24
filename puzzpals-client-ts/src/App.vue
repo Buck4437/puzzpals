@@ -96,6 +96,10 @@ const baseRoutes = [
     name: "Editor",
     route: "/editor",
   },
+  {
+    name: "About",
+    route: "/about",
+  },
 ];
 const navRoutes = computed(() => {
   if (!currentUser.value) {
