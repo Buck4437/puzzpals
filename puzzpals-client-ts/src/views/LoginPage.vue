@@ -1,6 +1,11 @@
 <template>
   <div class="login-page">
     <h2>Login</h2>
+    <p>
+      Please read our
+      <RouterLink to="/about">privacy policy</RouterLink>
+      before logging in.
+    </p>
     <button class="google-btn" @click="loginWithGoogle">
       Login with Google
     </button>
